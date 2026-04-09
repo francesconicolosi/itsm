@@ -436,6 +436,19 @@ export function askModal() {
     });
 }
 
+export function applyStreamVisibility({ hiddenStreams, isolatedStream }) {
+    d3.selectAll('g[data-key^="stream::"]').each(function () {
+        const g = d3.select(this);
+        const key = g.attr('data-key');
+
+        const isHidden = hiddenStreams.has(key);
+        const isIsolated =
+            isolatedStream && key !== isolatedStream;
+
+        g.style('display', (isHidden || isIsolated) ? 'none' : null);
+    });
+}
+
 export function askHideStreamModal(streamName) {
     return createModal({
         title: `Hide stream "${streamName}"?`,

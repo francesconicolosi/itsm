@@ -1,7 +1,7 @@
 import * as d3 from 'd3';
 
 import {
-    addTagToElement,
+    applyStreamVisibility,
     askHideStreamModal,
     applySearchDimmingForMatches,
     buildCompositeKey,
@@ -52,6 +52,11 @@ let logoLayer;
 
 let people = [];
 let colorScale = null;
+let cachedCsvText = null;
+
+function resetStreamVisibility() {
+    setStreamFilter(null);
+}
 
 
 const secondLevelRowPadY = 60;
@@ -555,12 +560,8 @@ function initSideDrawerEvents() {
     initCommonActions();
 
     document.getElementById('act-clear')?.addEventListener('click', () => {
+        resetStreamVisibility();
         clearSearch();
-        if (getQueryParam('stream')) {
-            const url = new URL(window.location.href);
-            url.searchParams.delete('stream');
-            window.location.href = url.toString();
-        }
     });
 
     document.getElementById('act-fit')?.addEventListener('click', () => {
@@ -881,17 +882,32 @@ function initDrawerEvents() {
     const closeBtn = document.getElementById('drawer-close');
     overlay?.addEventListener('click', closeDrawer);
     closeBtn?.addEventListener('click', closeDrawer);
-    window.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') closeDrawer();
-    });
 }
 
 window.addEventListener('DOMContentLoaded', initDrawerEvents);
+
+function clearAllStreamsAndSearch() {
+    resetStreamVisibility();
+    clearSearch();
+}
+
+window.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape') return;
+
+    const drawerOpen = document.body.classList.contains('drawer-open');
+
+    if (drawerOpen) {
+        closeDrawer()
+    } else {
+        clearAllStreamsAndSearch();
+    }
+});
 
 window.addEventListener('load', function () {
     fetch('https://francesconicolosi.github.io/itsm/sample-people-database.csv')
         .then(response => response.text())
         .then(csvData => {
+            cachedCsvText = csvData;
             resetVisualization();
             extractData(csvData);
             searchParam = getQueryParam('search');
@@ -975,6 +991,25 @@ function resetVisualization() {
         });
 
     svg.call(zoom);
+}
+
+function setStreamFilter(streamKeys /* Set | null */) {
+    const params = new URLSearchParams(window.location.search);
+
+    if (!streamKeys || streamKeys.size === 0) {
+        params.delete('stream');
+    } else {
+        params.set('stream', [...streamKeys].join(','));
+    }
+
+    const newUrl =
+        window.location.pathname +
+        (params.toString() ? '?' + params.toString() : '');
+
+    window.history.replaceState({}, '', newUrl);
+
+    resetVisualization();
+    extractData(cachedCsvText);
 }
 
 function showToast(message, duration = 3000) {
@@ -1610,6 +1645,8 @@ function extractData(csvText) {
         if (firstLevelDescription !== "") {
             titleText.append('tspan')
                 .attr('class', 'stream-icon stream-icon--desc')
+                .attr('data-tooltip', 'View stream details')
+                .attr('aria-label', 'View stream details')
                 .text(' ℹ️')
                 .on('click', (e) => {
                     e?.stopPropagation?.();
@@ -1620,23 +1657,43 @@ function extractData(csvText) {
 
         if (visibleStreamNames.length > 1) {
             titleText.append('tspan')
-                .attr('class', 'stream-icon stream-icon--hide')
+                .attr('class', 'stream-icon stream-icon--isolate')
+                .attr('data-tooltip', 'Show this stream only (ESC to reset)')
+                .attr('aria-label', 'Show this stream only (ESC to reset)')
                 .text(' 👁️‍🗨️')
-                .on('click', async (e) => {
+                .style('cursor', 'pointer')
+                .on('click', (e) => {
                     e.stopPropagation();
-                    const confirmed = await askHideStreamModal(firstLevel);
-                    if (!confirmed) return;
+                    const key = normalizeKey(firstLevel);
 
-                    const others = visibleStreamNames.filter(
-                        s => normalizeKey(s) !== normalizeKey(firstLevel)
-                    );
-                    const url = new URL(window.location.href);
-                    if (others.length > 0) {
-                        url.searchParams.set('stream', others.join(','));
+                    setStreamFilter(new Set([key]));
+                });
+
+
+            titleText.append('tspan')
+                .attr('class', 'stream-icon stream-icon--hide')
+                .attr('data-tooltip', 'Hide this stream (ESC to reset)')
+                .attr('aria-label', 'Hide this stream (ESC to reset)')
+                .text(' 🙈')
+                .style('cursor', 'pointer')
+                .on('click', (e) => {
+                    e.stopPropagation();
+
+                    const key = normalizeKey(firstLevel);
+                    const current = getAllowedStreamsSet();
+
+                    let next;
+
+                    if (!current) {
+                        next = new Set(
+                            visibleStreamNames.map(s => normalizeKey(s))
+                        );
+                        next.delete(key);
                     } else {
-                        url.searchParams.delete('stream');
+                        next = new Set(current);
+                        next.delete(key);
                     }
-                    window.location.href = url.toString();
+                    setStreamFilter(next.size > 0 ? next : null);
                 });
         }
 
@@ -1701,6 +1758,8 @@ function extractData(csvText) {
                         .append('tspan')
                         .attr('class', 'theme-icon')
                         .attr('dx', 10)
+                        .attr('data-tooltip', 'View theme details')
+                        .attr('aria-label', 'View theme details')
                         .text(' ℹ️')
                         .on('click', (e) => {
                             e.stopPropagation();
