@@ -16,6 +16,52 @@ export const NEUTRAL_COLOR = '#fcfcfc';
 export const MAX_TEAMS_PER_ROW = 5;
 export const emailField = "Company email";
 
+export function enableGlobalFindShortcut({
+                                             inputSelector,
+                                             onFocus,
+                                             selectText = true
+                                         } = {}) {
+    if (!inputSelector) {
+        console.warn('[enableGlobalFindShortcut] inputSelector is required');
+        return;
+    }
+
+    window.addEventListener('keydown', (e) => {
+        const isMac = navigator.platform.toUpperCase().includes('MAC');
+
+        const isFindShortcut =
+            (isMac && e.metaKey && e.key.toLowerCase() === 'f') ||
+            (!isMac && e.ctrlKey && e.key.toLowerCase() === 'f');
+
+        if (!isFindShortcut) return;
+
+        const activeTag = document.activeElement?.tagName;
+        const isTyping =
+            activeTag === 'INPUT' ||
+            activeTag === 'TEXTAREA' ||
+            document.activeElement?.isContentEditable;
+
+        // se sto già scrivendo in un input, non forzare nulla
+        if (isTyping) return;
+
+        const input = document.querySelector(inputSelector);
+        if (!input) return;
+
+        e.preventDefault();
+        e.stopPropagation();
+
+        input.focus({ preventScroll: false });
+
+        if (selectText && typeof input.select === 'function') {
+            try { input.select(); } catch {}
+        }
+
+        if (typeof onFocus === 'function') {
+            onFocus(input);
+        }
+    }, true);
+}
+
 export function isDateTimeValue(value) {
     if (typeof value !== 'string') return false;
 

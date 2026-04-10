@@ -1,7 +1,7 @@
 import * as d3 from 'd3';
 
 import {
-    applyStreamVisibility,
+    enableGlobalFindShortcut,
     askHideStreamModal,
     applySearchDimmingForMatches,
     buildCompositeKey,
@@ -626,6 +626,16 @@ function initSideDrawerEvents() {
 }
 
 window.addEventListener('DOMContentLoaded', initSideDrawerEvents);
+
+window.addEventListener('DOMContentLoaded', () => {
+    enableGlobalFindShortcut({
+        inputSelector: '#drawer-search-input',
+        onFocus: (input) => {
+            // opzionale: svuota highlight precedenti o apri drawer
+            // openDrawerIfClosed();
+        }
+    });
+});
 
 (function handleAdvancedMode() {
     const params = new URLSearchParams(window.location.search);

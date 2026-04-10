@@ -12,6 +12,7 @@ import {
     splitValues,
     isUrl,
     labelForKey,
+    enableGlobalFindShortcut,
     LABEL_FOR_KEY, isListViewVisible, isDateTimeValue, formatDateTimeLocal
 } from './utils.js';
 
@@ -260,6 +261,17 @@ function initSideDrawerEvents() {
 }
 
 window.addEventListener('DOMContentLoaded', initSideDrawerEvents);
+
+
+window.addEventListener('DOMContentLoaded', () => {
+    enableGlobalFindShortcut({
+        inputSelector: '#drawer-search-input',
+        onFocus: (input) => {
+            // opzionale: svuota highlight precedenti o apri drawer
+            // openDrawerIfClosed();
+        }
+    });
+});
 
 document.getElementById('closeDrawer').addEventListener('click', closeDrawer);
 document.getElementById('overlay').addEventListener('click', closeDrawer);
