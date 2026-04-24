@@ -1199,3 +1199,182 @@ body.side-drawer-open #legend-root {
 .drawer-section__body li{
     margin: 6px 0;
 }
+
+#legend-root .legend__header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    margin-bottom: 6px;
+    cursor: move;
+    user-select: none;
+}
+
+#legend-root .legend__title{
+    margin: 0;               /* override del vecchio margin-bottom */
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    color:#333;
+    flex: 1;
+    min-width: 0;
+}
+
+#legend-root .legend__collapse{
+    width: 30px;
+    height: 22px;
+    border-radius: 7px;
+    border: 1px solid rgba(0,0,0,.14);
+    background: rgba(255,255,255,0.85);
+    color:#111;
+    font-size: 18px;
+    line-height: 18px;
+    padding: 0;
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+    transition: background-color .2s ease, color .2s ease, border-color .2s ease;
+}
+
+/* header */
+#legend-root .legend__header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    margin-bottom: 6px;
+    cursor: move;
+    user-select: none;
+}
+
+#legend-root .legend__title{
+    margin: 0;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    color:#333;
+    flex: 1;
+    min-width: 0;
+}
+
+/* chevron button */
+#legend-root .legend__collapse{
+    width: 28px;
+    height: 28px;
+    border: 1px solid rgba(0,0,0,.12);
+    background: rgba(255,255,255,0.70);
+    border-radius: 8px;
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+    padding: 0;
+    transition: background-color .2s ease, border-color .2s ease, transform .12s ease;
+}
+
+#legend-root .legend__collapse:hover{
+    background: rgba(0,0,0,0.06);
+    border-color: rgba(0,0,0,.18);
+}
+
+#legend-root .legend__collapse:active{
+    transform: translateY(1px);
+}
+
+#legend-root .legend__collapse:focus-visible{
+    outline: 2px solid #0078d4;
+    outline-offset: 2px;
+}
+
+/* chevron icon */
+#legend-root .legend__collapse .chevron{
+    width: 8px;
+    height: 8px;
+    border-right: 2px solid #222;
+    border-bottom: 2px solid #222;
+    transform: rotate(45deg);            /* open */
+    transition: transform .2s ease, opacity .2s ease;
+    opacity: .75;
+}
+
+#legend-root.legend--collapsed .legend__collapse .chevron{
+    transform: rotate(-45deg);           /* collapsed */
+}
+
+#legend-root .legend__collapse:hover .chevron{
+    opacity: 1;
+}
+
+/* collapsed behavior */
+#legend-root.legend--collapsed .legend__list{
+    display:none;
+}
+
+#legend-root .legend__collapse{
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+}
+
+/* bottone hover → nero */
+#legend-root .legend__collapse:hover{
+    background: #111;
+    border-color: #111;
+}
+
+/* chevron diventa bianca quando il bottone è hover/focus */
+#legend-root .legend__collapse:hover .chevron,
+#legend-root .legend__collapse:focus-visible .chevron{
+    border-color: #fff;
+}
+
+/* marquee selection box */
+#multi-select-marquee{
+    position: fixed;
+    z-index: 20000;
+    border: 1px dashed #111;
+    background: rgba(0,0,0,0.06);
+    border-radius: 6px;
+    pointer-events: none;
+}
+
+/* context menu */
+#canvas-context-menu{
+    position: fixed;
+    z-index: 20001;
+    display: none;
+    min-width: 180px;
+    background: rgba(255,255,255,0.96);
+    border: 1px solid rgba(0,0,0,0.14);
+    border-radius: 10px;
+    box-shadow: 0 10px 26px rgba(0,0,0,0.18);
+    padding: 6px;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+}
+
+#canvas-context-menu.visible{ display: block; }
+
+#canvas-context-menu button{
+    width: 100%;
+    border: none;
+    background: transparent;
+    padding: 10px 10px;
+    border-radius: 8px;
+    text-align: left;
+    font-family: "Gucci Sans Pro Custom", Arial, sans-serif;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+#canvas-context-menu button:hover{
+    background: #111;
+    color: #fff;
+}
+
+#canvas-context-menu button.active{
+    background: rgba(0,0,0,0.06);
+    font-weight: 650;
+}
+
+/* selected highlight: bordo nero forte sul primo rect del gruppo */
+g.draggable.multi-selected rect:first-of-type{
+    stroke: #111 !important;
+    stroke-width: 4px !important;
+}

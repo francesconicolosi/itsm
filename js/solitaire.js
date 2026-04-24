@@ -98,6 +98,106 @@ const peopleDBUpdateRecipients = [
     'teams@share.software.net'
 ];
 
+function ensureMarquee() {
+    if (marqueeEl) return marqueeEl;
+    marqueeEl = document.createElement('div');
+    marqueeEl.id = 'multi-select-marquee';
+    marqueeEl.style.display = 'none';
+    document.body.appendChild(marqueeEl);
+    return marqueeEl;
+}
+
+function ensureContextMenu() {
+    if (ctxMenuEl) return ctxMenuEl;
+
+    ctxMenuEl = document.createElement('div');
+    ctxMenuEl.id = 'canvas-context-menu';
+    ctxMenuEl.innerHTML = `
+    <button type="button" data-mode="drag">1. Drag</button>
+    <button type="button" data-mode="select">2. Multiple select</button>
+  `;
+    document.body.appendChild(ctxMenuEl);
+
+    ctxMenuEl.addEventListener('click', (e) => {
+        const btn = e.target.closest('button[data-mode]');
+        if (!btn) return;
+        setInteractionMode(btn.dataset.mode);
+        hideContextMenu();
+    });
+
+    document.addEventListener('pointerdown', (e) => {
+        // non chiudere se il click è dentro al menu
+        if (ctxMenuEl && ctxMenuEl.contains(e.target)) return;
+        hideContextMenu();
+    }, { passive: true });
+    window.addEventListener('keydown', (e) => { if (e.key === 'Escape') hideContextMenu(); });
+
+    ctxMenuEl.addEventListener('pointerdown', (e) => {
+        e.stopPropagation();
+    });
+
+    return ctxMenuEl;
+}
+
+function showContextMenu(x, y) {
+    const m = ensureContextMenu();
+    m.style.left = `${x}px`;
+    m.style.top  = `${y}px`;
+    m.classList.add('visible');
+
+    // evidenzia voce attiva
+    m.querySelectorAll('button').forEach(b => b.classList.toggle('active', b.dataset.mode === interactionMode));
+}
+
+function hideContextMenu() {
+    if (!ctxMenuEl) return;
+    ctxMenuEl.classList.remove('visible');
+}
+
+function setInteractionMode(mode) {
+    showToast(`Mode: ${interactionMode === 'select' ? 'Multiple select' : 'Drag'}`);
+    interactionMode = (mode === 'select') ? 'select' : 'drag';
+
+    // se esci dalla select mode, pulisci marquee e (opzionale) selezione
+    if (interactionMode === 'drag') {
+        hideMarquee();
+    }
+
+    // ri-applica lo stato draggable (così in drag mode riprende il comportamento standard)
+    applyDraggableToggleState();
+
+    // in select mode NON vogliamo il drag standard sui singoli elementi
+    if (interactionMode === 'select') {
+        requestAnimationFrame(() => {
+            d3.selectAll('.draggable').on('.drag', null);
+        });
+    }
+}
+
+function clearSelection() {
+    selectedGroups.forEach(g => g.classList.remove('multi-selected'));
+    selectedGroups.clear();
+}
+
+function addToSelection(g) {
+    if (!g) return;
+    g.classList.add('multi-selected');
+    selectedGroups.add(g);
+}
+
+function isSelected(g) {
+    return selectedGroups.has(g);
+}
+
+function rectIntersects(a, b) {
+    return !(b.left > a.right || b.right < a.left || b.top > a.bottom || b.bottom < a.top);
+}
+
+function hideMarquee() {
+    const el = ensureMarquee();
+    el.style.display = 'none';
+}
+
 const portfolioDBUpdateRecipients = ['portfolio@nycosoft.com', 'bleiz.jonas@nycosoft.com'];
 
 let roleDetailsMapping;
@@ -129,11 +229,45 @@ function renderLegendAll({ title, fieldName = LOCATION_FIELD, keys, counts, topK
     }
     root.className = 'legend legend--generic';
     root.innerHTML = `
-    <div class="legend__title"></div>
-    <div class="legend__list" aria-label="Legend list"></div>
-  `;
+     <div class="legend__header" aria-label="Legend header">
+    <div class="legend__title" role="heading" aria-level="2"></div>
+    <button class="legend__collapse" type="button" aria-label="Toggle legend" aria-expanded="true">
+      <span class="chevron" aria-hidden="true"></span>
+    </button>
+  </div>
+  <div class="legend__list" aria-label="Legend list"></div>
+`;
     root.querySelector('.legend__title').textContent = title;
     const list = root.querySelector('.legend__list');
+    const btn  = root.querySelector('.legend__collapse');
+
+    const collapsedKey = `legend-collapsed-v1::${String(colorBy || fieldName || 'legend').toLowerCase()}`;
+
+    function applyCollapsed(collapsed) {
+        root.classList.toggle('legend--collapsed', collapsed);
+
+        list.hidden = collapsed;
+
+        btn.setAttribute('aria-expanded', String(!collapsed));
+        btn.setAttribute('aria-label', collapsed ? 'Expand legend' : 'Collapse legend');
+
+        try { localStorage.setItem(collapsedKey, collapsed ? '1' : '0'); } catch {}
+    }
+
+
+    let initialCollapsed = false;
+    try { initialCollapsed = (localStorage.getItem(collapsedKey) === '1'); } catch {}
+    applyCollapsed(initialCollapsed);
+
+    btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        applyCollapsed(!root.classList.contains('legend--collapsed'));
+    });
+
+    btn.addEventListener('pointerdown', (e) => {
+        e.stopPropagation();
+    });
 
     keys.forEach((key) => {
         const item = document.createElement('div');
@@ -217,7 +351,7 @@ function renderLegendAll({ title, fieldName = LOCATION_FIELD, keys, counts, topK
 
     list.style.setProperty('--legend-row', '24px');
     list.style.maxHeight = `calc(${maxVisible} * var(--legend-row))`;
-    enableLegendDrag({ handleSelector: '.legend__title' });
+    enableLegendDrag({ handleSelector: '.legend__header' });
 }
 
 function recolorProfileCards(field) {
@@ -283,11 +417,11 @@ function setColorMode(mode) {
 
 const drag = d3.drag()
     .on("start", function () {
-        d3.select(this).raise();
+        bringToCorrectLayer(this);
     })
     .on("drag", function (event) {
         const transform = d3.select(this).attr("transform");
-        const translate = transform.match(/translate\(([^,]+),([^\)]+)\)/);
+        const translate = transform.match(/translate\(([^,]+),([^)]+)\)/);
         const x = parseFloat(translate[1]) + event.dx;
         const y = parseFloat(translate[2]) + event.dy;
         d3.select(this).attr("transform", `translate(${x},${y})`);
@@ -650,6 +784,7 @@ window.addEventListener('DOMContentLoaded', () => {
     show("act-upload", isAdvanced);
     show("label-file", isAdvanced);
     show("toggle-draggable", isAdvanced);
+    show("change-scenario-label", isAdvanced);
     show("act-save", isAdvanced);
     show("act-reset-layout", isAdvanced);
     show("switch-label", isAdvanced);
@@ -672,6 +807,20 @@ window.addEventListener('DOMContentLoaded', () => {
     window.addEventListener('gestureend', (e) => e.preventDefault(), {passive: false});
 })();
 
+function bringToCorrectLayer(g) {
+    const key = g.getAttribute('data-key') || '';
+
+    if (key.startsWith('card::')) {
+        cardLayer.node().appendChild(g);
+    } else if (key.startsWith('team::')) {
+        teamLayer.node().appendChild(g);
+    } else if (key.startsWith('theme::')) {
+        themeLayer.node().appendChild(g);
+    } else if (key.startsWith('stream::')) {
+        streamLayer.node().appendChild(g);
+    }
+}
+
 function openDrawer({
                         name: title,
                         description,
@@ -683,6 +832,7 @@ function openDrawer({
                         elementsTitle = "Managed Services ⚙️",
                         elementsBaseUrl
                     }) {
+    if (isDraggable) return;
     console.log('open');
 
     const drawer = document.getElementById('drawer');
@@ -894,6 +1044,32 @@ function initDrawerEvents() {
     closeBtn?.addEventListener('click', closeDrawer);
 }
 
+function makeStripRects(outer, t) {
+    // outer: DOMRect-like {left, right, top, bottom}
+    const left = outer.left, right = outer.right, top = outer.top, bottom = outer.bottom;
+
+    const tt = Math.max(1, t);
+    const tTop = { left, right, top, bottom: Math.min(bottom, top + tt) };
+    const tBot = { left, right, top: Math.max(top, bottom - tt), bottom };
+    const tLeft = { left, right: Math.min(right, left + tt), top: top + tt, bottom: bottom - tt };
+    const tRight = { left: Math.max(left, right - tt), right, top: top + tt, bottom: bottom - tt };
+
+    return [tTop, tBot, tLeft, tRight];
+}
+
+function borderHit(selRect, outerRect, thicknessPx = 10) {
+    // se non interseca nemmeno il bounding box, inutile calcolare
+    if (!rectIntersects(selRect, outerRect)) return false;
+
+    const strips = makeStripRects(outerRect, thicknessPx);
+    return strips.some(s => rectIntersects(selRect, s));
+}
+
+// utile per filtrare contenitori (stream/theme) quando selezioni team/card
+function rectContains(a, b) {
+    return a.left <= b.left && a.top <= b.top && a.right >= b.right && a.bottom >= b.bottom;
+}
+
 window.addEventListener('DOMContentLoaded', initDrawerEvents);
 
 function clearAllStreamsAndSearch() {
@@ -1001,6 +1177,135 @@ function resetVisualization() {
         });
 
     svg.call(zoom);
+    const svgNode = svg.node();
+    if (svgNode) {
+        svgNode.addEventListener('contextmenu', (e) => {
+            if (!isDraggable) return;          // solo in Change Scenario
+            e.preventDefault();
+            e.stopPropagation();
+            showContextMenu(e.clientX, e.clientY);
+        }, { capture: true });
+    }
+
+    function startMarquee(e) {
+        const el = ensureMarquee();
+        const startX = e.clientX;
+        const startY = e.clientY;
+
+        el.style.display = 'block';
+        el.style.left = `${startX}px`;
+        el.style.top = `${startY}px`;
+        el.style.width = `0px`;
+        el.style.height = `0px`;
+
+        const move = (ev) => {
+            const x = ev.clientX;
+            const y = ev.clientY;
+            const left = Math.min(startX, x);
+            const top  = Math.min(startY, y);
+            const w = Math.abs(x - startX);
+            const h = Math.abs(y - startY);
+
+            el.style.left = `${left}px`;
+            el.style.top  = `${top}px`;
+            el.style.width  = `${w}px`;
+            el.style.height = `${h}px`;
+        };
+
+        const up = (ev) => {
+            window.removeEventListener('pointermove', move);
+            window.removeEventListener('pointerup', up);
+
+            const selRect = el.getBoundingClientRect();
+            hideMarquee();
+
+            if (!ev.shiftKey) clearSelection();
+
+            const groups = Array.from(svgNode.querySelectorAll('g.draggable'));
+            const BORDER_PX = 10;
+
+            groups.forEach(g => {
+                const r = g.getBoundingClientRect();
+                if (borderHit(selRect, r, BORDER_PX)) {
+                    addToSelection(g);
+                }
+            });
+        };
+
+        window.addEventListener('pointermove', move, { passive: true });
+        window.addEventListener('pointerup', up, { passive: true });
+    }
+
+    function startMoveSelection(e, originGroup) {
+        // se non è selected, e non c’è shift, reset e seleziona solo lui
+        selectedGroups.forEach(g => bringToCorrectLayer(g));
+        if (!isSelected(originGroup) && !e.shiftKey) {
+            clearSelection();
+            addToSelection(originGroup);
+        } else if (!isSelected(originGroup) && e.shiftKey) {
+            addToSelection(originGroup);
+        }
+
+        // prepara posizioni iniziali
+        const startClientX = e.clientX;
+        const startClientY = e.clientY;
+
+        const initial = new Map();
+        selectedGroups.forEach(g => {
+            const t = g.getAttribute('transform') || '';
+            const m = t.match(/translate\(([^,]+),\s*([^)]+)\)/);
+            const x = m ? (+m[1] || 0) : 0;
+            const y = m ? (+m[2] || 0) : 0;
+            initial.set(g, { x, y });
+        });
+
+        // zoom scale per convertire pixel -> unità SVG
+        const getK = () => (d3.zoomTransform(svgNode)?.k || 1);
+
+        const move = (ev) => {
+            const dxClient = ev.clientX - startClientX;
+            const dyClient = ev.clientY - startClientY;
+            const k = getK();
+
+            const dx = dxClient / k;
+            const dy = dyClient / k;
+
+            selectedGroups.forEach(g => {
+                const p = initial.get(g);
+                if (!p) return;
+                g.setAttribute('transform', `translate(${p.x + dx},${p.y + dy})`);
+            });
+            selectedGroups.forEach(g => bringToCorrectLayer(g));
+        };
+
+        const up = () => {
+            window.removeEventListener('pointermove', move);
+            window.removeEventListener('pointerup', up);
+        };
+
+        window.addEventListener('pointermove', move, { passive: true });
+        window.addEventListener('pointerup', up, { passive: true });
+    }
+
+    svgNode.addEventListener('pointerdown', (e) => {
+        if (!isDraggable) return;
+        if (interactionMode !== 'select') return;
+        if (e.button !== 0) return; // solo left mouse
+
+        // se clicchi su un group draggable (o dentro), e quel group è selezionato => muovi selezione
+        const g = e.target?.closest?.('g.draggable');
+        if (g && (isSelected(g) || e.shiftKey)) {
+            e.preventDefault();
+            e.stopPropagation();
+            startMoveSelection(e, g);
+            return;
+        }
+
+        // altrimenti marquee selection
+        e.preventDefault();
+        e.stopPropagation();
+        startMarquee(e);
+    }, { capture: true });
 }
 
 function setStreamFilter(streamKeys /* Set | null */) {
@@ -1334,6 +1639,11 @@ function placeCompanyLogoUnderDiagram(url = './assets/company-logo.png', maxWidt
 
 
 let isDraggable = false;
+
+let interactionMode = 'drag'; // 'drag' | 'select'
+const selectedGroups = new Set(); // Set<SVGGElement>
+let marqueeEl = null;
+let ctxMenuEl = null;
 
 function applyDraggableToggleState() {
     const groups = d3.selectAll('.draggable');
@@ -1812,7 +2122,10 @@ function extractData(csvText) {
                     makeResizable(thirdLevelGroup, thirdLevelRect, { minWidth: 360, minHeight: 220 });
 
                     const serviceCount = services?.items?.length || 0;
-                    const titleText = `${truncateString(thirdLevel)} - ⚙️ (${serviceCount})`;
+
+                    const titleText = serviceCount > 0
+                        ? `${truncateString(thirdLevel)} - ⚙️ (${serviceCount})`
+                        : truncateString(thirdLevel);
 
                     thirdLevelGroup.append('text')
                         .attr('x', thirdLevelBoxWidth / 2)
