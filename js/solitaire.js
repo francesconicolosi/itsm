@@ -742,6 +742,39 @@ function makeResizable(group, rect, opts = {}) {
             applySize();
         });
 
+    const dragNE = d3.drag()
+        .on('start', e => { e.sourceEvent?.stopPropagation(); trackerSE.start(e); })
+        .on('drag', e => {
+            const { dx, dy } = trackerSE.drag(e);
+
+            // NE: aumenta width (dx), diminuisce height (dy) + sposta Y
+            const dxClamped = Math.max(-(w - minW), dx);      // consenti anche “tirare indietro”
+            const dyClamped = Math.min(dy, h - minH);         // quanto puoi ridurre l’altezza
+
+            w = Math.max(minW, w + dxClamped);
+            h = h - dyClamped;
+
+            applyTranslate(0, dyClamped); // top edge scende
+            applySize();
+        });
+
+    const dragSW = d3.drag()
+        .on('start', e => { e.sourceEvent?.stopPropagation(); trackerSE.start(e); })
+        .on('drag', e => {
+            const { dx, dy } = trackerSE.drag(e);
+
+            // SW: diminuisce width (dx) + sposta X, aumenta height (dy)
+            const dxClamped = Math.min(dx, w - minW);         // quanto puoi ridurre la larghezza
+            const dyClamped = Math.max(-(h - minH), dy);      // consenti anche “tirare su”
+
+            w = w - dxClamped;
+            h = Math.max(minH, h + dyClamped);
+
+            applyTranslate(dxClamped, 0); // left edge si sposta a destra
+            applySize();
+        });
+
+
     handleE.call(dragE);
     hitE.call(dragE);
     handleS.call(dragS);
@@ -754,6 +787,16 @@ function makeResizable(group, rect, opts = {}) {
     hitW.call(dragW);
     handleNW.call(dragNW);
     hitNW.call(dragNW);
+    handleNE.call(dragNE);
+    hitNE.call(dragNE);
+    handleSW.call(dragSW);
+    hitSW.call(dragSW);
+
+    handles.selectAll('.resize-handle, .resize-hit')
+        .on('pointerdown', (event) => {
+            event.stopPropagation();
+        });
+
 
     handles
         .style('display', isDraggable ? null : 'none')
