@@ -155,18 +155,16 @@ function hideContextMenu() {
 }
 
 function setInteractionMode(mode) {
-    showToast(`Mode: ${interactionMode === 'select' ? 'Multiple select' : 'Drag'}`);
     interactionMode = (mode === 'select') ? 'select' : 'drag';
+    showToast(`Mode: ${interactionMode === 'select' ? 'Multiple select' : 'Drag'}`);
 
-    // se esci dalla select mode, pulisci marquee e (opzionale) selezione
     if (interactionMode === 'drag') {
         hideMarquee();
+        clearSelection();
     }
 
-    // ri-applica lo stato draggable (così in drag mode riprende il comportamento standard)
     applyDraggableToggleState();
 
-    // in select mode NON vogliamo il drag standard sui singoli elementi
     if (interactionMode === 'select') {
         requestAnimationFrame(() => {
             d3.selectAll('.draggable').on('.drag', null);
@@ -427,6 +425,8 @@ const drag = d3.drag()
         d3.select(this).attr("transform", `translate(${x},${y})`);
     });
 
+const isAdvanced = getQueryParam("advanced") === "true";
+
 
 let searchParam;
 
@@ -514,10 +514,21 @@ function makeResizable(group, rect, opts = {}) {
     const handleE = handles.append('rect').attr('class', 'resize-handle e');
     const handleS = handles.append('rect').attr('class', 'resize-handle s');
     const handleSE = handles.append('rect').attr('class', 'resize-handle se');
+    const handleN  = handles.append('rect').attr('class', 'resize-handle n');
+    const handleW  = handles.append('rect').attr('class', 'resize-handle w');
+    const handleNW = handles.append('rect').attr('class', 'resize-handle nw');
+    const handleNE = handles.append('rect').attr('class', 'resize-handle ne');
+    const handleSW = handles.append('rect').attr('class', 'resize-handle sw');
 
     const hitE = handles.append('rect').attr('class', 'resize-hit e');
     const hitS = handles.append('rect').attr('class', 'resize-hit s');
     const hitSE = handles.append('rect').attr('class', 'resize-hit se');
+    const hitN  = handles.append('rect').attr('class', 'resize-hit n');
+    const hitW  = handles.append('rect').attr('class', 'resize-hit w');
+    const hitNW = handles.append('rect').attr('class', 'resize-hit nw');
+    const hitNE = handles.append('rect').attr('class', 'resize-hit ne');
+    const hitSW = handles.append('rect').attr('class', 'resize-hit sw');
+
 
     function positionHandles() {
         handleE
@@ -534,6 +545,31 @@ function makeResizable(group, rect, opts = {}) {
 
         handleSE
             .attr('x', w - handleSize / 2)
+            .attr('y', h - handleSize / 2)
+            .attr('width', handleSize)
+            .attr('height', handleSize);
+
+        handleN.attr('x', w / 2 - handleSize / 2)
+            .attr('y', -handleSize / 2)
+            .attr('width', handleSize)
+            .attr('height', handleSize);
+
+        handleW.attr('x', -handleSize / 2)
+            .attr('y', h / 2 - handleSize / 2)
+            .attr('width', handleSize)
+            .attr('height', handleSize);
+
+        handleNW.attr('x', -handleSize / 2)
+            .attr('y', -handleSize / 2)
+            .attr('width', handleSize)
+            .attr('height', handleSize);
+
+        handleNE.attr('x', w - handleSize / 2)
+            .attr('y', -handleSize / 2)
+            .attr('width', handleSize)
+            .attr('height', handleSize);
+
+        handleSW.attr('x', -handleSize / 2)
             .attr('y', h - handleSize / 2)
             .attr('width', handleSize)
             .attr('height', handleSize);
@@ -555,6 +591,38 @@ function makeResizable(group, rect, opts = {}) {
             .attr('y', h - (handleSize / 2 + hitPad))
             .attr('width', handleSize + 2 * hitPad)
             .attr('height', handleSize + 2 * hitPad);
+
+        const hitSize = handleSize + 2 * hitPad;
+
+        hitN
+            .attr('x', w / 2 - hitSize / 2)
+            .attr('y', -hitSize / 2)
+            .attr('width', hitSize)
+            .attr('height', hitSize);
+
+        hitW
+            .attr('x', -hitSize / 2)
+            .attr('y', h / 2 - hitSize / 2)
+            .attr('width', hitSize)
+            .attr('height', hitSize);
+
+        hitNW
+            .attr('x', -hitSize / 2)
+            .attr('y', -hitSize / 2)
+            .attr('width', hitSize)
+            .attr('height', hitSize);
+
+        hitNE
+            .attr('x', w - hitSize / 2)
+            .attr('y', -hitSize / 2)
+            .attr('width', hitSize)
+            .attr('height', hitSize);
+
+        hitSW
+            .attr('x', -hitSize / 2)
+            .attr('y', h - hitSize / 2)
+            .attr('width', hitSize)
+            .attr('height', hitSize);
     }
 
     function applySize() {
@@ -599,6 +667,14 @@ function makeResizable(group, rect, opts = {}) {
     const trackerS = makeDeltaTracker();
     const trackerSE = makeDeltaTracker();
 
+    function applyTranslate(dx, dy) {
+        const t = group.attr('transform') || 'translate(0,0)';
+        const m = t.match(/translate\(([^,]+),\s*([^)]+)\)/);
+        const x = m ? (+m[1] || 0) : 0;
+        const y = m ? (+m[2] || 0) : 0;
+        group.attr('transform', `translate(${x + dx},${y + dy})`);
+    }
+
     const dragE = d3.drag()
         .on('start', (event) => {
             event.sourceEvent?.stopPropagation();
@@ -633,12 +709,51 @@ function makeResizable(group, rect, opts = {}) {
             applySize();
         });
 
+    const dragN = d3.drag()
+        .on('start', e => { e.sourceEvent?.stopPropagation(); trackerS.start(e); })
+        .on('drag', e => {
+            const { dy } = trackerS.drag(e);
+            const delta = Math.min(dy, h - minH);
+            h = h - delta;
+            applyTranslate(0, delta);
+            applySize();
+        });
+
+    const dragW = d3.drag()
+        .on('start', e => { e.sourceEvent?.stopPropagation(); trackerE.start(e); })
+        .on('drag', e => {
+            const { dx } = trackerE.drag(e);
+            const delta = Math.min(dx, w - minW);
+            w = w - delta;
+            applyTranslate(delta, 0);
+            applySize();
+        });
+
+    const dragNW = d3.drag()
+        .on('start', e => { e.sourceEvent?.stopPropagation(); trackerSE.start(e); })
+        .on('drag', e => {
+            const { dx, dy } = trackerSE.drag(e);
+            const dxClamped = Math.min(dx, w - minW);
+            const dyClamped = Math.min(dy, h - minH);
+
+            w -= dxClamped;
+            h -= dyClamped;
+            applyTranslate(dxClamped, dyClamped);
+            applySize();
+        });
+
     handleE.call(dragE);
     hitE.call(dragE);
     handleS.call(dragS);
     hitS.call(dragS);
     handleSE.call(dragSE);
     hitSE.call(dragSE);
+    handleN.call(dragN);
+    hitN.call(dragN);
+    handleW.call(dragW);
+    hitW.call(dragW);
+    handleNW.call(dragNW);
+    hitNW.call(dragNW);
 
     handles
         .style('display', isDraggable ? null : 'none')
@@ -772,8 +887,6 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 
 (function handleAdvancedMode() {
-    const params = new URLSearchParams(window.location.search);
-    const isAdvanced = params.get("advanced") === "true";
 
     function show(elId, visible) {
         const el = document.getElementById(elId);
@@ -1728,9 +1841,22 @@ function getCompanyGroupTalentUrl(member, emailField = 'Email') {
 }
 
 document.getElementById('toggle-draggable')?.addEventListener('change', (e) => {
+    if (!isAdvanced) {
+        e.target.checked = false;
+        isDraggable = false;
+        clearSelection();
+        return;
+    }
+
     isDraggable = e.target.checked;
+
+    if (!isDraggable) {
+        clearSelection();
+    }
+
     applyDraggableToggleState();
 });
+``
 
 function getThemeTeamsCount(themeObj) {
     return Object.keys(themeObj || {}).length || 0;

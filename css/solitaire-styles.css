@@ -74,6 +74,17 @@ hr {
     pointer-events: all;
 }
 
+.resize-hit.n  { cursor: ns-resize; }
+.resize-hit.s  { cursor: ns-resize; }
+.resize-hit.e  { cursor: ew-resize; }
+.resize-hit.w  { cursor: ew-resize; }
+
+.resize-hit.nw { cursor: nwse-resize; }
+.resize-hit.se { cursor: nwse-resize; }
+
+.resize-hit.ne { cursor: nesw-resize; }
+.resize-hit.sw { cursor: nesw-resize; }
+
 .resize-handle.e, .resize-hit.e {
     cursor: ew-resize;
     touch-action: none;
