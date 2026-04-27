@@ -50,6 +50,14 @@ let lastSearch = '';
 let currentIndex = 0;
 let logoLayer;
 
+let longPressTimer = null;
+let longPressPointerId = null;
+let longPressStart = null;
+let longPressFired = false;
+
+const LONG_PRESS_MS = 520;     // 450–600ms è lo standard; 520 è un buon compromesso
+const LONG_PRESS_MOVE_PX = 10; // soglia movimento per cancellare long press
+
 let suppressClicksUntil = 0;
 let panMoved = false;
 
@@ -60,6 +68,79 @@ let cachedCsvText = null;
 let fitMinScale = 0.1;
 let lastFitTransform = d3.zoomIdentity;
 const ZOOM_MAX_SCALE = 1;
+
+function setupMobileLongPressContextMenu() {
+    if (window.__solitaireLongPressAttached) return;
+    window.__solitaireLongPressAttached = true;
+
+    const svgEl = document.getElementById('canvas');
+    if (!svgEl) return;
+
+    // Evita callout nativo iOS (selettore testo/menù safari)
+    // (Non è CSS perfetto, ma aiuta molto)
+    svgEl.style.webkitTouchCallout = 'none';
+    svgEl.style.webkitUserSelect = 'none';
+    svgEl.style.userSelect = 'none';
+
+    const clear = () => {
+        if (longPressTimer) clearTimeout(longPressTimer);
+        longPressTimer = null;
+        longPressPointerId = null;
+        longPressStart = null;
+        longPressFired = false;
+    };
+
+    svgEl.addEventListener('pointerdown', (e) => {
+        // Solo touch / pen (su desktop resta il right click)
+        if (e.pointerType !== 'touch' && e.pointerType !== 'pen') return;
+        if (e.button !== 0) return;
+
+        longPressPointerId = e.pointerId;
+        longPressStart = { x: e.clientX, y: e.clientY };
+        longPressFired = false;
+
+        // NON preventDefault qui: altrimenti rompi il pan naturale
+        longPressTimer = setTimeout(() => {
+            // Se nel frattempo è stato cancellato, esci
+            if (longPressPointerId !== e.pointerId) return;
+
+            longPressFired = true;
+
+            // apre menu come right click
+            showContextMenu(e.clientX, e.clientY);
+
+            // evita click “fantasma” dopo il long press
+            suppressClicksUntil = Date.now() + 450;
+        }, LONG_PRESS_MS);
+    }, { passive: true });
+
+    svgEl.addEventListener('pointermove', (e) => {
+        if (e.pointerId !== longPressPointerId) return;
+        if (!longPressStart) return;
+
+        const dx = e.clientX - longPressStart.x;
+        const dy = e.clientY - longPressStart.y;
+
+        // Se l'utente si muove → sta facendo pan / gesture → cancella long press
+        if ((dx * dx + dy * dy) > (LONG_PRESS_MOVE_PX * LONG_PRESS_MOVE_PX)) {
+            clear();
+        }
+    }, { passive: true });
+
+    const end = (e) => {
+        if (e.pointerId !== longPressPointerId) return;
+
+        // Se il menu è stato aperto col long press, sopprimi l'azione “tap”
+        if (longPressFired) {
+            try { e.preventDefault(); } catch {}
+            try { e.stopPropagation(); } catch {}
+        }
+        clear();
+    };
+
+    svgEl.addEventListener('pointerup', end, { passive: false });
+    svgEl.addEventListener('pointercancel', end, { passive: false });
+}
 
 function resetStreamVisibility() {
     setStreamFilter(null);
@@ -114,18 +195,48 @@ function ensureMarquee() {
     return marqueeEl;
 }
 
-function handleScenarioAction(action) {
+async function handleScenarioAction(action) {
     if (action === 'save') {
-        document.getElementById('act-save')?.click();
+        const expanded = buildExpandedLayoutMapFromDom();
+        localStorage.setItem(LS_KEY, JSON.stringify(expanded));
+        showToast('Scenario saved ✅');
     }
     if (action === 'import') {
-        document.getElementById('act-import-scenario')?.click();
+        try {
+            const text = await clipboardReadText();
+            const obj = parseScenarioString(text);
+
+            if (!obj || typeof obj !== 'object' || !obj.layout || typeof obj.layout !== 'object') {
+                throw new Error('Invalid scenario format');
+            }
+            const current = (() => {
+                try { return JSON.parse(localStorage.getItem(LS_KEY) || '{}'); } catch { return {}; }
+            })();
+
+            const merged = { ...current, ...obj.layout };
+
+            await applyImportedScenarioAndPersist(merged);
+        } catch (e) {
+            console.warn('Import scenario failed:', e);
+            showToast('Import failed: invalid clipboard scenario', 5000);
+        }
     }
     if (action === 'export') {
-        document.getElementById('act-export-scenario')?.click();
+        try {
+            // Build full map from current DOM
+            const expanded = buildExpandedLayoutMapFromDom();
+            const exportString = serializeScenarioString(expanded, LS_KEY);
+
+            await clipboardWriteText(exportString);
+            showToast('Scenario copied to clipboard ✅');
+        } catch (e) {
+            console.warn('Export scenario failed:', e);
+            showToast('Export failed (clipboard not available)', 4500);
+        }
     }
     if (action === 'reset') {
-        document.getElementById('act-reset-layout')?.click();
+        localStorage.removeItem(LS_KEY);
+        window.location.reload();
     }
 }
 
@@ -159,7 +270,7 @@ function ensureContextMenu() {
 
         if (btn.dataset.action) {
             hideContextMenu();
-            handleScenarioAction(btn.dataset.action);
+            handleScenarioAction(btn.dataset.action).then(r => {});
         }
     });
 
@@ -1047,6 +1158,10 @@ function initSideDrawerEvents() {
 window.addEventListener('DOMContentLoaded', initSideDrawerEvents);
 
 window.addEventListener('DOMContentLoaded', () => {
+    setupMobileLongPressContextMenu();
+});
+
+window.addEventListener('DOMContentLoaded', () => {
     enableGlobalFindShortcut({
         inputSelector: '#drawer-search-input',
         onFocus: (input) => {
@@ -1068,8 +1183,6 @@ window.addEventListener('DOMContentLoaded', () => {
     show("label-file", isAdvanced);
     show("toggle-draggable", isAdvanced);
     show("change-scenario-label", isAdvanced);
-    show("act-save", isAdvanced);
-    show("act-reset-layout", isAdvanced);
     show("switch-label", isAdvanced);
 })();
 
@@ -1390,48 +1503,6 @@ window.addEventListener('load', function () {
         })
         .catch(error => console.error('Error loading the CSV file:', error));
 });
-
-document.getElementById('act-export-scenario')?.addEventListener('click', async () => {
-    try {
-        // Build full map from current DOM
-        const expanded = buildExpandedLayoutMapFromDom();
-        const exportString = serializeScenarioString(expanded, LS_KEY);
-
-        await clipboardWriteText(exportString);
-        showToast('Scenario copied to clipboard ✅');
-    } catch (e) {
-        console.warn('Export scenario failed:', e);
-        showToast('Export failed (clipboard not available)', 4500);
-    }
-});
-
-document.getElementById('act-import-scenario')?.addEventListener('click', async () => {
-    try {
-        const text = await clipboardReadText();
-        const obj = parseScenarioString(text);
-
-        if (!obj || typeof obj !== 'object' || !obj.layout || typeof obj.layout !== 'object') {
-            throw new Error('Invalid scenario format');
-        }
-        const current = (() => {
-            try { return JSON.parse(localStorage.getItem(LS_KEY) || '{}'); } catch { return {}; }
-        })();
-
-        const merged = { ...current, ...obj.layout };
-
-        await applyImportedScenarioAndPersist(merged);
-    } catch (e) {
-        console.warn('Import scenario failed:', e);
-        showToast('Import failed: invalid clipboard scenario', 5000);
-    }
-});
-
-document.getElementById('act-save')?.addEventListener('click', () => {
-    const expanded = buildExpandedLayoutMapFromDom();
-    localStorage.setItem(LS_KEY, JSON.stringify(expanded));
-    showToast('Scenario saved ✅');
-});
-
 
 function resetVisualization() {
     const svgEl = document.getElementById('canvas');
@@ -2070,12 +2141,6 @@ function wireFabsInteractions(cardSel) {
         }, { passive: true });
     }
 }
-
-document.getElementById('act-reset-layout')?.addEventListener('click', () => {
-    localStorage.removeItem(LS_KEY);
-    window.location.reload();
-});
-
 
 function getCompanyGroupTalentUrl(member, emailField = 'Email') {
     const email = (member?.[emailField] ?? '').toString().trim();
