@@ -42,15 +42,16 @@
         </label>
       </li>
       <li>
-        <label class="switch-label" id="change-scenario-label">
-          ↩ Change Scenario
-          <input type="checkbox" id="toggle-draggable">
-          <span class="slider"></span>
-        </label>
+      <li class="scenario-actions">
+        <div class="scenario-row">
+          <button id="act-save" type="button">💾 Save</button>
+          <button id="act-reset-layout" type="button">❌ Reset</button>
+        </div>
+        <div class="scenario-row">
+          <button id="act-export-scenario" type="button">📋 Export</button>
+          <button id="act-import-scenario" type="button">📥 Import</button>
+        </div>
       </li>
-      <li>
-      <li><button id="act-save">💾 Save scenario</button></li>
-      <li><button id="act-reset-layout" type="button">❌ Reset scenario</button></li>
 
       <li><button id="act-report">📝 Report a change</button></li>
       <li><button id="act-switch" onclick="window.location.href='./domino.html'">⚅ Domino</button></li>

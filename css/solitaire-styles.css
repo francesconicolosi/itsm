@@ -1369,7 +1369,7 @@ body.side-drawer-open #legend-root {
     padding: 10px 10px;
     border-radius: 8px;
     text-align: left;
-    font-family: "Gucci Sans Pro Custom", Arial, sans-serif;
+    font-family: "Montserrat", "Sans 3", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Inter", Arial, sans-serif;
     font-size: 14px;
     cursor: pointer;
 }
@@ -1388,4 +1388,37 @@ body.side-drawer-open #legend-root {
 g.draggable.multi-selected rect:first-of-type{
     stroke: #111 !important;
     stroke-width: 4px !important;
+}
+
+/* Scenario actions: two compact rows */
+.actions .scenario-actions {
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.actions .scenario-row {
+    display: flex;
+    gap: 8px;
+}
+
+.actions .scenario-row button {
+    flex: 1 1 0;
+    padding: 7px 8px;
+    font-size: 0.85rem;
+    white-space: nowrap;
+}
+
+/* Mobile fine tuning */
+@media (max-width: 420px) {
+    .actions .scenario-row {
+        gap: 6px;
+    }
+
+    .actions .scenario-row button {
+        padding: 6px 6px;
+        font-size: 0.78rem;
+    }
 }

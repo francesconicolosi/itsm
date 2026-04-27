@@ -43,16 +43,23 @@ import {
     computeStreamBoxWidthByCapacity,
     MAX_TEAMS_PER_ROW, splitValues, NEUTRAL_COLOR,
     ROLE_FIELD_WITH_MAPPING,
-    COMPANY_FIELD, LOCATION_FIELD, emailField
+    COMPANY_FIELD, LOCATION_FIELD, emailField, buildExpandedLayoutMapFromDom
 } from './utils.js';
 
 let lastSearch = '';
 let currentIndex = 0;
 let logoLayer;
 
+let suppressClicksUntil = 0;
+let panMoved = false;
+
 let people = [];
 let colorScale = null;
 let cachedCsvText = null;
+
+let fitMinScale = 0.1;
+let lastFitTransform = d3.zoomIdentity;
+const ZOOM_MAX_SCALE = 1;
 
 function resetStreamVisibility() {
     setStreamFilter(null);
@@ -107,22 +114,58 @@ function ensureMarquee() {
     return marqueeEl;
 }
 
+function handleScenarioAction(action) {
+    if (action === 'save') {
+        document.getElementById('act-save')?.click();
+    }
+    if (action === 'import') {
+        document.getElementById('act-import-scenario')?.click();
+    }
+    if (action === 'export') {
+        document.getElementById('act-export-scenario')?.click();
+    }
+    if (action === 'reset') {
+        document.getElementById('act-reset-layout')?.click();
+    }
+}
+
 function ensureContextMenu() {
     if (ctxMenuEl) return ctxMenuEl;
 
     ctxMenuEl = document.createElement('div');
     ctxMenuEl.id = 'canvas-context-menu';
     ctxMenuEl.innerHTML = `
-    <button type="button" data-mode="drag">1. Drag</button>
-    <button type="button" data-mode="select">2. Multiple select</button>
-  `;
+  <button data-mode="free-pan">🖐 Free pan (default)</button>
+  <hr/>
+  <button data-mode="contextual-drag">🔗 Contextual drag</button>
+  <button data-mode="drag">✋ Drag</button>
+  <button data-mode="select">⬚ Multiple select</button>
+  <hr/>
+  <button data-action="save">💾 Save scenario</button>
+  <button data-action="import">📥 Import scenario</button>
+  <button data-action="export">📤 Export scenario</button>
+  <button data-action="reset">♻ Reset scenario</button>
+`;
     document.body.appendChild(ctxMenuEl);
 
     ctxMenuEl.addEventListener('click', (e) => {
-        const btn = e.target.closest('button[data-mode]');
+        const btn = e.target.closest('button');
         if (!btn) return;
-        setInteractionMode(btn.dataset.mode);
-        hideContextMenu();
+        if (btn.dataset.mode) {
+            setInteractionMode(btn.dataset.mode);
+            hideContextMenu();
+            return;
+        }
+
+        if (btn.dataset.action) {
+            hideContextMenu();
+            handleScenarioAction(btn.dataset.action);
+        }
+    });
+
+    ctxMenuEl.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
     });
 
     document.addEventListener('pointerdown', (e) => {
@@ -155,21 +198,20 @@ function hideContextMenu() {
 }
 
 function setInteractionMode(mode) {
-    interactionMode = (mode === 'select') ? 'select' : 'drag';
-    showToast(`Mode: ${interactionMode === 'select' ? 'Multiple select' : 'Drag'}`);
+    interactionMode = mode;
 
-    if (interactionMode === 'drag') {
-        hideMarquee();
-        clearSelection();
-    }
+    showToast(`Mode: ${
+        mode === 'free-pan' ? 'Free pan' :
+            mode === 'contextual-drag' ? 'Contextual drag' :
+                mode === 'drag' ? 'Drag' :
+                    'Multiple select'
+    }`);
 
+    isDraggable = (mode !== 'free-pan');
+
+    clearSelection();
+    hideMarquee();
     applyDraggableToggleState();
-
-    if (interactionMode === 'select') {
-        requestAnimationFrame(() => {
-            d3.selectAll('.draggable').on('.drag', null);
-        });
-    }
 }
 
 function clearSelection() {
@@ -412,21 +454,59 @@ function setColorMode(mode) {
     recolorProfileCards(mode);
 }
 
+let ctxPrevCanvas = null;
+let ctxDragTargets = [];
+
 
 const drag = d3.drag()
-    .on("start", function () {
+    .container(() => svg?.node?.() || document.body)
+
+    .on("start", function (event) {
         bringToCorrectLayer(this);
+        if (interactionMode === 'select') return;
+
+        const svgNode = svg?.node?.();
+        const t = svgNode ? d3.zoomTransform(svgNode) : d3.zoomIdentity;
+
+        // event.x / event.y ora sono nello spazio dello SVG (grazie a .container)
+        ctxPrevCanvas = t.invert([event.x, event.y]);
+
+        if (interactionMode === 'contextual-drag') {
+            ctxDragTargets = collectContextualTargets(this);
+            ctxDragTargets = ctxDragTargets.filter(el => el !== this);
+            ctxDragTargets.forEach(g => bringToCorrectLayer(g));
+        } else {
+            ctxDragTargets = [];
+        }
     })
     .on("drag", function (event) {
-        const transform = d3.select(this).attr("transform");
-        const translate = transform.match(/translate\(([^,]+),([^)]+)\)/);
-        const x = parseFloat(translate[1]) + event.dx;
-        const y = parseFloat(translate[2]) + event.dy;
-        d3.select(this).attr("transform", `translate(${x},${y})`);
+        if (interactionMode === 'select') return;
+
+        const svgNode = svg?.node?.();
+        const t = svgNode ? d3.zoomTransform(svgNode) : d3.zoomIdentity;
+
+        const currCanvas = t.invert([event.x, event.y]);
+        const prev = ctxPrevCanvas || currCanvas;
+
+        const dx = currCanvas[0] - prev[0];
+        const dy = currCanvas[1] - prev[1];
+
+        ctxPrevCanvas = currCanvas;
+
+        applyTranslateDelta(this, dx, dy);
+
+        if (interactionMode === 'contextual-drag' && ctxDragTargets?.length) {
+            ctxDragTargets.forEach(el => applyTranslateDelta(el, dx, dy));
+        }
+    })
+
+    .on("end", function () {
+        ctxPrevCanvas = null;
+        ctxDragTargets = [];
     });
 
-const isAdvanced = getQueryParam("advanced") === "true";
-
+const isAdvancedParam = getQueryParam("advanced");
+const isAdvanced = isAdvancedParam ? isAdvancedParam === "true" : true;
 
 let searchParam;
 
@@ -439,6 +519,7 @@ let themeLayer;
 let teamLayer;
 
 let zoom;
+let snapToFitInProgress = false;
 let width = 1200;
 let height = 800;
 
@@ -465,16 +546,62 @@ function getItemLayout(key) {
     return loadLayout()[key];
 }
 
-function upsertItemLayout(key, patch) {
-    const all = loadLayout();
-    all[key] = {...(all[key] || {}), ...patch};
-    saveLayout(all);
+function parseTranslateFromEl(el) {
+    const t = el?.getAttribute?.('transform') || '';
+    const m = t.match(/translate\(([^,]+),\s*([^)]+)\)/);
+    return { x: m ? (+m[1] || 0) : 0, y: m ? (+m[2] || 0) : 0 };
 }
 
-function parseTranslate(transform) {
-    if (!transform) return {x: 0, y: 0};
-    const m = transform.match(/translate\(([^,]+),\s*([^)]+)\)/);
-    return m ? {x: +m[1] || 0, y: +m[2] || 0} : {x: 0, y: 0};
+function getLocalBBoxForGroup(g) {
+    const key = g.getAttribute('data-key') || '';
+
+    const pick = (sel) => g.querySelector(sel)?.getBBox?.() || null;
+
+    if (key.startsWith('stream::')) return pick('rect.stream-box') || g.getBBox();
+    if (key.startsWith('theme::'))  return pick('rect.theme-box')  || g.getBBox();
+    if (key.startsWith('team::'))   return pick('rect.team-box')   || g.getBBox();
+    if (key.startsWith('card::'))   return pick('rect.profile-box')|| g.getBBox();
+
+    return g.getBBox();
+}
+
+function getAbsBBoxForGroup(g) {
+    const tr = parseTranslateFromEl(g);
+    const b = getLocalBBoxForGroup(g);
+    return { x: tr.x + b.x, y: tr.y + b.y, width: b.width, height: b.height };
+}
+
+function bboxContains(outer, inner, eps = 2) {
+    return (
+        inner.x >= outer.x - eps &&
+        inner.y >= outer.y - eps &&
+        (inner.x + inner.width)  <= (outer.x + outer.width)  + eps &&
+        (inner.y + inner.height) <= (outer.y + outer.height) + eps
+    );
+}
+
+function collectContextualTargets(containerEl) {
+    const key = containerEl.getAttribute('data-key') || '';
+    const containerBox = getAbsBBoxForGroup(containerEl);
+
+    let selectors = [];
+    if (key.startsWith('stream::')) {
+        selectors = ['g.draggable[data-key^="theme::"]', 'g.draggable[data-key^="team::"]', 'g.draggable[data-key^="card::"]'];
+    } else if (key.startsWith('theme::')) {
+        selectors = ['g.draggable[data-key^="team::"]', 'g.draggable[data-key^="card::"]'];
+    } else if (key.startsWith('team::')) {
+        selectors = ['g.draggable[data-key^="card::"]'];
+    } else {
+        return [];
+    }
+
+    const candidates = selectors.flatMap(sel => Array.from(document.querySelectorAll(sel)));
+    return candidates.filter(el => bboxContains(containerBox, getAbsBBoxForGroup(el)));
+}
+
+function applyTranslateDelta(el, dx, dy) {
+    const tr = parseTranslateFromEl(el);
+    el.setAttribute('transform', `translate(${tr.x + dx},${tr.y + dy})`);
 }
 
 function restoreGroupPosition(groupSel) {
@@ -1264,33 +1391,45 @@ window.addEventListener('load', function () {
         .catch(error => console.error('Error loading the CSV file:', error));
 });
 
-document.getElementById('act-save')?.addEventListener('click', () => {
-    const layout = {};
+document.getElementById('act-export-scenario')?.addEventListener('click', async () => {
+    try {
+        // Build full map from current DOM
+        const expanded = buildExpandedLayoutMapFromDom();
+        const exportString = serializeScenarioString(expanded, LS_KEY);
 
-    d3.selectAll('.draggable').each(function () {
-        const sel = d3.select(this);
-        const key = sel.attr('data-key');
-        if (!key) return;
+        await clipboardWriteText(exportString);
+        showToast('Scenario copied to clipboard ✅');
+    } catch (e) {
+        console.warn('Export scenario failed:', e);
+        showToast('Export failed (clipboard not available)', 4500);
+    }
+});
 
-        const {x, y} = parseTranslate(sel.attr('transform'));
-        layout[key] = {x, y};
-    });
+document.getElementById('act-import-scenario')?.addEventListener('click', async () => {
+    try {
+        const text = await clipboardReadText();
+        const obj = parseScenarioString(text);
 
-    d3.selectAll('.draggable').each(function () {
-        const sel = d3.select(this);
-        const key = sel.attr('data-key');
-        if (!key) return;
-
-        const rect = sel.select('rect');
-        if (!rect.empty()) {
-            const w = +rect.attr('width');
-            const h = +rect.attr('height');
-            layout[key] = {...(layout[key] || {}), width: w, height: h};
+        if (!obj || typeof obj !== 'object' || !obj.layout || typeof obj.layout !== 'object') {
+            throw new Error('Invalid scenario format');
         }
-    });
+        const current = (() => {
+            try { return JSON.parse(localStorage.getItem(LS_KEY) || '{}'); } catch { return {}; }
+        })();
 
-    localStorage.setItem(LS_KEY, JSON.stringify(layout));
-    showToast('Scenario successfully saved!');
+        const merged = { ...current, ...obj.layout };
+
+        await applyImportedScenarioAndPersist(merged);
+    } catch (e) {
+        console.warn('Import scenario failed:', e);
+        showToast('Import failed: invalid clipboard scenario', 5000);
+    }
+});
+
+document.getElementById('act-save')?.addEventListener('click', () => {
+    const expanded = buildExpandedLayoutMapFromDom();
+    localStorage.setItem(LS_KEY, JSON.stringify(expanded));
+    showToast('Scenario saved ✅');
 });
 
 
@@ -1321,26 +1460,66 @@ function resetVisualization() {
     zoom = d3.zoom()
         .filter((event) => {
             if (event.type === 'wheel') return !event.ctrlKey;          // ⬅️ ignora pinch su trackpad
-            if (event.type === 'mousedown') return event.button === 0;
+            if (event.type === 'mousedown') {
+                if (event.button !== 0) return false;
+
+                if (interactionMode === 'free-pan') return true;
+
+                if (interactionMode === 'select') return false;
+
+                return false;
+            }
+
             if (event.type.startsWith('touch')) return true;
             return !event.ctrlKey;
         })
-        .scaleExtent([0.1, 1])
-        .on('start', () => svg.attr('cursor', 'grabbing'))
-        .on('end', () => svg.attr('cursor', 'grab'))
+        .scaleExtent([fitMinScale, ZOOM_MAX_SCALE])
+        .on('start', (event) => {
+            svg.attr('cursor', 'grabbing');
+            if (!isDraggable && event?.sourceEvent?.type === 'mousedown') {
+                panMoved = false;
+            }
+        })
         .on('zoom', (event) => {
             viewport.attr('transform', event.transform);
-        });
+            window.dispatchEvent(new Event('dsm-canvas-zoom'));
+
+            if (!isDraggable && event?.sourceEvent && (event.sourceEvent.type === 'mousemove' || event.sourceEvent.type === 'touchmove')) {
+                panMoved = true;
+            }
+        })
+        .on('end', (event) => {
+            svg.attr('cursor', 'grab');
+
+            if (!isDraggable && panMoved) {
+                suppressClicksUntil = Date.now() + 250;
+            }
+            panMoved = false;
+
+        })
 
     svg.call(zoom);
     const svgNode = svg.node();
-    if (svgNode) {
-        svgNode.addEventListener('contextmenu', (e) => {
-            if (!isDraggable) return;          // solo in Change Scenario
+    if (!window.__dsmGlobalContextMenuAttached) {
+        window.__dsmGlobalContextMenuAttached = true;
+
+        document.addEventListener('contextmenu', (e) => {
+            const svgEl = document.getElementById('canvas');
+            if (!svgEl || !svgEl.contains(e.target)) return;
             e.preventDefault();
             e.stopPropagation();
             showContextMenu(e.clientX, e.clientY);
-        }, { capture: true });
+        }, true); // capture
+    }
+    if (svgNode && !window.__panClickBlockerAttached) {
+        window.__panClickBlockerAttached = true;
+
+        svgNode.addEventListener('click', (e) => {
+            if (!isDraggable && Date.now() < suppressClicksUntil) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+            }
+        }, true); // capture = true
     }
 
     function startMarquee(e) {
@@ -1550,19 +1729,39 @@ function showToast(message, duration = 3000) {
 }
 
 function fitToContent(paddingRatio = 0.9) {
-    if (!viewport) return;
+    if (!viewport || !svg || !zoom) return;
 
     const bbox = viewport.node().getBBox();
     if (!bbox || !isFinite(bbox.width) || !isFinite(bbox.height) || bbox.width === 0 || bbox.height === 0) {
+        fitMinScale = 0.1;
+        lastFitTransform = d3.zoomIdentity;
+        zoom.scaleExtent([fitMinScale, ZOOM_MAX_SCALE]);
         svg.call(zoom.transform, d3.zoomIdentity);
         return;
     }
 
-    const scale = Math.min(width / bbox.width, height / bbox.height) * paddingRatio;
-    const x = width / 2 - (bbox.x + bbox.width / 2) * scale;
+    // scale “fit”
+    let scale = Math.min(width / bbox.width, height / bbox.height) * paddingRatio;
+
+    // clamp di sicurezza (se un giorno il contenuto fosse più piccolo e scale>max)
+    scale = Math.min(scale, ZOOM_MAX_SCALE);
+
+    const x = width  / 2 - (bbox.x + bbox.width  / 2) * scale;
     const y = height / 2 - (bbox.y + bbox.height / 2) * scale;
 
     const t = d3.zoomIdentity.translate(x, y).scale(scale);
+    fitMinScale = scale;
+    lastFitTransform = t;
+
+    zoom.scaleExtent([fitMinScale, ZOOM_MAX_SCALE]);
+
+    zoom.extent([[0, 0], [width, height]]);
+
+    if (!isDraggable) {
+        zoom.translateExtent([[-1e6, -1e6], [1e6, 1e6]]);
+    } else {
+        zoom.translateExtent([[bbox.x, bbox.y], [bbox.x + bbox.width, bbox.y + bbox.height]]);
+    }
     svg.call(zoom.transform, t);
 }
 
@@ -1796,7 +1995,8 @@ function placeCompanyLogoUnderDiagram(url = './assets/company-logo.png', maxWidt
 
 let isDraggable = false;
 
-let interactionMode = 'drag'; // 'drag' | 'select'
+let interactionMode = 'free-pan';
+// 'free-pan' | 'contextual-drag' | 'drag' | 'select'
 const selectedGroups = new Set(); // Set<SVGGElement>
 let marqueeEl = null;
 let ctxMenuEl = null;
@@ -2930,6 +3130,114 @@ document.getElementById('drawer-search-input')?.addEventListener('keydown', func
         e.preventDefault();
     }
 });
+
+const SCENARIO_CLIP_PREFIX = 'SOLITAIRE_SCENARIO_V1:'; // versioned format
+
+function filterLayoutForScenario(layoutMap) {
+    // include everything needed to recreate the same scenario:
+    // stream/theme/team boxes + member cards
+    const out = {};
+    for (const [k, v] of Object.entries(layoutMap || {})) {
+        if (
+            k.startsWith('stream::') ||
+            k.startsWith('theme::')  ||
+            k.startsWith('team::')   ||
+            k.startsWith('card::')
+        ) {
+            out[k] = v;
+        }
+    }
+    return out;
+}
+
+async function clipboardWriteText(text) {
+    // Works on desktop & mobile when triggered by user gesture
+    if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(text);
+        return true;
+    }
+    // Fallback (works in more places)
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.setAttribute('readonly', '');
+    ta.style.position = 'fixed';
+    ta.style.top = '-9999px';
+    ta.style.left = '-9999px';
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    let ok = false;
+    try { ok = document.execCommand('copy'); } catch {}
+    ta.remove();
+    if (!ok) throw new Error('Clipboard write failed');
+    return true;
+}
+
+async function clipboardReadText() {
+    // 1) TENTATIVO automatico (desktop, alcuni Android)
+    if (navigator.clipboard && window.isSecureContext) {
+        try {
+            const text = await navigator.clipboard.readText();
+            if (text && text.trim()) return text;
+        } catch (e) {
+            // fallthrough
+        }
+    }
+
+    // 2) FALLBACK UNIVERSALE (mobile-safe)
+    // return await promptPasteModal();
+}
+
+function promptPasteModal() {
+    return new Promise((resolve, reject) => {
+        const pasted = window.prompt(
+            'Paste the exported scenario here:',
+            ''
+        );
+
+        if (!pasted || !pasted.trim()) {
+            reject(new Error('No scenario pasted'));
+        } else {
+            resolve(pasted.trim());
+        }
+    });
+}
+
+
+function serializeScenarioString(layoutMap, datasetKey) {
+    const payload = {
+        v: 1,
+        app: 'solitaire',
+        dataset: datasetKey || '',
+        layout: filterLayoutForScenario(layoutMap)
+    };
+    // user said encoding is not mandatory; keep plain JSON but add a prefix
+    return SCENARIO_CLIP_PREFIX + JSON.stringify(payload);
+}
+
+function parseScenarioString(text) {
+    const raw = (text || '').trim();
+    if (!raw) throw new Error('Empty clipboard');
+
+    if (!raw.startsWith(SCENARIO_CLIP_PREFIX)) {
+        // allow pure JSON as fallback
+        const obj = JSON.parse(raw);
+        return obj;
+    }
+    const json = raw.slice(SCENARIO_CLIP_PREFIX.length);
+    return JSON.parse(json);
+}
+
+async function applyImportedScenarioAndPersist(importedLayoutMap) {
+    // Save in LS in the SAME format your restore engine expects (map by key)
+    localStorage.setItem(LS_KEY, JSON.stringify(importedLayoutMap));
+
+    // Re-render so restoreGroupPosition + size restore are applied consistently
+    resetVisualization();
+    await extractData(cachedCsvText);
+
+    showToast('Scenario imported and applied ✅');
+}
 
 function searchByQuery(query, opts = {}) {
     const q = (query ?? '').toString().trim().toLowerCase();
