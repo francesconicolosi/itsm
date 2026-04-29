@@ -958,8 +958,11 @@ export function createFormattedElementsFrom(lines) {
 export function createFormattedLongTextElementsFrom(longText) {
     let elementsToAppend = [];
     if (longText) {
-        const lines = longText.split('\n');
-        elementsToAppend = createFormattedElementsFrom(lines, elementsToAppend);
+        const normalized = longText.replace(/\s*\|\|\s*/g, '\n\n');
+
+        const lines = normalized.split('\n');
+
+        elementsToAppend = createFormattedElementsFrom(lines);
     }
     return elementsToAppend;
 }
