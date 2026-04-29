@@ -2,7 +2,7 @@ import * as d3 from 'd3';
 
 import {
     enableGlobalFindShortcut,
-    askHideStreamModal,
+    createModal,
     applySearchDimmingForMatches,
     buildCompositeKey,
     buildFallbackMailToLink,
@@ -1090,8 +1090,7 @@ function initSideDrawerEvents() {
     initCommonActions();
 
     document.getElementById('act-clear')?.addEventListener('click', () => {
-        resetStreamVisibility();
-        clearSearch();
+        handleClearAction('act-clear');
     });
 
     document.getElementById('act-fit')?.addEventListener('click', () => {
@@ -1468,8 +1467,70 @@ function rectContains(a, b) {
 
 window.addEventListener('DOMContentLoaded', initDrawerEvents);
 
-function clearAllStreamsAndSearch() {
-    resetStreamVisibility();
+// ===============================
+// URL param clearing logic (keep Stream unless explicitly confirmed)
+// ===============================
+function getUrlParamsSnapshot() {
+    const params = new URLSearchParams(window.location.search);
+
+    const hasStream =
+        params.has('stream') &&
+        String(params.get('stream') ?? '').trim() !== '';
+
+    const otherKeysWithValue = [];
+
+    for (const [key, value] of params.entries()) {
+        if (key === 'stream') continue;
+
+        if (String(value ?? '').trim() !== '') {
+            otherKeysWithValue.push(key);
+        }
+    }
+
+    return {
+        hasStream,
+        otherKeysWithValue,
+        hasOtherValues: otherKeysWithValue.length > 0
+    };
+}
+
+function stripUrlParamsExceptStream() {
+    const params = new URLSearchParams(window.location.search);
+    const keys = Array.from(params.keys());
+    keys.forEach(k => { if (k !== 'stream') params.delete(k); });
+    const newUrl = window.location.pathname + (params.toString() ? '?' + params.toString() : '');
+    window.history.replaceState({}, '', newUrl);
+}
+
+async function handleClearAction(source = '') {
+
+    const { hasStream, hasOtherValues } = getUrlParamsSnapshot();
+
+    if (hasOtherValues) {
+        stripUrlParamsExceptStream();
+        clearSearch();
+        return;
+    }
+
+
+    if (hasStream) {
+        const result = await createModal({
+            title: 'Remove the Stream filter?',
+            html: 'This will display all streams from the Visual People DB. You can restore a filtered view at any time using the monkey and eye actions on the streams lane.',
+            buttons: [
+                { id: 'keep', label: 'Keep' },
+                { id: 'remove', label: 'Remove', primary: true }
+            ]
+        });
+
+        if (result === 'remove') {
+            resetStreamVisibility();
+            clearSearch();
+            showToast('Stream filter removed');
+        }
+
+        return;
+    }
     clearSearch();
 }
 
@@ -1481,7 +1542,7 @@ window.addEventListener('keydown', (e) => {
     if (drawerOpen) {
         closeDrawer()
     } else {
-        clearAllStreamsAndSearch();
+        handleClearAction('Escape').then(r => {});
     }
 });
 
