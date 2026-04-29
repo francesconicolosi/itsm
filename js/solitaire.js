@@ -6,7 +6,7 @@ import {
     applySearchDimmingForMatches,
     buildCompositeKey,
     buildFallbackMailToLink,
-    buildLegendaColorScale,
+    splitNarrativeValues,
     clearFieldHighlights,
     clearSearchDimming,
     closeSideDrawer,
@@ -1044,28 +1044,32 @@ function makeResizable(group, rect, opts = {}) {
 }
 
 
-function aggregateInfoByHeader(members, headers, headerName = 'Team Managed Services', sortElements = false) {
+function aggregateInfoByHeader(
+    members,
+    headers,
+    headerName,
+    sortElements = false,
+    splitter = splitValues
+) {
     const idx = findHeaderIndex(headers, headerName);
     if (idx === -1) {
-        return {exists: false, items: []};
+        return { exists: false, items: [] };
     }
+
     const headerRealName = headers[idx];
     const set = new Set();
 
     members.forEach(m => {
         const raw = m[headerRealName];
         if (!raw) return;
-        splitValues(raw).forEach(v => set.add(v));
+        splitter(raw).forEach(v => set.add(v));
     });
 
     const itemsToReturn = sortElements
         ? [...set].sort((a, b) => a.localeCompare(b, 'it', { sensitivity: 'base' }))
         : [...set];
 
-    return {
-        exists: true,
-        items: itemsToReturn
-    };
+    return { exists: true, items: itemsToReturn };
 }
 
 function clearSearch() {
@@ -2363,7 +2367,9 @@ function extractData(csvText) {
                 .flatMap(themeObj => Object.values(themeObj))
                 .flat();
         const firstLevelDescription =
-            aggregateInfoByHeader(firstLevelMembers, headers, "Team Stream Description")?.items?.join("") ?? '';
+            aggregateInfoByHeader(firstLevelMembers, headers, 'Team Stream Description', false, splitNarrativeValues)
+                ?.items
+                ?.join('\n\n') ?? '';
 
         // LARGHEZZA stream (come già fai)
         const firstLevelBoxWidth = computeStreamBoxWidthByCapacity(
@@ -2540,9 +2546,10 @@ function extractData(csvText) {
                 const secondLevelY = secondLevelYBase;
 
                 const originalThemeMembers = Object.values(organization[firstLevel]?.[secondLevel] || {}).flat();
-                const secondLevelDescription = aggregateInfoByHeader(
-                    originalThemeMembers, headers, 'Team Theme Description'
-                )?.items?.join("") ?? '';
+                const secondLevelDescription =
+                    aggregateInfoByHeader(originalThemeMembers, headers, 'Team Theme Description', false, splitNarrativeValues)
+                        ?.items
+                        ?.join('\n\n') ?? '';
 
                 // Gruppo theme
                 const secondLevelGroup = themeLayer.append('g')
@@ -2594,7 +2601,10 @@ function extractData(csvText) {
                 Object.entries(thirdLevelItems).forEach(([thirdLevel, members], teamIdx) => {
                     const originalMembers = (organization[firstLevel]?.[secondLevel]?.[thirdLevel]) || [];
                     const services    = aggregateInfoByHeader(originalMembers, headers, 'Team Managed Services', true);
-                    const description = aggregateInfoByHeader(originalMembers, headers, 'Team Description')?.items?.join("") ?? '';
+                    const description =
+                        aggregateInfoByHeader(originalMembers, headers, 'Team Description', false, splitNarrativeValues)
+                            ?.items
+                            ?.join('\n\n') ?? '';
                     const channels    = aggregateInfoByHeader(originalMembers, headers, 'Team Channels', true)?.items;
                     const email       = aggregateInfoByHeader(originalMembers, headers, 'Team Email')?.items?.join("") ?? '';
 

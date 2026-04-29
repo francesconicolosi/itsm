@@ -219,7 +219,7 @@ def resolve_attr_id(attr_defs: List[dict], aliases: List[str]) -> Optional[str]:
     return None
 
 
-def values_from_attr_id(obj: dict, attr_id: str) -> List[str]:
+def values_from_attr_id(obj: dict, attr_id: str, *, split_commas: bool = True) -> List[str]:
     vals: List[str] = []
     for a in obj.get('attributes', []) or []:
         if str(a.get('objectTypeAttributeId')) != str(attr_id):
@@ -245,8 +245,9 @@ def values_from_attr_id(obj: dict, attr_id: str) -> List[str]:
             parts = s.split('||')
         elif '\n' in s:
             parts = s.split('\n')
-        elif ',' in s:
+        elif split_commas and ',' in s:
             parts = s.split(',')
+
         else:
             parts = [s]
         for p in parts:
@@ -501,7 +502,7 @@ def main():
 
             # Team direct attributes
             if team_desc_id:
-                agg['Team Description'].extend(values_from_attr_id(t, team_desc_id))
+                agg['Team Description'].extend(values_from_attr_id(t, team_desc_id, split_commas=False))
             if team_email_id:
                 agg['Team Email'].extend(values_from_attr_id(t, team_email_id))
             if team_channels_id:
@@ -537,7 +538,7 @@ def main():
                     continue
 
                 if theme_desc_id:
-                    agg['Team Theme Description'].extend(values_from_attr_id(th, theme_desc_id))
+                    agg['Team Theme Description'].extend(values_from_attr_id(th, theme_desc_id, split_commas=False))
 
                 stream_labels: List[str] = []
                 if theme_stream_id:
@@ -549,7 +550,7 @@ def main():
                     if not st:
                         continue
                     if stream_desc_id:
-                        agg['Team Stream Description'].extend(values_from_attr_id(st, stream_desc_id))
+                        agg['Team Stream Description'].extend(values_from_attr_id(st, stream_desc_id, split_commas=False))
 
         return {k: join_dedup(v) for k, v in agg.items()}
 
@@ -562,7 +563,7 @@ def main():
             if not r:
                 continue
             if role_desc_id:
-                desc_vals.extend(values_from_attr_id(r, role_desc_id))
+                desc_vals.extend(values_from_attr_id(r, role_desc_id, split_commas=False))
             if role_grants_id:
                 grants_vals.extend(values_from_attr_id(r, role_grants_id))
 

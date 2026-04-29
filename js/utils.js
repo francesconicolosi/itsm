@@ -49,6 +49,21 @@ export function buildExpandedLayoutMapFromDom() {
     return map;
 }
 
+export function splitNarrativeValues(raw) {
+    if (!raw) return [];
+
+    const s = raw
+        .toString()
+        .replace(/\r?\n/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+
+    return s
+        .split(/\s*\|\|\s*/)
+        .map(x => x.trim())
+        .filter(Boolean);
+}
+
 export function enableGlobalFindShortcut({
                                              inputSelector,
                                              onFocus,
@@ -956,15 +971,20 @@ export function createFormattedElementsFrom(lines) {
 }
 
 export function createFormattedLongTextElementsFrom(longText) {
-    let elementsToAppend = [];
-    if (longText) {
-        const normalized = longText.replace(/\s*\|\|\s*/g, '\n\n');
+    if (!longText) return [];
+    const normalized = longText.replace(/\s*\|\|\s*/g, '\n\n');
 
-        const lines = normalized.split('\n');
+    const lines = normalized
+        .split(/\r?\n/)
+        .reduce((acc, line) => {
+            const isEmpty = !line.trim();
+            const prevEmpty = acc.length ? !acc[acc.length - 1].trim() : false;
+            if (isEmpty && prevEmpty) return acc;     // skip extra empties
+            acc.push(line);
+            return acc;
+        }, []);
 
-        elementsToAppend = createFormattedElementsFrom(lines);
-    }
-    return elementsToAppend;
+    return createFormattedElementsFrom(lines);
 }
 
 function computeThemeWidth(numTeams, thirdLevelBoxWidth, thirdLevelBoxPadX) {
