@@ -1350,7 +1350,10 @@ body.side-drawer-open #legend-root {
     position: fixed;
     z-index: 20001;
     display: none;
-    min-width: 180px;
+    flex-direction: column;
+    width: max-content;
+    min-width: unset;
+    max-width: 280px;
     background: rgba(255,255,255,0.96);
     border: 1px solid rgba(0,0,0,0.14);
     border-radius: 10px;
@@ -1360,15 +1363,17 @@ body.side-drawer-open #legend-root {
     -webkit-backdrop-filter: blur(6px);
 }
 
-#canvas-context-menu.visible{ display: block; }
+#canvas-context-menu.visible{ display: inline-flex; }
 
 #canvas-context-menu button{
-    width: 100%;
+    text-align: left;
+    min-width: unset;
+    width: auto;
+    white-space: nowrap;
+    padding: 10px 14px;
     border: none;
     background: transparent;
-    padding: 10px 10px;
     border-radius: 8px;
-    text-align: left;
     font-family: "Montserrat", "Sans 3", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Inter", Arial, sans-serif;
     font-size: 14px;
     cursor: pointer;
