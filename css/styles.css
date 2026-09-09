@@ -334,46 +334,6 @@ body.side-drawer-open {
   border-bottom: 1px solid #ccc;
 }
 
-/* Unified style for all drawer header action buttons: ↑A, ↓Z, 🔗, ✖ */
-.drawer-sort-btn, #closeDrawer {
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  font-size: 16px;
-  font-family: inherit;
-  padding: 6px 10px;
-  border-radius: 6px;
-  opacity: 0.65;
-  color: inherit;
-  margin: 0;
-  position: relative;
-  transition: opacity 0.15s, background-color 0.15s;
-}
-.drawer-sort-btn:hover, #closeDrawer:hover { opacity: 1; background-color: rgba(0,0,0,0.06); }
-.drawer-sort-btn--active { opacity: 1; font-weight: 600; }
-#drawerSort-az { margin-left: auto; }
-.drawer-sort-btn[data-tooltip]::after,
-#closeDrawer[data-tooltip]::after {
-  content: attr(data-tooltip);
-  position: absolute;
-  bottom: calc(100% + 6px);
-  left: 50%;
-  transform: translateX(-50%);
-  white-space: nowrap;
-  background: rgba(0, 0, 0, 0.82);
-  color: #fff;
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 12px;
-  font-family: var(--brand-font), sans-serif;
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 0.08s;
-  z-index: 1000;
-}
-.drawer-sort-btn:hover[data-tooltip]::after,
-#closeDrawer:hover[data-tooltip]::after { opacity: 1; }
-
 .drawer-content table {
   table-layout: fixed;
   width: 100%;
@@ -419,6 +379,47 @@ button:hover {
   background-color: black;
   color: white;
 }
+
+/* Unified style for all drawer header action buttons: ↑A, ↓Z, 🔗, ✖ */
+/* Placed after the global button rule so it wins the cascade without !important */
+.drawer-sort-btn, #closeDrawer {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  font-family: inherit;
+  padding: 6px 10px;
+  border-radius: 6px;
+  opacity: 0.65;
+  color: inherit;
+  margin: 0;
+  position: relative;
+  transition: opacity 0.15s, background-color 0.15s;
+}
+.drawer-sort-btn:hover, #closeDrawer:hover { opacity: 1; background-color: rgba(0,0,0,0.06); color: inherit; }
+.drawer-sort-btn--active { opacity: 1; font-weight: 600; }
+#drawerSort-az { margin-left: auto; }
+.drawer-sort-btn[data-tooltip]::after,
+#closeDrawer[data-tooltip]::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  background: rgba(0, 0, 0, 0.82);
+  color: #fff;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-family: var(--brand-font), sans-serif;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.08s;
+  z-index: 1000;
+}
+.drawer-sort-btn:hover[data-tooltip]::after,
+#closeDrawer:hover[data-tooltip]::after { opacity: 1; }
 
 .fade-link {
   color: black;
