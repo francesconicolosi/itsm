@@ -224,6 +224,53 @@ export class DominoApp {
         enableGlobalFindShortcut({ inputSelector: '#drawer-search-input' });
     }
 
+    showToast(message, duration = 3000) {
+        const positionContainer = (container) => {
+            const drawer = document.getElementById('drawer');
+            const isOpen = drawer?.classList.contains('open');
+            if (isOpen) {
+                container.style.top = 'unset';
+                container.style.bottom = '20px';
+                container.style.right = '20px';
+            } else {
+                container.style.bottom = 'unset';
+                container.style.top = '70px';
+                container.style.right = '20px';
+            }
+            container.style.zIndex = '10001';
+            container.style.position = 'fixed';
+            container.style.display = 'flex';
+            container.style.flexDirection = 'column';
+            container.style.gap = '10px';
+        };
+        let container = document.querySelector('.toast-container');
+        if (!container) {
+            container = document.createElement('div');
+            container.className = 'toast-container';
+            document.body.appendChild(container);
+        }
+        positionContainer(container);
+        const toast = document.createElement('div');
+        toast.className = 'toast';
+        toast.textContent = message;
+        container.appendChild(toast);
+        setTimeout(() => toast.classList.add('show'), 10);
+        requestAnimationFrame(() => positionContainer(container));
+        setTimeout(() => positionContainer(container), 180);
+        if (!window.__toastDrawerObserverAttached) {
+            const drawer = document.getElementById('drawer');
+            if (drawer) {
+                new MutationObserver(() => positionContainer(container))
+                    .observe(drawer, { attributes: true, attributeFilter: ['class'] });
+                window.__toastDrawerObserverAttached = true;
+            }
+        }
+        setTimeout(() => {
+            toast.classList.remove('show');
+            setTimeout(() => toast.remove(), 300);
+        }, duration);
+    }
+
     _processAndRender(data, jiraCardsData = null) {
         const colorScale = this.store.processData(data);
         if (!colorScale) return;
@@ -287,7 +334,8 @@ export class DominoApp {
                         const showDrawer = typeof searchParam === 'string' && uniqueIds.includes(searchParam.split(':')[0]);
                         this.graph.updateVisualization(showDrawer);
 
-                        if (wantListView && showDrawer) {
+                        const openDrawerParam = getQueryParam('openDrawer');
+                        if ((wantListView || openDrawerParam === 'true') && showDrawer) {
                             const id = searchParam.split(':')[1]?.replace(/"/g, '');
                             const node = this.store.nodes.find(n => n.id === id);
                             if (node) this.drawer.showNodeDetails(node, true);

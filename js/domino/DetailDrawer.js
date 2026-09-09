@@ -10,10 +10,60 @@ export class DetailDrawer {
     constructor(app) {
         this.app = app;
         this.currentNode = null;
+        this._sortOrder = localStorage.getItem('domino_drawer_attr_sort') || 'original';
+    }
+
+    _updateSortButtons() {
+        ['az', 'za'].forEach(order => {
+            document.getElementById(`drawerSort-${order}`)
+                ?.classList.toggle('drawer-sort-btn--active', this._sortOrder === order);
+        });
     }
 
     initDOM() {
         document.getElementById('closeDrawer')?.addEventListener('click', () => this.closeDrawer());
+
+        const drawerHeader = document.querySelector('#drawer .drawer-header');
+        const closeBtn = document.getElementById('closeDrawer');
+        if (drawerHeader && closeBtn) {
+            ['az', 'za'].forEach(order => {
+                const btn = document.createElement('button');
+                btn.id = `drawerSort-${order}`;
+                btn.className = 'drawer-sort-btn';
+                btn.setAttribute('data-tooltip', order === 'az' ? 'Sort A → Z' : 'Sort Z → A');
+                btn.textContent = order === 'az' ? '↑A' : '↓Z';
+                btn.addEventListener('click', () => {
+                    const wasActive = this._sortOrder === order;
+                    this._sortOrder = wasActive ? 'original' : order;
+                    localStorage.setItem('domino_drawer_attr_sort', this._sortOrder);
+                    this._updateSortButtons();
+                    if (this.currentNode) this.showNodeDetails(this.currentNode, false);
+                    this.app.showToast(wasActive
+                        ? 'Sort reset to original order'
+                        : (order === 'az' ? 'Attributes sorted A → Z' : 'Attributes sorted Z → A'));
+                });
+                drawerHeader.insertBefore(btn, closeBtn);
+            });
+
+            const linkBtn = document.createElement('button');
+            linkBtn.id = 'drawerCopyLink';
+            linkBtn.className = 'drawer-sort-btn';
+            linkBtn.setAttribute('data-tooltip', 'Copy link');
+            linkBtn.textContent = '🔗';
+            linkBtn.addEventListener('click', () => {
+                if (!this.currentNode) return;
+                const url = new URL(window.location.href);
+                url.searchParams.set('search', `id:"${this.currentNode.id}"`);
+                url.searchParams.set('openDrawer', 'true');
+                navigator.clipboard?.writeText(url.toString());
+                linkBtn.textContent = '✔';
+                setTimeout(() => { linkBtn.textContent = '🔗'; }, 1500);
+                this.app.showToast('Link to this service copied to clipboard');
+            });
+            drawerHeader.insertBefore(linkBtn, closeBtn);
+
+            this._updateSortButtons();
+        }
         document.getElementById('overlay')?.addEventListener('click', () => this.closeDrawer());
 
         document.addEventListener('keydown', (e) => {
@@ -188,13 +238,17 @@ export class DetailDrawer {
             renderedKeys.add(key);
         };
 
+        this._updateSortButtons();
+        const jiraUrl = computeJiraIssuesValue(node);
         const nodeKeys = Object.keys(node);
         const orderedKeys = priorityKeys.map(pk => nodeKeys.find(k => k === pk)).filter(Boolean);
         const remainingKeys = nodeKeys.filter(k => !orderedKeys.includes(k));
-        [...orderedKeys, ...remainingKeys].forEach(key => renderRow(key, node[key]));
-
-        const jiraUrl = computeJiraIssuesValue(node);
-        if (jiraUrl && !renderedKeys.has('Jira Issues')) renderRow('Jira Issues', jiraUrl);
+        if (jiraUrl) remainingKeys.push('Jira Issues');
+        if (this._sortOrder === 'az') remainingKeys.sort((a, b) => a.localeCompare(b));
+        else if (this._sortOrder === 'za') remainingKeys.sort((a, b) => b.localeCompare(a));
+        [...orderedKeys, ...remainingKeys].forEach(key =>
+            renderRow(key, key === 'Jira Issues' ? jiraUrl : node[key])
+        );
 
         table.addEventListener('click', (e) => {
             const btn = e.target.closest('button.col-op');
