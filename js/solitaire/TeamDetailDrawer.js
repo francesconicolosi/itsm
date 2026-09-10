@@ -208,6 +208,7 @@ export class TeamDetailDrawer {
         if (header && closeBtn) {
             const copyBtn = document.createElement('button');
             copyBtn.id = 'drawerCopyLink';
+            copyBtn.setAttribute('aria-label', 'Copy link');
             copyBtn.setAttribute('data-tooltip', 'Copy link');
             copyBtn.textContent = '🔗';
             copyBtn.style.display = 'none';
