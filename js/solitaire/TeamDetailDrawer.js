@@ -210,6 +210,7 @@ export class TeamDetailDrawer {
             copyBtn.id = 'drawerCopyLink';
             copyBtn.setAttribute('aria-label', 'Copy link');
             copyBtn.setAttribute('data-tooltip', 'Copy link');
+            copyBtn.title = '';
             copyBtn.textContent = '🔗';
             copyBtn.style.display = 'none';
             copyBtn.addEventListener('click', async (e) => {
