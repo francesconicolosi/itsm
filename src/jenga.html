@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jenga: Service Operations Calendar</title>
+    <link rel="stylesheet" href="./brand-specific/brand.css">
+    <link rel="stylesheet" href="./css/jenga-styles.css">
+    <link rel="icon" type="image/svg+xml" href="assets/jenga.svg">
+    <style>
+        #app-spinner{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:99999;background:#fff;transition:opacity .35s ease}
+        html[data-theme="dark"] #app-spinner{background:#111217}
+        #app-spinner.is-hidden{opacity:0;pointer-events:none}
+        .app-spinner__ring{width:40px;height:40px;border:3px solid rgba(0,0,0,.1);border-top-color:#888;border-radius:50%;animation:_spin .75s linear infinite}
+        html[data-theme="dark"] .app-spinner__ring{border-color:rgba(255,255,255,.1);border-top-color:#aaa}
+        @keyframes _spin{to{transform:rotate(360deg)}}
+    </style>
+</head>
+<body>
+
+<div id="app-spinner" aria-hidden="true"><div class="app-spinner__ring"></div></div>
+<div id="side-overlay" tabindex="-1"></div>
+
+<aside id="side-drawer" aria-hidden="true" aria-labelledby="side-title" role="dialog">
+    <header class="drawer-header">
+        <h1>Jenga <img src="assets/jenga.svg" alt="" aria-hidden="true" style="height:0.85em;vertical-align:middle;margin-bottom:0.1em"> Service Operations Calendar</h1>
+        <button id="side-close" aria-label="Close">✖</button>
+    </header>
+
+    <nav class="content">
+        <ul class="actions">
+            <li><button id="act-about">ℹ️ About</button></li>
+            <li><button id="act-today">📅 Go to Today</button></li>
+        </ul>
+
+        <ul class="actions" style="margin-top: 8px;">
+            <li>
+                <label class="switch-label">
+                    🌙 Dark Mode
+                    <input type="checkbox" id="toggle-dark-mode">
+                    <span class="slider"></span>
+                </label>
+            </li>
+            <li><button id="act-switch-domino" onclick="window.location.href='./domino.html'">⚅ Domino</button></li>
+            <li><button id="act-switch-solitaire" onclick="window.location.href='./solitaire.html'">♤ Solitaire</button></li>
+            <li><button id="act-switch-hub" onclick="window.location.href='./index.html'">🕹 Playground</button></li>
+        </ul>
+    </nav>
+
+    <footer class="drawer-footer">
+        <small id="side-last-update"></small>
+        <small id="build-info" style="opacity:0.55;display:block;margin-top:2px"></small>
+    </footer>
+</aside>
+
+<!-- Top bar -->
+<div class="top-bar jenga-top-bar">
+    <div class="top-bar__row top-bar__row--search">
+        <!-- Row 1 (mobile): hamburger + search -->
+        <button class="top-bar__hamburger" id="toggle-cta" aria-label="Menu">☰</button>
+        <div class="top-search">
+            <button class="top-search__icon" id="jenga-search-go" title="Search" aria-label="Search">🔍</button>
+            <input type="text" id="jenga-search-input" placeholder="Search events…" />
+            <button class="top-search__clear" id="act-clear" title="Clear" aria-label="Clear">✕</button>
+        </div>
+        <!-- Flex line-break 1: after search, before filters -->
+        <div class="top-bar__break top-bar__break--1"></div>
+        <!-- Row 2 (mobile): env + type filters -->
+        <div id="jenga-filters-primary" class="jenga-filters jenga-filters--primary"></div>
+        <!-- Flex line-break 2: after env+type, before service -->
+        <div class="top-bar__break top-bar__break--2"></div>
+        <!-- Row 3 (mobile): service filter -->
+        <div id="jenga-filters-service" class="jenga-filters jenga-filters--service"></div>
+        <!-- Flex line-break 3: after service, before nav -->
+        <div class="top-bar__break top-bar__break--3"></div>
+        <!-- Row 4 (mobile): nav + view toggle + today -->
+        <div class="jenga-month-nav">
+            <button class="jenga-month-btn" id="jenga-prev" aria-label="Previous month">‹</button>
+            <span id="jenga-month-label" class="jenga-month-label">June 2026</span>
+            <button class="jenga-month-btn" id="jenga-next" aria-label="Next month">›</button>
+        </div>
+        <div class="jenga-view-toggle">
+            <button class="jenga-view-btn jenga-view-btn--active" id="jenga-view-calendar" title="Calendar view" aria-label="Calendar view">📅</button>
+            <button class="jenga-view-btn" id="jenga-view-timeline" title="Timeline view" aria-label="Timeline view">📊</button>
+            <button class="jenga-view-btn" id="jenga-view-slideshow" title="Slideshow view" aria-label="Slideshow view">🎬</button>
+        </div>
+        <button class="top-bar__action" id="jenga-today-btn" title="Go to today">Today</button>
+    </div>
+</div>
+
+<!-- Calendar view -->
+<div id="jenga-calendar" class="jenga-calendar-wrap"></div>
+
+<!-- Timeline view (hidden by default) -->
+<div id="jenga-timeline" class="jenga-timeline-wrap" style="display:none;"></div>
+
+<!-- Slideshow view (hidden by default) -->
+<div id="jenga-slideshow-container" class="jenga-slideshow-container" style="display:none;"></div>
+
+<!-- Event detail drawer (two-level) -->
+<div id="overlay" class="overlay"></div>
+<div id="drawer" class="drawer">
+    <div class="drawer-panels">
+        <!-- Level 1: Day timeline -->
+        <div id="drawer-panel-day" class="drawer-panel">
+            <div class="drawer-header">
+                <h2 id="day-drawer-title">Day Details</h2>
+                <button class="close-drawer" id="closeDrawer" data-tooltip="Close">✖</button>
+            </div>
+            <div id="dayDrawerContent" class="drawer-content"></div>
+        </div>
+        <!-- Level 2: Event detail -->
+        <div id="drawer-panel-event" class="drawer-panel">
+            <div class="drawer-header">
+                <button class="drawer-back" id="drawerBack" aria-label="Back">‹ Back</button>
+                <h2 id="drawer-title">Event Details</h2>
+                <div class="drawer-header__actions">
+                    <button class="jenga-share-btn" id="drawerShareBtn" aria-label="Copy link" data-tooltip="Copy link">🔗</button>
+                    <button class="close-drawer" id="closeDrawer2" data-tooltip="Close">✖</button>
+                </div>
+            </div>
+            <div id="drawerContent" class="drawer-content"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Cards drawer — incidents / service requests for a given day -->
+<div id="cards-overlay" class="overlay"></div>
+<aside id="cards-drawer" aria-hidden="true" role="dialog">
+    <div class="drawer-header">
+        <div class="drawer-header__text">
+            <p id="cards-drawer-date" class="drawer-header__date"></p>
+            <h3 id="cards-drawer-title"></h3>
+        </div>
+        <button id="cards-drawer-close" aria-label="Close">✖</button>
+    </div>
+    <div id="cards-drawer-content" class="drawer-content"></div>
+</aside>
+
+<footer>
+    <svg id="brand-logo"></svg>
+    <p>Digital Service Management</p>
+</footer>
+</body>
+</html>

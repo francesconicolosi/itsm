@@ -71,6 +71,9 @@ M 271.125 27.303 Q 271.125 34.953 273.825 40.691 Q 276.525 46.428 281.4 49.616 Q
         /** Jira cards CSV for Domino badge overlay (optional — set null to disable) */
         jiraCards: './jira-cards.csv',
 
+        /** Jenga change-calendar events CSV */
+        jenga: './jenga-events.csv',
+
         /** Quick-filter presets CSV for Solitaire (optional — set null to disable) */
         customFilters: './custom-filters.csv',
     },

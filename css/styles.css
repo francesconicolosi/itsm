@@ -908,7 +908,7 @@ html[data-theme="dark"] footer       { color: rgba(245,245,247,0.35); }
 
 .domino-jira-popup,
 .domino-jira-popup * {
-    font-family: var(--brand-font), "Brand Font", "GucciSansPro", Arial, sans-serif !important;
+    font-family: var(--brand-font), "Brand Font", Arial, sans-serif !important;
 }
 
 .domino-jira-card__services {

@@ -1,0 +1,4820 @@
+/* ── Jenga — Service Operations Calendar ─────────────────────────────────── */
+
+/* Import shared switch, drawer, top-bar patterns from the platform stylesheet */
+@import url('./styles.css');
+
+:root {
+    --jtl-label-width: 130px;
+    --jtl-label-width-mobile: 80px;
+    --jtl-label-width-compact: 60px;
+    --jtl-collapsed-height: 34px;
+    --jtl-collapsed-height-mobile: 30px;
+    --jenga-cab-row-space: 24px;
+}
+
+/* ── Base ────────────────────────────────────────────────────────────────── */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    font-family: var(--brand-font, Inter, sans-serif);
+    background: #f5f5f7;
+    color: #1a1a1a;
+    overflow-x: hidden;
+    /* Reserve scrollbar gutter so opening the side drawer (overflow:hidden)
+       doesn't shift the layout when the scrollbar disappears */
+    scrollbar-gutter: stable;
+}
+
+/* Search bar: equal flex weight as env/service/type dropdowns — all share
+   available space equally. Override shared styles.css flex:1. */
+.jenga-top-bar .top-search {
+    flex: 1 1 0 !important;
+    max-width: none !important;
+    min-width: 120px !important;
+}
+
+/* ── Top bar ─────────────────────────────────────────────────────────────── */
+
+/* Announcement bar lives inside .jenga-top-bar — disable its own sticky so
+   the top bar is the single sticky container and --jenga-topbar-height covers both.
+   Margin trick offsets the parent's 16px side padding so the bar spans full width. */
+.jenga-top-bar .announcement-bar {
+    position: static;
+    z-index: auto;
+    margin-left: -16px;
+    margin-right: -16px;
+    width: calc(100% + 32px);
+    box-shadow: none;
+    border-bottom: 1px solid rgba(0,0,0,.07);
+}
+
+.jenga-top-bar {
+    display: flex;
+    flex-direction: column;
+    padding: 0 16px;
+    background: #fff;
+    box-shadow: 0 1px 0 #eee;
+    position: sticky;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 100;
+    box-sizing: border-box;
+}
+
+.top-bar__row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 0;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.top-bar__hamburger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+    background: #f8f8f8;
+    box-shadow: 0 1px 2px rgba(0,0,0,.10);
+    cursor: pointer;
+    font-size: 16px;
+    flex-shrink: 0;
+}
+.top-bar__hamburger:hover { background: #000; color: #fff; border-color: #000; }
+
+.top-search {
+    /* Grows to fill available space but capped so navigation isn't pushed off */
+    flex: 1 1 auto;
+    min-width: 160px;
+    max-width: 480px;
+    display: flex;
+    align-items: center;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 0 4px 0 4px;
+    background: #fff;
+    box-shadow: 0 1px 2px rgba(0,0,0,.10);
+    height: 36px;
+}
+.top-search:focus-within { border-color: #999; box-shadow: 0 0 0 2px rgba(0,0,0,.06); }
+
+.top-search__icon {
+    background: none !important; border: none !important; box-shadow: none !important;
+    cursor: pointer; color: #aaa;
+    font-size: 14px; padding: 4px 6px; border-radius: 4px;
+}
+.top-search__icon:hover { color: #555; background: rgba(0,0,0,.05) !important; }
+
+.top-search input {
+    flex: 1; border: none; outline: none; padding: 6px 4px;
+    font-size: 14px; background: transparent; font-family: var(--brand-font);
+}
+
+.top-search__clear {
+    background: none !important; border: none !important; box-shadow: none !important;
+    cursor: pointer; color: #aaa;
+    font-size: 14px; padding: 4px 6px; border-radius: 4px;
+}
+.top-search__clear:hover { color: #c0392b; background: rgba(192,57,43,.08) !important; }
+
+/* Month navigation — pushed to the right of search */
+.jenga-month-nav {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+    margin-left: auto; /* pushes nav + controls to the right */
+}
+
+.jenga-month-btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 36px; height: 36px;
+    border-radius: 6px; border: 1px solid #ddd; background: #f8f8f8;
+    cursor: pointer; font-size: 18px; color: #555;
+}
+.jenga-month-btn:hover { background: #000; color: #fff; border-color: #000; }
+
+.jenga-month-label {
+    font-size: 15px; font-weight: 600; min-width: 140px; text-align: center;
+    font-family: var(--brand-font);
+}
+
+/* View toggle */
+.jenga-view-toggle {
+    display: flex;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+.jenga-view-btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 34px; height: 36px;
+    border-radius: 8px; border: 1px solid #ddd; background: #f8f8f8;
+    cursor: pointer; font-size: 16px;
+}
+.jenga-view-btn:hover { background: #000; color: #fff; border-color: #000; }
+.jenga-view-btn--active { background: #1a1a1a; color: #fff; border-color: #1a1a1a; }
+.jenga-view-btn--active:hover { background: #333; }
+
+.top-bar__action {
+    display: inline-flex; align-items: center; justify-content: center;
+    padding: 0 12px; height: 36px;
+    border-radius: 8px; border: 1px solid #ddd; background: #f8f8f8;
+    box-shadow: 0 1px 2px rgba(0,0,0,.10);
+    cursor: pointer; font-size: 13px; font-family: var(--brand-font);
+    white-space: nowrap; flex-shrink: 0;
+}
+.top-bar__action:hover { background: #000; color: #fff; border-color: #000; }
+
+/* ── Calendar grid ───────────────────────────────────────────────────────── */
+
+.jenga-calendar-wrap {
+    padding: 16px;
+    min-height: calc(100vh - 52px);
+}
+
+.jenga-cal {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 1px 4px rgba(0,0,0,.08);
+    overflow: hidden;
+}
+
+.jenga-cal__header {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    border-bottom: 1px solid #eee;
+}
+
+.jenga-cal__dayname {
+    padding: 8px 10px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    color: #aaa;
+    text-align: center;
+}
+.jenga-cal__dayname--weekend { color: #ccc; }
+
+.jenga-cal__week {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    border-bottom: 1px solid #f0f0f0;
+    min-height: 190px;
+    position: relative; /* anchor for absolutely-positioned multi-day bars */
+}
+.jenga-cal__week:last-child { border-bottom: none; }
+
+.jenga-cal__cell {
+    border-right: 1px solid #f0f0f0;
+    padding: 0 4px 8px;
+    vertical-align: top;
+    min-height: 190px;
+    cursor: default;
+    position: relative;
+}
+.jenga-cal__cell:last-child { border-right: none; }
+.jenga-cal__cell--weekend { background: #fafafa; }
+.jenga-cal__cell--other-month { opacity: 0.45; }
+.jenga-cal__cell--today { background: #fefce8; }
+.jenga-cal__cell--no-itsm {
+    background: repeating-linear-gradient(
+        135deg,
+        transparent,
+        transparent 6px,
+        rgba(0,0,0,0.03) 6px,
+        rgba(0,0,0,0.03) 12px
+    );
+}
+.jenga-cal__cell--no-itsm .jenga-cal__daynum { color: #bbb; }
+
+.jenga-cal__daynum {
+    display: flex;
+    justify-content: flex-end;
+    font-size: 12px;
+    font-weight: 500;
+    padding: 5px 4px 3px;
+    color: #777;
+    line-height: 1;
+    position: relative;
+    z-index: 3;
+    height: 28px;
+}
+
+.jenga-cal__today-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: #1a1a1a; color: #fff;
+    font-size: 11px; font-weight: 700;
+    position: absolute;
+    right: 4px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.jenga-cal__chips {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 0 2px;
+}
+
+/* ── Mobile summary badges (hidden on desktop, shown on mobile) ───────────── */
+
+.jenga-cal__mobile-summary {
+    display: none;             /* hidden on desktop */
+    flex-wrap: wrap;
+    gap: 2px;
+    padding: 2px 2px 0;
+    pointer-events: none;      /* cell handles clicks, not badges */
+}
+
+.jenga-cal__mb-env {
+    display: inline-flex;
+    align-items: center;
+    font-size: 9px;
+    font-weight: 700;
+    padding: 1px 4px;
+    border-radius: 3px;
+    white-space: nowrap;
+    letter-spacing: .02em;
+}
+
+.jenga-cal__mb-hybris {
+    display: inline-flex;
+    align-items: center;
+    font-size: 9px;
+    font-weight: 700;
+    color: #0f766e;
+    background: #e0fdf4;
+    border-radius: 3px;
+    padding: 1px 4px;
+    white-space: nowrap;
+}
+
+.jenga-cal__mb-milestone {
+    display: inline-flex;
+    align-items: center;
+    font-size: 11px;
+    padding: 0 2px;
+    white-space: nowrap;
+}
+
+html[data-theme="dark"] .jenga-cal__mb-hybris {
+    background: #071d1b; color: #5eead4;
+}
+
+/* ── Multi-day spanning bars ─────────────────────────────────────────────── */
+
+.jenga-multiday-bar {
+    position: absolute;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 0 6px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-family: var(--brand-font);
+    cursor: pointer;
+    white-space: nowrap;
+    overflow: hidden;
+    z-index: 2;
+    transition: filter .1s;
+}
+.jenga-multiday-bar:hover { filter: brightness(.92); }
+
+.jenga-multiday-bar__icon { flex-shrink: 0; font-size: 12px; }
+.jenga-multiday-bar__label { flex: 1; overflow: hidden; text-overflow: ellipsis; font-weight: 600; }
+.jenga-multiday-bar__arrow { flex-shrink: 0; font-size: 13px; font-weight: 700; opacity: .7; }
+.jenga-multiday-bar--business_event { padding-left: 26px; }
+
+/* Placeholder space inside each cell pushed down by multi-day bars */
+.jenga-cal__multiday-placeholder { min-height: 0; transition: height .1s; }
+
+/* ── Peak-date flame icons + gradient wash ───────────────────────────────── */
+
+.jenga-peak-flame {
+    position: absolute;
+    height: 20px; /* same as bar height */
+    width: 20px !important; /* compact icon, left-aligned in column */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    pointer-events: none;
+    z-index: 4; /* above bar (z-index 2) */
+}
+
+.jenga-cal__cell--peak {
+    background: linear-gradient(
+        to bottom,
+        rgba(251, 146, 60, 0.32) 0%,
+        rgba(251, 146, 60, 0.12) 50%,
+        transparent 100%
+    );
+}
+
+/* ── Event chips — Google Calendar–inspired ──────────────────────────────── */
+
+.jenga-chip {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 5px 2px 3px;
+    border-radius: 4px;
+    margin-bottom: 1px;
+    font-size: 11px;
+    font-family: var(--brand-font);
+    cursor: pointer;
+    background: var(--chip-bg, #f1f5f9);
+    border-left: 3px solid var(--chip-border, #94a3b8);
+    color: var(--chip-text, #475569);
+    white-space: nowrap;
+    overflow: hidden;
+    max-width: 100%;
+    transition: filter .1s;
+    line-height: 1.4;
+    text-align: left;
+    width: 100%;
+    box-sizing: border-box;
+}
+.jenga-chip:hover { filter: brightness(0.93); }
+
+.jenga-chip--more {
+    background: none;
+    border-left-color: transparent;
+    color: #666;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 1px 4px;
+    letter-spacing: .02em;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    flex-wrap: wrap;
+}
+.jenga-chip--more:hover {
+    background: #333;
+    color: #fff;
+    filter: none;
+    border-radius: 4px;
+}
+.jenga-chip__env-badge--mini {
+    font-size: 8px !important;
+    height: 12px !important;
+    line-height: 12px !important;
+    padding: 0 3px !important;
+    border-radius: 2px !important;
+    font-weight: 800 !important;
+}
+.jenga-chip__more-icon {
+    font-size: 10px;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    opacity: 0.8;
+}
+
+/* Env badge inside service chip */
+.jenga-chip__env-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    padding: 0 4px;
+    border-radius: 3px;
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: .04em;
+    flex-shrink: 0;
+    height: 14px;
+    line-height: 14px;
+}
+
+/* Service name */
+.jenga-chip__service {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-weight: 600;
+    min-width: 0;
+}
+
+/* Operation tag (Deploy, Backsync…) */
+.jenga-chip__operation {
+    flex-shrink: 0;
+    font-size: 9px;
+    font-weight: 500;
+    opacity: 0.7;
+    white-space: nowrap;
+}
+
+/* Count badge for grouped deploys */
+.jenga-chip__count {
+    flex-shrink: 0;
+    font-size: 9px;
+    font-weight: 700;
+    opacity: 0.75;
+    background: rgba(0,0,0,.12);
+    border-radius: 8px;
+    padding: 0 4px;
+}
+
+/* Type icon for non-service chips */
+.jenga-chip__type-icon { flex-shrink: 0; font-size: 10px; }
+.jenga-chip__label { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ── Hybris release chip ─────────────────────────────────────────────────── */
+/* Teal colour scheme to distinguish from deploys */
+.jenga-chip--hybris {
+    --chip-bg: #e0fdf4;
+    --chip-border: #14b8a6;
+    --chip-text: #0f766e;
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+    letter-spacing: -.01em;
+}
+
+.jenga-hybris-icon {
+    flex-shrink: 0;
+    font-size: 12px;
+    line-height: 1;
+}
+
+/* ── Milestone chip ──────────────────────────────────────────────────────── */
+.jenga-chip--milestone {
+    --chip-bg: #ede9fe;
+    --chip-border: #7c3aed;
+    --chip-text: #5b21b6;
+}
+
+/* ── Business event — all-day banner ─────────────────────────────────────── */
+/* Displayed as a full-width tinted banner, not a pill */
+.jenga-chip--business_event {
+    --chip-bg: #fce7f3;
+    --chip-border: #db2777;
+    --chip-text: #9d174d;
+    border-left-width: 0;
+    border-radius: 3px;
+    border: none;
+    background: linear-gradient(90deg, #be185d 0%, #db2777 100%);
+    color: #fff;
+    font-weight: 600;
+    font-size: 11px;
+    padding: 3px 6px;
+    position: relative;
+    overflow: visible;
+}
+
+/* multi-day: rendered as a spanning bar, handled by JS adding --allday */
+.jenga-chip--allday {
+    border-radius: 3px;
+    border: none;
+    padding: 3px 6px;
+}
+
+.jenga-biz-icon { flex-shrink: 0; font-size: 11px; margin-right: 1px; }
+.jenga-biz-label { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+
+.jenga-chip__label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+}
+
+/* ── Legend bar ──────────────────────────────────────────────────────────── */
+
+.jenga-legend-bar {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 6px 20px;
+    background: #fff;
+    border-bottom: 1px solid #eee;
+    font-size: 11px;
+    color: #666;
+    flex-wrap: wrap;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.jenga-legend-bar__item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    white-space: nowrap;
+}
+
+.jenga-legend-dot {
+    width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+}
+
+.jenga-legend-chip {
+    display: inline-block;
+    width: 20px; height: 10px;
+    border-radius: 2px;
+    border-left: 3px solid var(--chip-border);
+    background: var(--chip-bg);
+    flex-shrink: 0;
+}
+
+.jenga-legend-bar__sep {
+    width: 1px; height: 14px; background: #ddd; flex-shrink: 0;
+}
+
+/* ── Floating collapsible legend (reuses LegendBase, scoped to Jenga) ────── */
+
+#jenga-legend-root {
+    position: fixed;
+    bottom: 16px;
+    left: 16px;
+    z-index: 200;
+    min-width: 160px;
+    max-width: 240px;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    box-shadow: 0 2px 12px rgba(0,0,0,.12);
+    font-size: 12px;
+    color: #333;
+    user-select: none;
+}
+
+/* Anchor positions (set by makeLegendDraggable corner snapping) */
+#jenga-legend-root.legend--anchor-bl { bottom: 16px; left:  16px; top: auto;  right: auto; }
+#jenga-legend-root.legend--anchor-br { bottom: 16px; right: 16px; top: auto;  left:  auto; }
+#jenga-legend-root.legend--anchor-tl { top:    68px; left:  16px; bottom: auto; right: auto; }
+#jenga-legend-root.legend--anchor-tr { top:    68px; right: 16px; bottom: auto; left:  auto; }
+
+#jenga-legend-root .legend__header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 6px 10px 6px; cursor: move; gap: 8px;
+}
+#jenga-legend-root .legend__title {
+    font-weight: 700; font-size: 11px; text-transform: uppercase;
+    letter-spacing: .05em; color: #888;
+}
+#jenga-legend-root .legend__collapse {
+    background: none !important; border: none !important; box-shadow: none !important;
+    cursor: pointer; padding: 2px 4px; color: #aaa; line-height: 1;
+}
+#jenga-legend-root .legend__collapse .chevron::before {
+    content: '▾'; display: inline-block; transition: transform .2s; transform: rotate(0deg);
+}
+#jenga-legend-root.legend--collapsed .legend__collapse .chevron::before { transform: rotate(-90deg); }
+#jenga-legend-root .legend__list { padding: 0 4px 4px; overflow-y: auto; max-height: 240px; }
+#jenga-legend-root .legend__item {
+    display: flex; align-items: center; gap: 8px;
+    padding: 3px 8px; border-radius: 4px; font-size: 12px;
+}
+#jenga-legend-root .legend__swatch--dot {
+    width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+}
+#jenga-legend-root .legend__swatch--chip {
+    display: inline-block; width: 18px; height: 10px;
+    border-radius: 2px; flex-shrink: 0;
+}
+#jenga-legend-root .legend__label { flex: 1; white-space: nowrap; }
+
+html[data-theme="dark"] #jenga-legend-root {
+    background: #1c1c1e; border-color: rgba(255,255,255,.10);
+    color: rgba(245,245,247,.8); box-shadow: 0 2px 12px rgba(0,0,0,.4);
+}
+html[data-theme="dark"] #jenga-legend-root .legend__title { color: rgba(245,245,247,.45); }
+html[data-theme="dark"] #jenga-legend-root .legend__collapse { color: rgba(245,245,247,.45); }
+
+/* ── Day popover ─────────────────────────────────────────────────────────── */
+
+.jenga-popover {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    box-shadow: 0 8px 24px rgba(0,0,0,.16);
+    padding: 0;
+    min-width: 240px;
+    max-width: 300px;
+    overflow: hidden;
+}
+
+.jenga-popover__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    background: #f8f8f8;
+    border-bottom: 1px solid #eee;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.jenga-popover__close {
+    background: none; border: none; cursor: pointer;
+    font-size: 12px; color: #888; padding: 2px 4px;
+}
+.jenga-popover__close:hover { color: #333; }
+
+.jenga-popover__list {
+    padding: 8px;
+    max-height: 280px;
+    overflow-y: auto;
+}
+
+/* ── Side drawer extras ──────────────────────────────────────────────────── */
+
+.drawer-section-title {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    color: #888;
+    padding: 12px 12px 4px;
+}
+
+.type-dot, .env-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 3px;
+    flex-shrink: 0;
+}
+.type-dot {
+    width: 10px; height: 10px; border-radius: 50%;
+}
+.type-dot--service_op     { background: #3b82f6; }
+.type-dot--delivery       { background: #22c55e; }
+.type-dot--business_event { background: #db2777; }
+.type-dot--hybris         { background: #a855f7; }
+.type-dot--other          { background: #94a3b8; }
+
+.env-badge {
+    font-size: 10px; font-weight: 700;
+    padding: 1px 5px; border-radius: 3px; color: #fff;
+}
+.env-badge--prd     { background: #ef4444; }
+.env-badge--qa      { background: #eab308; color: #1a1a1a; }
+.env-badge--staging { background: #6b7280; }
+
+/* ── Two-panel drawer structure (sliding viewport) ───────────────────────── */
+
+/* The outer #drawer clips content to its own width.
+   shared styles.css sets overflow-y:auto on .drawer — override it. */
+#drawer.drawer {
+    overflow: hidden;
+    overscroll-behavior: contain;
+}
+
+/* .drawer-panels is a flex row, 200% wide, containing both panels side-by-side.
+   It slides left by 50% (= one panel width) when L2 is active. */
+.drawer-panels {
+    display: flex;
+    flex-direction: row;
+    width: 200%;
+    height: 100%;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    will-change: transform;
+}
+
+/* When L2 is open, shift the strip left so L2 is in view */
+.drawer-panels.panels-level2 {
+    transform: translateX(-50%);
+}
+
+/* Each panel takes exactly half of the 200%-wide strip = 100% of #drawer width */
+.drawer-panel {
+    flex: 0 0 50%;
+    width: 50%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: #fff; /* explicit — do not rely on inherit through .drawer-panels */
+}
+html[data-theme="dark"] .drawer-panel { background: #1c1c1e; }
+
+/* L1: day timeline — content area must fill remaining height for flex scroll */
+#drawer-panel-day .drawer-content {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* L2: event detail — scrolls independently */
+#drawer-panel-event {
+    overflow-y: auto;
+}
+
+.drawer-back {
+    display: inline-flex; align-items: center;
+    background: none !important; border: none !important; box-shadow: none !important;
+    color: #555; font-size: 13px; font-family: var(--brand-font);
+    cursor: pointer; padding: 4px 8px 4px 0; margin-right: 4px;
+    font-weight: 500;
+}
+.drawer-back:hover { color: #000; }
+
+/* Direct open: event panel is the only one — hide Back, no transition */
+#drawer.drawer--direct .drawer-panels { transition: none; }
+#drawer.drawer--direct #drawerBack { display: none; }
+
+/* Direct-only: skip L1 entirely — strip starts at L2 position with no slide */
+#drawer.drawer--direct-only .drawer-panels {
+    transform: translateX(-50%);
+    transition: none;
+}
+
+/* ── Day timeline panel ──────────────────────────────────────────────────── */
+
+.day-timeline__allday {
+    padding: 12px 16px 8px;
+    border-bottom: 1px solid #f0f0f0;
+    flex-shrink: 0;
+}
+
+.day-timeline__allday-label {
+    font-size: 10px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .06em; color: #aaa; margin-bottom: 6px;
+}
+
+.day-timeline__allday-empty {
+    font-size: 13px; color: #bbb;
+}
+
+.day-timeline__allday-chip {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    border-left: 3px solid #999;
+    background: #f8f8f8;
+    font-size: 12px;
+    margin-bottom: 4px;
+    cursor: pointer;
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+.day-timeline__event-icon {
+    flex-shrink: 0;
+    font-size: 11px;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+}
+.day-timeline__allday-chip:hover { background: #f0f0f0; }
+
+.day-timeline__grid {
+    /* Pure scroll viewport — height is constrained by the flex panel above */
+    flex: 1;
+    min-height: 0; /* allow flex to compress below content size */
+    overflow-y: auto;
+    overscroll-behavior: contain;
+}
+
+/* Inner fixed-height canvas — all hour lines and event blocks position here.
+   Height is set inline by JS (PAD_TOP + rangeSpan*2px + PAD_BOT). */
+.day-timeline__canvas {
+    position: relative;
+    padding-left: 60px;  /* room for hour labels — must match LABEL_W in DayDrawer.js */
+    padding-right: 12px;
+    box-sizing: border-box;
+    width: 100%;
+}
+
+.day-timeline__hour {
+    position: absolute;
+    left: 0;
+    right: 0;
+    display: flex;
+    align-items: flex-start;
+    /* No full-width border — the line is drawn only in the event area via ::after */
+}
+
+.day-timeline__hour::after {
+    content: '';
+    position: absolute;
+    left: 60px; /* matches canvas padding-left — line starts after hour label */
+    right: 0;
+    top: 0;
+    height: 1px;
+    background: #f0f0f0;
+    pointer-events: none;
+}
+
+.day-timeline__hour-label {
+    font-size: 10px; color: #bbb;
+    width: 56px; text-align: right;
+    padding-right: 8px;
+    margin-top: -7px;
+    flex-shrink: 0;
+    font-family: var(--brand-font);
+    white-space: nowrap;
+}
+
+.day-timeline__event {
+    position: absolute;
+    /* left, width, right are set inline by DayDrawer for column-splitting */
+    border-radius: 4px;
+    border-left: 3px solid #999;
+    padding: 2px 5px;
+    cursor: pointer;
+    overflow: hidden;
+    min-height: 18px;
+    box-sizing: border-box;
+    display: flex;
+    align-items: flex-start;
+}
+.day-timeline__event:hover { filter: brightness(0.95); }
+
+.day-timeline__event-inner {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    overflow: hidden;
+    width: 100%;
+    line-height: 1.3;
+}
+
+.day-timeline__event-label {
+    flex: 1;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.day-timeline__event-time {
+    flex-shrink: 0;
+    font-size: 10px;
+    opacity: 0.65;
+    white-space: nowrap;
+}
+
+/* ── Dense time-slot stack block ─────────────────────────────────────────── */
+
+.day-timeline__event--stack {
+    min-height: 32px;
+    border-radius: 6px;
+    border-left-width: 3px;
+    box-shadow:
+            inset 0 0 0 1px rgba(59,130,246,.28),
+            0 0 0 1px rgba(59,130,246,.12);
+}
+
+.day-timeline__event--stack:hover {
+    filter: brightness(1.08);
+}
+
+.day-timeline__event-inner--stack {
+    align-items: center;
+    gap: 8px;
+}
+
+.day-timeline__event-label--stack {
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.day-timeline__event-stack-count {
+    margin-left: auto;
+    flex-shrink: 0;
+    font-size: 11px;
+    font-weight: 700;
+    color: rgba(255,255,255,.45);
+}
+
+.day-timeline__stack-badge {
+    height: 18px;
+    line-height: 18px;
+    padding: 0 7px;
+    font-size: 10px;
+    border-radius: 4px;
+}
+
+.day-timeline__stack-type-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 18px;
+    padding: 0 7px;
+    border-radius: 4px;
+    color: #fff;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: .03em;
+    text-transform: uppercase;
+    flex-shrink: 0;
+}
+
+/* ── Custom scrollbar (dark) ───────────────── */
+
+html[data-theme="dark"] .day-slot-popover__list {
+    color-scheme: dark; /* ✅ QUESTA È LA CHIAVE */
+}
+
+html[data-theme="dark"] .day-slot-popover__list::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,.28); /* 👉 più visibile */
+}
+
+.day-slot-popover__list {
+    flex: 1;
+    min-height: 0;   /* ✅ CRITICO */
+}
+
+.day-slot-popover__header {
+    flex-shrink: 0;
+}
+
+html[data-theme="dark"] .day-slot-popover__list {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255,255,255,.18) transparent;
+}
+
+html[data-theme="dark"] .day-slot-popover__list::-webkit-scrollbar {
+    width: 8px;
+}
+
+html[data-theme="dark"] .day-slot-popover__list::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+html[data-theme="dark"] .day-slot-popover__list::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,.18);
+    border-radius: 6px;
+}
+
+html[data-theme="dark"] .day-slot-popover__list::-webkit-scrollbar-thumb:hover {
+    background: rgba(255,255,255,.28);
+}
+
+/* ── Dense slot interactive popup ────────────────────────────────────────── */
+
+.day-slot-popover {
+    position: absolute;
+    z-index: 10000;
+    width: 292px;
+    max-width: calc(100vw - 16px);
+
+    background: #111827;
+    color: #f5f5f7;
+    border: 1px solid rgba(255,255,255,.12);
+    border-radius: 10px;
+    box-shadow: 0 18px 42px rgba(0,0,0,.45);
+
+    animation: daySlotPopoverIn 120ms ease-out;
+
+    display: flex;
+    flex-direction: column;
+
+    height: 260px;        /* ✅ cambia da max-height a height */
+    max-height: 260px;
+
+    overflow: hidden;     /* ✅ IMPORTANTISSIMO */
+
+}
+
+@keyframes daySlotPopoverIn {
+    from {
+        opacity: 0;
+        transform: translateY(-4px) scale(.98);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.day-slot-popover__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 12px 10px;
+    border-bottom: 1px solid rgba(255,255,255,.08);
+    background: rgba(255,255,255,.025);
+}
+
+.day-slot-popover__title-wrap {
+    min-width: 0;
+}
+
+.day-slot-popover__time {
+    font-size: 12px;
+    font-weight: 700;
+    color: rgba(245,245,247,.55);
+    margin-bottom: 2px;
+}
+
+.day-slot-popover__title {
+    font-size: 15px;
+    font-weight: 800;
+    color: #f5f5f7;
+}
+
+.day-slot-popover__close {
+    width: 26px;
+    height: 26px;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: rgba(245,245,247,.45);
+    cursor: pointer;
+    font-size: 18px;
+    line-height: 1;
+    padding: 0;
+}
+
+.day-slot-popover__close:hover {
+    background: rgba(255,255,255,.08);
+    color: #fff;
+}
+
+.day-slot-popover__list {
+    padding: 8px;
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.day-slot-popover__item {
+    width: 100%;
+    min-width: 0;
+    min-height: 36px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    border: none;
+    border-left: 3px solid #3b82f6;
+    border-radius: 7px;
+    background: rgba(255,255,255,.045);
+    color: #f5f5f7;
+
+    padding: 7px 9px;
+    margin-bottom: 6px;
+
+    text-align: left;
+    cursor: pointer;
+    font-family: var(--brand-font);
+}
+
+.day-slot-popover {
+    overflow-x: hidden; /* ✅ FIX principale */
+}
+
+.day-slot-popover__item:last-child {
+    margin-bottom: 0;
+}
+
+.day-slot-popover__section-header {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    color: rgba(245,245,247,.4);
+    padding: 6px 2px 4px;
+    margin-top: 4px;
+}
+.day-slot-popover__section-header:first-child {
+    margin-top: 0;
+}
+html:not([data-theme="dark"]) .day-slot-popover__section-header {
+    color: rgba(30,30,30,.45);
+}
+
+.day-slot-popover__item:hover {
+    background: rgba(255,255,255,.09);
+}
+
+.day-slot-popover__item-icon {
+    flex-shrink: 0;
+}
+
+.day-slot-popover__item-label {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    font-size: 12px;
+    font-weight: 650;
+}
+
+.day-slot-popover__item-chevron {
+    flex-shrink: 0;
+    margin-left: 4px;
+    color: rgba(245,245,247,.4);
+    font-size: 18px;
+    line-height: 1;
+}
+
+html {
+    overflow-y: scroll; /* ✅ forza scrollbar sempre presente */
+}
+
+/* Light mode fallback */
+
+html:not([data-theme="dark"]) .day-slot-popover {
+    background: #fff;
+    color: #111827;
+    border-color: #ddd;
+    box-shadow: 0 14px 36px rgba(0,0,0,.18);
+}
+
+html:not([data-theme="dark"]) .day-slot-popover__header {
+    background: #f8f8f8;
+    border-bottom-color: #eee;
+}
+
+html:not([data-theme="dark"]) .day-slot-popover__time {
+    color: #6b7280;
+}
+
+html:not([data-theme="dark"]) .day-slot-popover__title {
+    color: #111827;
+}
+
+html:not([data-theme="dark"]) .day-slot-popover__close {
+    color: #777;
+}
+
+html:not([data-theme="dark"]) .day-slot-popover__close:hover {
+    background: rgba(0,0,0,.06);
+    color: #111827;
+}
+
+html:not([data-theme="dark"]) .day-slot-popover__item {
+    background: #f8fafc;
+    color: #111827;
+}
+
+html:not([data-theme="dark"]) .day-slot-popover__item:hover {
+    background: #eef2f7;
+}
+
+html:not([data-theme="dark"]) .day-slot-popover__item-chevron {
+    color: #9ca3af;
+}
+
+html:not([data-theme="dark"]) .day-timeline__event-stack-count {
+    color: rgba(17,24,39,.45);
+}
+
+/* ── Fast custom tooltip for day timeline ────────────────────────────────── */
+
+.jenga-day-tooltip {
+    position: fixed;
+    z-index: 10001;
+    background: rgba(0,0,0,.85);
+    color: #fff;
+    padding: 4px 8px;
+    border-radius: 5px;
+    font-size: 12px;
+    font-family: var(--brand-font);
+    pointer-events: none;
+    white-space: nowrap;
+    max-width: 320px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    opacity: 0;
+    transition: opacity 80ms ease;
+}
+
+/* dark mode for day timeline */
+html[data-theme="dark"] .day-timeline__allday { border-bottom-color: rgba(255,255,255,.07); }
+html[data-theme="dark"] .day-timeline__allday-chip { background: #2e2e32; color: #e2e8f0; }
+html[data-theme="dark"] .day-timeline__allday-chip:hover { background: #3a3a3f; }
+html[data-theme="dark"] .day-timeline__hour::after { background: rgba(255,255,255,.06); }
+html[data-theme="dark"] .day-timeline__hour-label { color: rgba(245,245,247,.3); }
+html[data-theme="dark"] .drawer-back { color: rgba(245,245,247,.65); }
+html[data-theme="dark"] .drawer-back:hover { color: #f5f5f7; }
+
+/* ── Event detail drawer content ─────────────────────────────────────────── */
+
+#drawerContent {
+    padding: 20px 20px 32px;
+}
+
+.jenga-drawer__badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 12px;
+    border-radius: 20px;
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+}
+
+.jenga-status-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .03em;
+    white-space: nowrap;
+}
+.jenga-status-badge--inline {
+    margin-left: 6px;
+    font-size: 9px;
+    padding: 1px 5px;
+    border-radius: 8px;
+    vertical-align: middle;
+}
+
+.jenga-drawer__meta {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 8px 16px;
+    font-size: 13px;
+    margin-bottom: 24px;
+    align-items: baseline;
+}
+.jenga-drawer__meta dt {
+    color: #aaa;
+    white-space: nowrap;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    padding-top: 1px;
+}
+.jenga-drawer__meta dd {
+    margin: 0;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+.jenga-drawer__meta-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 8px;
+    align-items: center;
+}
+.jenga-drawer__meta-link {
+    color: #1a6aff;
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 13px;
+    border-radius: 4px;
+    padding: 1px 3px;
+}
+.jenga-drawer__meta-link:hover {
+    text-decoration: underline;
+}
+html[data-theme="dark"] .jenga-drawer__meta-link {
+    color: #60a5fa;
+}
+.jenga-drawer__meta-link--btn {
+    display: inline;
+    background: none;
+    border: none;
+    padding: 1px 3px;
+    margin: 0;
+    cursor: pointer;
+    font-family: var(--brand-font);
+    line-height: inherit;
+    -webkit-appearance: none;
+    appearance: none;
+}
+.jenga-drawer__meta-link--btn:hover,
+.jenga-drawer__meta-link--btn:focus {
+    color: #1a6aff;
+    background: none;
+    outline: none;
+}
+html[data-theme="dark"] .jenga-drawer__meta-link--btn:hover {
+    color: #60a5fa;
+}
+
+.drawer-header__actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+.jenga-drawer__meta-summary {
+    font-size: 11px !important;
+    opacity: 0.55;
+    font-weight: 400 !important;
+    word-break: break-all;
+}
+
+.jenga-drawer__section {
+    margin-bottom: 20px;
+}
+.jenga-drawer__section-title {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    color: #aaa;
+    margin-bottom: 6px;
+}
+.jenga-drawer__section-body {
+    font-size: 13px;
+    line-height: 1.5;
+    color: #444;
+    margin: 0;
+    word-break: break-word;
+}
+
+.jenga-desc-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+    margin: 6px 0;
+}
+.jenga-desc-table th,
+.jenga-desc-table td {
+    padding: 6px 10px;
+    vertical-align: top;
+    border: 1px solid rgba(0,0,0,.15);
+    line-height: 1.4;
+}
+.jenga-desc-table th {
+    font-weight: 600;
+    width: 35%;
+    color: #555;
+    background: rgba(0,0,0,.03);
+}
+html[data-theme="dark"] .jenga-desc-table th,
+html[data-theme="dark"] .jenga-desc-table td {
+    border-color: rgba(255,255,255,.12);
+}
+html[data-theme="dark"] .jenga-desc-table th {
+    color: rgba(245,245,247,.5);
+    background: rgba(255,255,255,.04);
+}
+
+.jenga-task-list {
+    list-style: none;
+    margin: 4px 0;
+    padding-left: 2px;
+}
+.jenga-task-list li {
+    display: flex;
+    align-items: baseline;
+    gap: 7px;
+    padding: 2px 0;
+    font-size: 13px;
+    line-height: 1.5;
+}
+.jenga-task-list input[type="checkbox"] {
+    flex-shrink: 0;
+    pointer-events: none;
+    accent-color: #1a1a1a;
+    margin-top: 1px;
+}
+.jenga-task-list input[type="checkbox"]:checked {
+    accent-color: #22a85a;
+}
+html[data-theme="dark"] .jenga-task-list input[type="checkbox"]:checked {
+    accent-color: #34d470;
+}
+
+.jenga-drawer__comment-author {
+    display: block;
+    margin-bottom: 6px;
+    color: #222;
+}
+html[data-theme="dark"] .jenga-drawer__comment-author { color: rgba(245,245,247,.9); }
+
+.jenga-drawer__jira-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 9px 18px;
+    border-radius: 8px;
+    background: #1a1a1a;
+    color: #fff;
+    text-decoration: none;
+    font-size: 13px;
+    font-family: var(--brand-font);
+    font-weight: 500;
+    margin-top: 4px;
+}
+.jenga-drawer__jira-link:hover { background: #333; }
+
+.jenga-drawer__app-links {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+    margin-top: 4px;
+}
+
+.jenga-drawer__app-link {
+    display: inline-flex;
+    align-items: center;
+    padding: 7px 14px;
+    border-radius: 8px;
+    background: #f0f0f0;
+    color: #333;
+    text-decoration: none;
+    font-size: 12px;
+    font-family: var(--brand-font);
+    font-weight: 500;
+    border: 1px solid #ddd;
+}
+.jenga-drawer__app-link:hover { background: #e0e0e0; }
+
+html[data-theme="dark"] .jenga-drawer__app-link { background: #2e2e32; border-color: rgba(255,255,255,.10); color: rgba(245,245,247,.85); }
+html[data-theme="dark"] .jenga-drawer__app-link:hover { background: rgba(255,255,255,.10); }
+
+/* dark mode section body */
+html[data-theme="dark"] .jenga-drawer__section-body { color: rgba(245,245,247,.75); }
+html[data-theme="dark"] .jenga-drawer__section-title { color: rgba(245,245,247,.35); }
+html[data-theme="dark"] .jenga-drawer__meta dt { color: rgba(245,245,247,.35); }
+
+/* ── Dark mode ───────────────────────────────────────────────────────────── */
+
+html[data-theme="dark"] body { background: #111113; color: #f5f5f7; }
+html[data-theme="dark"] .jenga-legend-bar { background: #1c1c1e; border-bottom-color: rgba(255,255,255,.08); color: rgba(245,245,247,.6); }
+html[data-theme="dark"] .jenga-legend-bar__sep { background: rgba(255,255,255,.12); }
+html[data-theme="dark"] .jenga-popover { background: #2e2e32; border-color: rgba(255,255,255,.12); box-shadow: 0 8px 24px rgba(0,0,0,.5); color: #f5f5f7; }
+html[data-theme="dark"] .jenga-popover__header { background: #1c1c1e; border-bottom-color: rgba(255,255,255,.08); }
+html[data-theme="dark"] .jenga-popover__close { color: rgba(245,245,247,.5); }
+html[data-theme="dark"] .jenga-top-bar { background: #1c1c1e; box-shadow: 0 1px 0 rgba(255,255,255,.07); }
+html[data-theme="dark"] .top-bar__hamburger { background: #2e2e32; border-color: rgba(255,255,255,.10); color: #f5f5f7; box-shadow: none; }
+html[data-theme="dark"] .top-bar__hamburger:hover { background: rgba(255,255,255,.10); border-color: rgba(255,255,255,.10); }
+html[data-theme="dark"] .top-search { background: #2e2e32; border-color: rgba(255,255,255,.12); box-shadow: none; }
+html[data-theme="dark"] .top-search input { color: #f5f5f7; }
+html[data-theme="dark"] .top-search input::placeholder { color: rgba(245,245,247,.35); }
+/* Search icon and clear button — uniform background matching the search container */
+html[data-theme="dark"] .jenga-top-bar .top-search { background: #2e2e32 !important; }
+html[data-theme="dark"] .jenga-top-bar .top-search__icon,
+html[data-theme="dark"] .jenga-top-bar .top-search__clear,
+html[data-theme="dark"] .jenga-top-bar .top-search input {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+html[data-theme="dark"] .jenga-top-bar .top-search__icon,
+html[data-theme="dark"] .jenga-top-bar .top-search__clear { color: rgba(245,245,247,.5) !important; }
+html[data-theme="dark"] .jenga-month-btn,
+html[data-theme="dark"] .top-bar__action { background: #2e2e32; border-color: rgba(255,255,255,.10); color: #f5f5f7; box-shadow: none; }
+html[data-theme="dark"] .jenga-month-btn:hover,
+html[data-theme="dark"] .top-bar__action:hover { background: rgba(255,255,255,.10); }
+html[data-theme="dark"] .jenga-month-label { color: #f5f5f7; }
+html[data-theme="dark"] .jenga-view-btn { background: #2e2e32; border-color: rgba(255,255,255,.10); color: #f5f5f7; }
+html[data-theme="dark"] .jenga-view-btn--active { background: #4b5563; color: #f5f5f7; border-color: #6b7280; }
+
+html[data-theme="dark"] .jenga-cal { background: #1c1c1e; box-shadow: none; }
+html[data-theme="dark"] .jenga-cal__header { border-bottom-color: rgba(255,255,255,.08); }
+html[data-theme="dark"] .jenga-cal__week { border-bottom-color: rgba(255,255,255,.06); }
+html[data-theme="dark"] .jenga-cal__cell { border-right-color: rgba(255,255,255,.06); }
+html[data-theme="dark"] .jenga-cal__cell--weekend { background: #16161a; }
+html[data-theme="dark"] .jenga-cal__cell--today { background: rgba(234,179,8,.08); }
+html[data-theme="dark"] .jenga-cal__cell--peak {
+    background: linear-gradient(
+        to bottom,
+        rgba(251, 146, 60, 0.30) 0%,
+        rgba(251, 146, 60, 0.10) 50%,
+        transparent 100%
+    );
+}
+html[data-theme="dark"] .jenga-cal__cell--no-itsm {
+    background: repeating-linear-gradient(
+        135deg,
+        transparent,
+        transparent 6px,
+        rgba(255,255,255,0.025) 6px,
+        rgba(255,255,255,0.025) 12px
+    );
+}
+html[data-theme="dark"] .jenga-cal__cell--no-itsm .jenga-cal__daynum { color: rgba(245,245,247,.28); }
+html[data-theme="dark"] .jenga-cal__dayname { color: rgba(245,245,247,.35); }
+html[data-theme="dark"] .jenga-cal__daynum { color: rgba(245,245,247,.55); }
+html[data-theme="dark"] .jenga-cal__today-badge { background: #f5f5f7; color: #1c1c1e; }
+/* Dark mode chips: solid dark backgrounds, vivid border-left accent */
+html[data-theme="dark"] .jenga-chip {
+    background: #1e2028;
+    color: #e2e8f0;
+    border-left-color: var(--chip-border, #94a3b8);
+}
+html[data-theme="dark"] .jenga-multiday-bar { filter: brightness(0.65); }
+html[data-theme="dark"] .jenga-multiday-bar:hover { filter: brightness(0.8); }
+/* Business event bars stay vivid in dark mode — override the brightness filter */
+html[data-theme="dark"] .jenga-multiday-bar--business_event {
+    filter: none;
+    background: rgba(219, 39, 119, 0.45) !important;
+    border-color: #db2777 !important;
+    color: #fff !important;
+}
+html[data-theme="dark"] .jenga-chip--service_op { background: #0d1a30; }
+html[data-theme="dark"] .jenga-chip--delivery   { background: #0a1f12; }
+html[data-theme="dark"] .jenga-chip--hybris      { background: #071d1b; color: #5eead4; border-left-color: #14b8a6; }
+html[data-theme="dark"] .jenga-chip--business_event {
+    background: #2d0f1f;
+    color: #f9a8d4;
+    border: none;
+    border-left: 3px solid #db2777;
+}
+html[data-theme="dark"] .jenga-chip--milestone   { background: #1e1433; color: #c4b5fd; border-left-color: #7c3aed; }
+html[data-theme="dark"] .jenga-chip--other       { background: #16181f; }
+html[data-theme="dark"] .jenga-chip--more        { background: none; color: rgba(245,245,247,.55); filter: none; }
+html[data-theme="dark"] .jenga-chip__count       { background: rgba(255,255,255,.18); }
+html[data-theme="dark"] .jenga-chip__service     { color: #f1f5f9; }
+html[data-theme="dark"] .jenga-chip__operation   { color: rgba(241,245,249,.65); }
+
+html[data-theme="dark"] .jenga-drawer__meta dt { color: rgba(245,245,247,.5); }
+html[data-theme="dark"] .jenga-drawer__jira-link { background: #f5f5f7; color: #1c1c1e; }
+html[data-theme="dark"] .jenga-drawer__jira-link:hover { background: #e0e0e3; }
+
+html[data-theme="dark"] .drawer-section-title { color: rgba(245,245,247,.35); }
+
+/* ── Timeline dashboard (.jtl-*) ─────────────────────────────────────────── */
+
+.jenga-timeline-wrap {
+    padding: 0;
+    overflow: visible;
+}
+
+/* ── Dashboard outer layout (no sidebar) ─────────────────────────────────── */
+
+.jtl-outer {
+    min-height: calc(100vh - 60px);
+    background: #111217;
+}
+
+/* ── Main area ───────────────────────────────────────────────────────────── */
+
+.jtl-main {
+    flex: 1;
+    min-width: 0;
+    padding: 0;
+    overflow-x: auto;
+}
+
+/* ── Filter bar ──────────────────────────────────────────────────────────── */
+
+.jtl-filterbar {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 8px 16px;
+    background: #1c1e26;
+    border-bottom: 1px solid rgba(255,255,255,.07);
+    flex-wrap: wrap;
+}
+
+.jtl-filterbar__item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    color: #ccc;
+    cursor: pointer;
+    padding: 3px 8px;
+    border-radius: 4px;
+    user-select: none;
+    white-space: nowrap;
+}
+
+.jtl-filterbar__item:hover { background: rgba(255,255,255,.06); }
+
+.jtl-filterbar__cb { display: none; }
+
+.jtl-filterbar__swatch {
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+    flex-shrink: 0;
+}
+
+/* ── Month label + day-axis header (above biz/milestone lanes) ──────────── */
+
+.jtl-axis-header {
+    display: flex;
+    flex-direction: column;
+    padding: 10px 0 0;
+    top: var(--jenga-topbar-height, 57px);
+    z-index: 15;
+    background: #111217;
+}
+html:not([data-theme="dark"]) .jtl-axis-header { background: #fff; }
+
+.jtl-month-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    color: rgba(255,255,255,.35);
+    padding: 0 0 6px 8px;
+    user-select: none;
+}
+
+html:not([data-theme="dark"]) .jtl-month-label {
+    color: rgba(0,0,0,.35);
+}
+
+/* ── Panel (one row per data type) ──────────────────────────────────────── */
+
+.jtl-panel {
+    display: flex;
+    align-items: stretch;
+    border-bottom: 1px solid rgba(255,255,255,.07);
+}
+
+.jtl-panel:last-child { border-bottom: none; }
+
+.jtl-panel__label {
+    width: 130px;
+    flex-shrink: 0;
+    padding: 16px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    border-right: 1px solid rgba(255,255,255,.07);
+}
+
+.jtl-panel__icon { font-size: 18px; line-height: 1; }
+
+.jtl-panel__title {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    line-height: 1.4;
+}
+
+.jtl-panel__subtitle {
+    font-size: 10px;
+    color: rgba(255,255,255,.4);
+    margin-top: 2px;
+}
+
+.jtl-panel__total {
+    font-size: 11px;
+    font-weight: 700;
+    color: rgba(255,255,255,.7);
+    margin-top: 6px;
+    letter-spacing: 0;
+}
+
+html:not([data-theme="dark"]) .jtl-panel__total { color: rgba(0,0,0,.55); }
+
+.jtl-panel__legend {
+    list-style: none;
+    margin: 8px 0 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.jtl-panel__legend li {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 10px;
+    color: rgba(255,255,255,.65);
+}
+
+.jtl-panel__legend-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.jtl-panel__chart {
+    flex: 1;
+    min-width: 0;
+    padding: 8px 8px 0;
+    overflow: hidden;
+}
+
+/* ── Business Events row ─────────────────────────────────────────────────── */
+
+.jtl-panel--biz .jtl-panel__chart--biz {
+    padding: 12px 8px;
+    position: relative;
+    min-height: 72px;
+}
+
+.jtl-biz-bars {
+    position: relative;
+    width: 100%;
+}
+
+.jtl-biz-bar {
+    position: absolute;
+    height: 28px;
+    border-radius: 4px;
+    padding: 0 10px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: filter 120ms;
+}
+
+.jtl-biz-bar:hover { filter: brightness(1.1); }
+
+/* ── Hover card (business events + milestones) ───────────────────────────── */
+
+.jtl-hover-card {
+    display: none;
+    position: fixed;
+    z-index: 10001;
+    background: #1e1e24;
+    border: 1px solid rgba(255,255,255,.12);
+    border-radius: 8px;
+    padding: 10px 12px;
+    min-width: 180px;
+    max-width: 340px;
+    box-shadow: 0 4px 20px rgba(0,0,0,.4);
+    pointer-events: none;
+    font-size: 12px;
+    font-family: var(--brand-font);
+}
+
+html:not([data-theme="dark"]) .jtl-hover-card {
+    background: #fff;
+    border-color: rgba(0,0,0,.1);
+    box-shadow: 0 4px 20px rgba(0,0,0,.15);
+}
+
+.jtl-hover-card__row {
+    display: flex;
+    gap: 8px;
+    align-items: baseline;
+    padding: 2px 0;
+}
+
+.jtl-hover-card__row + .jtl-hover-card__row {
+    border-top: 1px solid rgba(255,255,255,.06);
+    padding-top: 4px;
+    margin-top: 2px;
+}
+
+html:not([data-theme="dark"]) .jtl-hover-card__row + .jtl-hover-card__row {
+    border-top-color: rgba(0,0,0,.07);
+}
+
+.jtl-hover-card__lbl {
+    color: rgba(255,255,255,.45);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    flex-shrink: 0;
+    min-width: 64px;
+}
+
+html:not([data-theme="dark"]) .jtl-hover-card__lbl { color: rgba(0,0,0,.45); }
+
+.jtl-hover-card__val {
+    color: #f5f5f7;
+    font-weight: 500;
+    line-height: 1.4;
+}
+
+html:not([data-theme="dark"]) .jtl-hover-card__val { color: #1a1a2e; }
+
+/* ── Milestone point markers ─────────────────────────────────────────────── */
+
+.jtl-milestone-marker {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    transform: translateX(-7px);
+    cursor: pointer;
+    white-space: nowrap;
+    z-index: 3;
+    transition: opacity 120ms;
+}
+
+.jtl-milestone-marker:hover { opacity: 0.8; }
+
+.jtl-milestone-stem {
+    width: 2px;
+    height: 12px;
+    background: currentColor;
+    margin-left: 6px;
+    opacity: 0.6;
+    border-radius: 1px;
+}
+
+.jtl-milestone-point {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+}
+
+.jtl-milestone-diamond {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+    background: currentColor;
+    transform: rotate(45deg);
+    border-radius: 2px;
+}
+
+.jtl-milestone-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: currentColor;
+    transform: translateY(1px);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+    -webkit-text-size-adjust: none; /* prevent iOS Safari from scaling per-label based on max-width */
+}
+
+/* 🔥 Peak-date flame icons in the timeline biz-events row */
+.jtl-peak-flame {
+    position: absolute;
+    font-size: 13px;
+    line-height: 1;
+    pointer-events: none;
+    z-index: 5;
+    transform: translateX(-50%); /* centre on the day position */
+    top: 0; /* aligns with bar top; bar top is set inline */
+    opacity: 0.9;
+}
+
+/* Orange flame-day band in the Milestones row */
+.jtl-milestone-flame-band {
+    position: absolute;
+    top: -8px;
+    bottom: -8px;
+    background: #f97316;
+    border-radius: 2px;
+    pointer-events: none;
+    z-index: 0;
+    transform: translateX(-50%);
+}
+
+/* Today vertical rule (inside biz bars layer) */
+.jtl-today-line {
+    position: absolute;
+    top: -8px;
+    bottom: -8px;
+    width: 2px;
+    background: #3b82f6;
+    border-radius: 1px;
+    pointer-events: none;
+    z-index: 5;
+    transform: translateX(-1px); /* centre the 2px bar on the tick */
+}
+
+/* ── D3 SVG chart styles ─────────────────────────────────────────────────── */
+
+.jtl-panel__chart svg text {
+    font-family: inherit;
+}
+
+.jtl-panel__chart svg .domain { stroke: rgba(255,255,255,.15); }
+
+.jtl-panel__chart svg .tick line { stroke: rgba(255,255,255,.08); }
+
+.jtl-panel__chart svg .tick text { fill: rgba(255,255,255,.45) !important; }
+
+/* ── Timeline D3 grid lines: light-mode visibility fix ───────────────────── */
+/* The generic `.tick line` rule above is dark-oriented. In light mode it makes
+   the horizontal D3 grid almost white on white, so force a visible stroke only
+   for the grid group, not for all axis ticks. */
+html:not([data-theme="dark"]) .jtl-panel__chart svg .jtl-grid .tick line,
+html[data-theme="light"] .jtl-panel__chart svg .jtl-grid .tick line {
+    stroke: rgba(0, 0, 0, .18) !important;
+    stroke-opacity: 1 !important;
+    stroke-dasharray: 3, 3 !important;
+}
+
+html:not([data-theme="dark"]) .jtl-panel__chart svg .jtl-grid path.domain,
+html[data-theme="light"] .jtl-panel__chart svg .jtl-grid path.domain {
+    stroke: transparent !important;
+}
+
+/* ── Sidebar ─────────────────────────────────────────────────────────────── */
+
+.jtl-sidebar {
+    width: 220px;
+    flex-shrink: 0;
+    background: #1c1e26;
+    border-left: 1px solid rgba(255,255,255,.07);
+    min-height: calc(100vh - 60px);
+    padding: 16px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    overflow-y: auto;
+}
+
+.jtl-sidebar__section {
+    padding-bottom: 16px;
+    margin-bottom: 16px;
+    border-bottom: 1px solid rgba(255,255,255,.07);
+}
+
+.jtl-sidebar__section:last-child { border-bottom: none; }
+
+.jtl-sidebar__heading {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: rgba(255,255,255,.4);
+    margin-bottom: 10px;
+}
+
+.jtl-sidebar__label {
+    display: block;
+    font-size: 11px;
+    color: rgba(255,255,255,.6);
+    margin-bottom: 4px;
+}
+
+.jtl-sidebar__select,
+.jtl-sidebar__input {
+    width: 100%;
+    background: rgba(255,255,255,.07);
+    border: 1px solid rgba(255,255,255,.12);
+    border-radius: 6px;
+    color: #e5e7eb;
+    font-size: 12px;
+    font-family: inherit;
+    padding: 6px 8px;
+    outline: none;
+    appearance: none;
+}
+
+.jtl-sidebar__select:focus,
+.jtl-sidebar__input:focus {
+    border-color: rgba(255,255,255,.3);
+}
+
+.jtl-sidebar__select option { background: #1c1e26; color: #e5e7eb; }
+
+/* Multi-select service dropdown */
+.jtl-sidebar__multiselect {
+    height: auto;
+    min-height: 90px;
+    max-height: 160px;
+    appearance: auto;
+    padding: 4px 2px;
+}
+.jtl-sidebar__multiselect option {
+    padding: 3px 6px;
+    border-radius: 3px;
+    cursor: pointer;
+}
+.jtl-sidebar__multiselect option:checked {
+    background: rgba(99,102,241,.35);
+    color: #e5e7eb;
+}
+
+/* Selected service chips below the multi-select */
+.jtl-sidebar__selected-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 6px;
+    min-height: 0;
+}
+
+.jtl-service-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    background: rgba(99,102,241,.25);
+    border: 1px solid rgba(99,102,241,.5);
+    border-radius: 4px;
+    color: #e5e7eb;
+    font-size: 10px;
+    padding: 2px 6px;
+}
+
+.jtl-service-chip__rm {
+    background: none !important;
+    border: none !important;
+    box-shadow: none !important;
+    color: rgba(245,245,247,.5);
+    font-size: 12px;
+    cursor: pointer;
+    padding: 0 0 0 2px;
+    line-height: 1;
+}
+.jtl-service-chip__rm:hover { color: #f5f5f7; }
+
+html:not([data-theme="dark"]) .jtl-sidebar__multiselect option:checked {
+    background: rgba(99,102,241,.15);
+    color: #1a1a1a;
+}
+html:not([data-theme="dark"]) .jtl-service-chip {
+    background: rgba(99,102,241,.1);
+    border-color: rgba(99,102,241,.35);
+    color: #3730a3;
+}
+html:not([data-theme="dark"]) .jtl-service-chip__rm { color: #999; }
+html:not([data-theme="dark"]) .jtl-service-chip__rm:hover { color: #333; }
+
+.jtl-sidebar__clear {
+    width: 100%;
+    background: rgba(255,255,255,.07);
+    border: 1px solid rgba(255,255,255,.12);
+    border-radius: 6px;
+    color: #e5e7eb;
+    font-size: 12px;
+    font-family: inherit;
+    padding: 7px;
+    cursor: pointer;
+    transition: background 120ms;
+}
+
+.jtl-sidebar__clear:hover { background: rgba(255,255,255,.14); }
+
+.jtl-sidebar__loading,
+.jtl-sidebar__no-insights {
+    font-size: 11px;
+    color: rgba(255,255,255,.35);
+    margin: 0;
+}
+
+/* ── Insights ────────────────────────────────────────────────────────────── */
+
+.jtl-insight {
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(255,255,255,.06);
+}
+
+.jtl-insight:last-child { border-bottom: none; }
+
+.jtl-insight__header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 2px;
+}
+
+.jtl-insight__icon { font-size: 14px; }
+
+.jtl-insight__title {
+    font-size: 11px;
+    font-weight: 600;
+    color: #e5e7eb;
+}
+
+.jtl-insight__sub {
+    font-size: 10px;
+    color: rgba(255,255,255,.45);
+    margin-bottom: 2px;
+    padding-left: 20px;
+}
+
+.jtl-insight__desc {
+    font-size: 10px;
+    color: rgba(255,255,255,.5);
+    padding-left: 20px;
+}
+
+/* ── Empty state ─────────────────────────────────────────────────────────── */
+
+.jtl-empty {
+    padding: 24px;
+    text-align: center;
+    font-size: 12px;
+    color: rgba(255,255,255,.3);
+    margin: 0;
+}
+
+/* ── Light mode overrides ────────────────────────────────────────────────── */
+
+html:not([data-theme="dark"]) .jtl-outer { background: #f5f5f7; }
+html:not([data-theme="dark"]) .jtl-main  { background: #fff; }
+html:not([data-theme="dark"]) .jtl-filterbar { background: #fafafa; border-bottom-color: #eee; }
+html:not([data-theme="dark"]) .jtl-filterbar__item { color: #444; }
+html:not([data-theme="dark"]) .jtl-filterbar__item:hover { background: #f0f0f0; }
+html:not([data-theme="dark"]) .jtl-panel { border-bottom-color: #f0f0f2; }
+html:not([data-theme="dark"]) .jtl-panel__label { border-right-color: #eee; }
+html:not([data-theme="dark"]) .jtl-panel__title { color: inherit; }
+html:not([data-theme="dark"]) .jtl-panel__subtitle { color: #aaa; }
+html:not([data-theme="dark"]) .jtl-panel__legend li { color: #555; }
+html:not([data-theme="dark"]) .jtl-panel__chart svg .tick text { fill: #888 !important; }
+html:not([data-theme="dark"]) .jtl-sidebar { background: #fafafa; border-left-color: #eee; }
+html:not([data-theme="dark"]) .jtl-sidebar__heading { color: #888; }
+html:not([data-theme="dark"]) .jtl-sidebar__label { color: #444; }
+html:not([data-theme="dark"]) .jtl-sidebar__select,
+html:not([data-theme="dark"]) .jtl-sidebar__input {
+    background: #fff; border-color: #ddd; color: #222;
+}
+html:not([data-theme="dark"]) .jtl-sidebar__select option { background: #fff; color: #222; }
+html:not([data-theme="dark"]) .jtl-sidebar__clear { background: #f0f0f0; border-color: #ddd; color: #333; }
+html:not([data-theme="dark"]) .jtl-sidebar__clear:hover { background: #e4e4e4; }
+html:not([data-theme="dark"]) .jtl-insight__title { color: #111; }
+html:not([data-theme="dark"]) .jtl-insight__sub,
+html:not([data-theme="dark"]) .jtl-insight__desc { color: #666; }
+html:not([data-theme="dark"]) .jtl-insight { border-bottom-color: #eee; }
+html:not([data-theme="dark"]) .jtl-sidebar__section { border-bottom-color: #eee; }
+html:not([data-theme="dark"]) .jtl-empty { color: #aaa; }
+
+/* ── Collapsible timeline lanes ──────────────────────────────────────────── */
+.jtl-lane {
+    overflow: hidden;
+}
+
+.jtl-lane--collapsed .jtl-panel__chart,
+.jtl-lane--collapsed .jtl-panel__chart--biz,
+.jtl-lane--collapsed .jtl-panel__legend,
+.jtl-lane--collapsed .jtl-panel__subtitle,
+.jtl-lane--collapsed .jtl-panel__title {
+    display: none !important;
+}
+
+.jtl-lane--collapsed .jtl-panel {
+    border-bottom: 1px solid rgba(255,255,255,.05);
+}
+
+html:not([data-theme="dark"]) .jtl-lane--collapsed .jtl-panel {
+    border-bottom-color: #f0f0f2;
+}
+
+.jtl-lane__toggle {
+    background: none !important;
+    border: none !important;
+    box-shadow: none !important;
+    color: rgba(255,255,255,.4);
+    font-size: 10px;
+    cursor: pointer;
+    padding: 0 0 4px;
+    flex-shrink: 0;
+    line-height: 1;
+    align-self: flex-end;
+}
+
+.jtl-lane__toggle:hover {
+    color: rgba(255,255,255,.8);
+}
+
+html:not([data-theme="dark"]) .jtl-lane__toggle {
+    color: #bbb;
+}
+
+html:not([data-theme="dark"]) .jtl-lane__toggle:hover {
+    color: #555;
+}
+
+/* ── Filter slot in top bar ─────────────────────────────────────────────── */
+
+/* Both filter slots combined form the filter area; primary holds env+type,
+   service holds the service dropdown. On desktop they appear as inline peers. */
+.jenga-filters {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex: 1 1 0;
+    min-width: 0;
+    overflow: visible;
+}
+
+.jenga-filters--primary { flex: 2 1 0; } /* env + type = 2 shares */
+.jenga-filters--service  { flex: 1 1 0; } /* service = 1 share */
+
+/* All jms dropdowns share space equally within their container */
+.jenga-filters > .jms { flex: 1 1 0; min-width: 0; max-width: none; }
+
+/* Flex line-break divs — invisible on desktop, force new rows on mobile */
+.top-bar__break { display: none; }
+
+/* ── JengaMultiSelect (.jms) ─────────────────────────────────────────────── */
+
+.jms {
+    position: relative;
+    font-size: 12px;
+    font-family: inherit;
+    min-width: 120px;
+    max-width: 260px;
+    user-select: none;
+}
+
+/* Trigger */
+.jms__trigger {
+    display: flex;
+    align-items: center;
+    flex-wrap: nowrap;
+    gap: 3px;
+    height: 36px;
+    padding: 0 4px 0 6px;
+    border: 1px solid rgba(255,255,255,.15);
+    border-radius: 6px;
+    background: rgba(255,255,255,.07);
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+}
+
+.jms__trigger:hover {
+    border-color: rgba(255,255,255,.3);
+}
+
+.jms__trigger[aria-expanded="true"] {
+    border-color: #6366f1;
+    box-shadow: 0 0 0 1px rgba(99,102,241,.35);
+}
+
+/* Chip container */
+.jms__chips {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    min-width: 0;
+    max-width: 70%;
+    overflow: hidden;
+    flex-shrink: 1;
+}
+
+/* Single chip */
+.jms__chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    min-width: 0;
+    max-width: 150px;
+    background: rgba(99,102,241,.35);
+    border-radius: 4px;
+    padding: 2px 6px;
+    color: #e5e7eb;
+    white-space: nowrap;
+    font-size: 11px;
+    line-height: 1.2;
+    flex-shrink: 1;
+    overflow: hidden;
+}
+
+.jms__chip-label {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Coloured env badge inside chip */
+.jms__env-badge {
+    display: inline-flex;
+    align-items: center;
+    font-size: 9px;
+    font-weight: 700;
+    padding: 1px 5px;
+    border-radius: 3px;
+    white-space: nowrap;
+    letter-spacing: .02em;
+    flex-shrink: 0;
+}
+
+/* When a chip contains a custom badge, remove the chip's own indigo background */
+.jms__chip:has(.jms__env-badge) {
+    background: transparent;
+    padding: 1px 2px;
+    max-width: none;
+    flex-shrink: 0;
+}
+
+/* +N chip */
+.jms__chip--more {
+    background: rgba(255,255,255,.12);
+    color: rgba(245,245,247,.8);
+    font-weight: 700;
+    cursor: pointer;
+    padding: 2px 7px;
+    flex-shrink: 0;
+}
+
+.jms__chip--more:hover {
+    background: rgba(255,255,255,.2);
+    color: #fff;
+}
+
+/* Remove button inside chip */
+.jms__chip-rm {
+    background: none !important;
+    border: none !important;
+    box-shadow: none !important;
+    color: rgba(245,245,247,.55);
+    cursor: pointer;
+    font-size: 13px;
+    padding: 0 0 0 2px;
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+.jms__chip-rm:hover {
+    color: #f5f5f7;
+}
+
+/* Input */
+.jms__input {
+    flex: 1;
+    min-width: 42px;
+    border: none;
+    background: transparent;
+    color: #e5e7eb;
+    font-size: 12px;
+    font-family: inherit;
+    outline: none;
+    padding: 2px 0;
+}
+
+.jms__input::placeholder {
+    color: rgba(245,245,247,.45);
+}
+
+/* Controls */
+.jms__controls {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    flex-shrink: 0;
+    margin-left: auto;
+}
+
+.jms__clear,
+.jms__chevron {
+    background: none !important;
+    border: none !important;
+    box-shadow: none !important;
+    color: rgba(245,245,247,.4);
+    cursor: pointer;
+    padding: 2px 4px;
+    font-size: 12px;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.jms__clear {
+    font-size: 11px;
+}
+
+.jms__clear:hover,
+.jms__chevron:hover {
+    color: #f5f5f7;
+}
+
+.jms__chevron {
+    pointer-events: none;
+    font-size: 14px;
+}
+
+/* Dropdown */
+.jms__dropdown {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    min-width: 100%;
+    max-width: 360px;
+    max-height: 280px;
+    overflow-y: auto;
+    background: #1e2030;
+    border: 1px solid rgba(255,255,255,.15);
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0,0,0,.45);
+    z-index: 500;
+    padding: 4px 0;
+}
+
+.jms__select-all {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    color: rgba(245,245,247,.7);
+    cursor: pointer;
+}
+
+.jms__select-all:hover {
+    background: rgba(255,255,255,.06);
+}
+
+.jms__sep {
+    height: 1px;
+    background: rgba(255,255,255,.08);
+    margin: 2px 0;
+}
+
+.jms__option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 12px;
+    font-size: 12px;
+    color: rgba(245,245,247,.85);
+    cursor: pointer;
+}
+
+.jms__option:hover {
+    background: rgba(255,255,255,.06);
+}
+
+.jms__option--focused,
+.jms__select-all.jms__option--focused {
+    background: rgba(255,255,255,.06);
+    outline: none;
+}
+
+.jms__option--selected {
+    background: rgba(99,102,241,.15);
+}
+
+.jms__option--selected:hover {
+    background: rgba(99,102,241,.25);
+}
+
+.jms__opt-label {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.jms__cb {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    border: 1.5px solid rgba(245,245,247,.3);
+    border-radius: 4px;
+    background: transparent;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 120ms, border-color 120ms;
+}
+
+.jms__cb--checked {
+    background: #6366f1;
+    border-color: #6366f1;
+}
+.jms__cb--indeterminate {
+    background: rgba(99,102,241,.5);
+    border-color: #6366f1;
+}
+
+.jms__cb {
+    position: relative;
+}
+
+.jms__cb--checked::after {
+    content: '';
+    width: 4px;
+    height: 8px;
+    border: solid #fff;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+    margin-top: -1px;
+    box-sizing: border-box;
+}
+
+.jms__cb--indeterminate::after {
+    content: '';
+    width: 8px;
+    height: 2px;
+    border-radius: 999px;
+    background: #fff;
+}
+
+.jms__option--selected {
+    background: rgba(99, 102, 241, .22);
+}
+
+.jms__option--selected .jms__opt-label {
+    color: #fff;
+    font-weight: 650;
+}
+
+html:not([data-theme="dark"]) .jms__option--selected {
+    background: rgba(99, 102, 241, .12);
+}
+
+html:not([data-theme="dark"]) .jms__option--selected .jms__opt-label {
+    color: #1f2937;
+    font-weight: 650;
+}
+
+.jms__empty {
+    padding: 12px;
+    text-align: center;
+    font-size: 12px;
+    color: rgba(245,245,247,.3);
+}
+
+/* Light mode JMS */
+html:not([data-theme="dark"]) .jms__trigger {
+    background: #fff;
+    border-color: #ddd;
+    color: #222;
+}
+
+html:not([data-theme="dark"]) .jms__trigger:hover {
+    border-color: #999;
+}
+
+html:not([data-theme="dark"]) .jms__trigger[aria-expanded="true"] {
+    border-color: #6366f1;
+    box-shadow: 0 0 0 1px rgba(99,102,241,.25);
+}
+
+html:not([data-theme="dark"]) .jms__input {
+    color: #222;
+}
+
+html:not([data-theme="dark"]) .jms__input::placeholder {
+    color: #888;
+}
+
+html:not([data-theme="dark"]) .jms__clear,
+html:not([data-theme="dark"]) .jms__chevron {
+    color: #aaa;
+}
+
+html:not([data-theme="dark"]) .jms__clear:hover,
+html:not([data-theme="dark"]) .jms__chevron:hover {
+    color: #333;
+}
+
+html:not([data-theme="dark"]) .jms__chip {
+    background: rgba(99,102,241,.15);
+    color: #3730a3;
+}
+
+html:not([data-theme="dark"]) .jms__chip:has(.jms__env-badge) {
+    background: transparent;
+}
+
+html:not([data-theme="dark"]) .jms__chip--more {
+    background: rgba(0,0,0,.08);
+    color: #555;
+}
+
+html:not([data-theme="dark"]) .jms__chip--more:hover {
+    background: rgba(0,0,0,.14);
+    color: #111;
+}
+
+html:not([data-theme="dark"]) .jms__chip-rm {
+    color: #999;
+}
+
+html:not([data-theme="dark"]) .jms__chip-rm:hover {
+    color: #333;
+}
+
+html:not([data-theme="dark"]) .jms__dropdown {
+    background: #fff;
+    border-color: #ddd;
+    box-shadow: 0 8px 24px rgba(0,0,0,.12);
+}
+
+html:not([data-theme="dark"]) .jms__select-all,
+html:not([data-theme="dark"]) .jms__option {
+    color: #333;
+}
+
+html:not([data-theme="dark"]) .jms__select-all:hover,
+html:not([data-theme="dark"]) .jms__option:hover {
+    background: #f5f5f7;
+}
+
+html:not([data-theme="dark"]) .jms__option--focused,
+html:not([data-theme="dark"]) .jms__select-all.jms__option--focused {
+    background: rgba(99,102,241,.08);
+    outline: none;
+}
+
+html:not([data-theme="dark"]) .jms__option--selected {
+    background: rgba(99,102,241,.08);
+}
+
+html:not([data-theme="dark"]) .jms__option--selected:hover {
+    background: rgba(99,102,241,.14);
+}
+
+html:not([data-theme="dark"]) .jms__sep {
+    background: #eee;
+}
+
+html:not([data-theme="dark"]) .jms__cb {
+    border-color: #bbb;
+}
+
+/* ── Selected section in dropdown ───────────────────────── */
+
+.jms__selected-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    padding: 4px 12px;                    /* ⬅ meno padding */
+    font-size: 10px;                      /* ⬅ più piccolo */
+    font-weight: 600;
+    color: rgba(245,245,247,.4);
+}
+
+.jms__clear-selected {
+    background: none;
+    border: none;
+
+    color: rgba(245,245,247,.45);
+    font-size: 10px;
+
+    cursor: pointer;
+    padding: 2px 4px;
+    border-radius: 4px;
+}
+
+.jms__clear-selected:hover {
+    background: rgba(255,255,255,.06);
+    color: #fff;
+}
+
+.jms__selected-wrap {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    padding: 4px 12px 6px;   /* prima era troppo alto */
+}
+
+.jms__selected-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+
+    background: rgba(99,102,241,.18);     /* meno aggressivo */
+    border: 1px solid rgba(99,102,241,.35);
+
+    border-radius: 4px;
+    padding: 2px 6px;
+
+    font-size: 10px;                      /* ⬅ più piccolo */
+    line-height: 1.2;
+    color: rgba(245,245,247,.85);
+
+    max-width: 160px;
+}
+
+/* testo */
+.jms__selected-label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* bottone X compatto */
+.jms__selected-rm {
+    background: none;
+    border: none;
+
+    width: 14px;
+    height: 14px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    font-size: 10px;                      /* ⬅ ridotto */
+    color: rgba(245,245,247,.55);
+
+    border-radius: 3px;
+    cursor: pointer;
+    padding: 0;
+}
+
+.jms__selected-rm:hover {
+    background: rgba(255,255,255,.06);
+    color: #fff;
+}
+
+/* ── FIX LIGHT MODE: selected section leggibile ───────────────── */
+
+html:not([data-theme="dark"]) .jms__selected-header {
+    color: #6b7280; /* grigio leggibile */
+}
+
+html:not([data-theme="dark"]) .jms__clear-selected {
+    color: #374151; /* grigio scuro */
+}
+
+html:not([data-theme="dark"]) .jms__clear-selected:hover {
+    background: rgba(0,0,0,.06);
+    color: #111827;
+}
+
+/* Chip selected */
+html:not([data-theme="dark"]) .jms__selected-chip {
+    background: rgba(99,102,241,.10);
+    border: 1px solid rgba(99,102,241,.30);
+    color: #1f2937; /* ✅ FIX fondamentale */
+}
+
+/* Label dentro chip */
+html:not([data-theme="dark"]) .jms__selected-label {
+    color: #1f2937; /* ✅ FIX: prima troppo chiaro */
+}
+
+/* Remove button */
+html:not([data-theme="dark"]) .jms__selected-rm {
+    color: #6b7280;
+}
+
+html:not([data-theme="dark"]) .jms__selected-rm:hover {
+    background: rgba(0,0,0,.06);
+    color: #111827;
+}
+
+/* ── Inline insights panel ───────────────────────────────────────────────── */
+
+/* Compact inline insights bar — lives inside .jenga-top-bar, inherits its background */
+.jtl-insights-panel {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 6px 4px;
+    border-top: 1px solid #eee;
+    flex-wrap: wrap;
+}
+html[data-theme="dark"] .jtl-insights-panel { border-top-color: rgba(255,255,255,.07); }
+
+.jtl-insights-panel__heading {
+    font-size: 10px; font-weight: 700; letter-spacing: .08em;
+    color: #aaa; flex-shrink: 0; white-space: nowrap;
+}
+html[data-theme="dark"] .jtl-insights-panel__heading { color: rgba(245,245,247,.35); }
+
+.jtl-insights-panel__list {
+    display: contents;
+}
+
+.jtl-insights-panel__item {
+    display: flex; align-items: center; gap: 6px;
+    background: rgba(255,255,255,.04);
+    border: 1px solid rgba(255,255,255,.07);
+    border-radius: 6px; padding: 5px 10px;
+    white-space: nowrap;
+}
+
+.jtl-insights-panel__icon { font-size: 13px; flex-shrink: 0; }
+.jtl-insights-panel__title { font-size: 11px; font-weight: 600; color: #e5e7eb; }
+.jtl-insights-panel__sub { font-size: 11px; color: rgba(245,245,247,.5); }
+.jtl-insights-panel__empty { font-size: 11px; color: rgba(245,245,247,.3); margin: 0; }
+
+html:not([data-theme="dark"]) .jtl-insights-panel__item { background: #f8f8f8; border-color: #eee; }
+html:not([data-theme="dark"]) .jtl-insights-panel__title { color: #111; }
+html:not([data-theme="dark"]) .jtl-insights-panel__sub { color: #777; }
+html:not([data-theme="dark"]) .jtl-insights-panel__empty { color: #bbb; }
+
+/* ── Cards drawer (#cards-drawer) ───────────────────────────────────────── */
+
+#cards-overlay.open {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 149;
+    background: rgba(0,0,0,.25);
+}
+
+#cards-drawer {
+    position: fixed;
+    top: 0;
+    right: -460px;
+    width: 440px;
+    max-width: 100vw;
+    height: 100%;
+    z-index: 150;
+    background: #fff;
+    box-shadow: -2px 0 12px rgba(0,0,0,.1);
+    transition: right 250ms ease;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+#cards-drawer.open { right: 0; }
+
+body.jenga-topbar-pinned #cards-drawer {
+    top: var(--jenga-topbar-height, 57px);
+    height: calc(100% - var(--jenga-topbar-height, 57px));
+}
+
+#cards-drawer .drawer-header {
+    display: flex;
+    align-items: center;
+    padding: 14px 16px;
+    border-bottom: 1px solid #eee;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.drawer-header__text {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+#cards-drawer-date {
+    margin: 0;
+    font-size: 11px;
+    font-weight: 400;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+#cards-drawer-title {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 600;
+    color: #111;
+}
+
+#cards-drawer-close {
+    background: none; border: none; box-shadow: none;
+    font-size: 18px; cursor: pointer; color: #777; padding: 4px 6px; border-radius: 4px;
+}
+#cards-drawer-close:hover { background: #f0f0f0; }
+
+#cards-drawer-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px 0;
+}
+
+.cards-drawer__empty {
+    padding: 24px 16px;
+    font-size: 13px;
+    color: #aaa;
+    margin: 0;
+}
+
+.cards-drawer__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.cards-drawer__card {
+    padding: 10px 16px;
+    border-bottom: 1px solid #f0f0f2;
+}
+.cards-drawer__card:last-child { border-bottom: none; }
+.cards-drawer__card:hover { background: #fafafa; }
+.cards-drawer__card--p1 { background: rgba(239, 68, 68, 0.10); }
+.cards-drawer__card--p1:hover { background: rgba(239, 68, 68, 0.17); }
+.cards-drawer__card--p2 { background: rgba(249, 115, 22, 0.09); }
+.cards-drawer__card--p2:hover { background: rgba(249, 115, 22, 0.15); }
+
+.cards-drawer__card-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+}
+
+.cards-drawer__key {
+    font-size: 12px;
+    font-weight: 700;
+    color: #3b82f6;
+    text-decoration: none;
+    flex-shrink: 0;
+}
+.cards-drawer__key:hover { text-decoration: underline; }
+
+.cards-drawer__priority {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .03em;
+    text-transform: uppercase;
+    padding: 2px 6px;
+    border-radius: 3px;
+    white-space: nowrap;
+    background: #e5e7eb;
+    color: #374151;
+}
+.cards-drawer__priority--p1 { background: #fee2e2; color: #991b1b; }
+.cards-drawer__priority--p2 { background: #ffedd5; color: #9a3412; }
+.cards-drawer__priority--p3 { background: #fef9c3; color: #854d0e; }
+.cards-drawer__priority--p4 { background: #dcfce7; color: #166534; }
+
+.cards-drawer__status {
+    font-size: 10px;
+    font-weight: 600;
+    background: #f0f0f2;
+    color: #555;
+    padding: 2px 6px;
+    border-radius: 10px;
+    white-space: nowrap;
+}
+
+.cards-drawer__summary {
+    font-size: 12px;
+    color: #333;
+    margin: 0 0 6px;
+    line-height: 1.4;
+    word-break: break-word;
+}
+
+.cards-drawer__services {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.cards-drawer__service-link {
+    font-size: 10px;
+    font-weight: 600;
+    color: #7c3aed;
+    background: #ede9fe;
+    padding: 2px 7px;
+    border-radius: 4px;
+    text-decoration: none;
+    white-space: nowrap;
+}
+.cards-drawer__service-link:hover { background: #ddd6fe; }
+
+/* Dark mode */
+html[data-theme="dark"] #cards-drawer { background: #1c1c1e; box-shadow: -2px 0 12px rgba(0,0,0,.4); }
+html[data-theme="dark"] #cards-drawer .drawer-header { border-bottom-color: rgba(255,255,255,.08); }
+html[data-theme="dark"] #cards-drawer-date  { color: rgba(245,245,247,.45); }
+html[data-theme="dark"] #cards-drawer-title { color: #f5f5f7; }
+html[data-theme="dark"] #cards-drawer-close { color: rgba(245,245,247,.5); }
+html[data-theme="dark"] #cards-drawer-close:hover { background: rgba(255,255,255,.08); }
+html[data-theme="dark"] .cards-drawer__card { border-bottom-color: rgba(255,255,255,.06); }
+html[data-theme="dark"] .cards-drawer__card:hover { background: rgba(255,255,255,.03); }
+html[data-theme="dark"] .cards-drawer__card--p1 { background: rgba(239, 68, 68, 0.18); }
+html[data-theme="dark"] .cards-drawer__card--p1:hover { background: rgba(239, 68, 68, 0.27); }
+html[data-theme="dark"] .cards-drawer__card--p2 { background: rgba(249, 115, 22, 0.15); }
+html[data-theme="dark"] .cards-drawer__card--p2:hover { background: rgba(249, 115, 22, 0.22); }
+html[data-theme="dark"] .cards-drawer__summary { color: rgba(245,245,247,.8); }
+html[data-theme="dark"] .cards-drawer__status { background: rgba(255,255,255,.1); color: rgba(245,245,247,.6); }
+html[data-theme="dark"] .cards-drawer__priority { background: rgba(255,255,255,.1); color: rgba(245,245,247,.6); }
+html[data-theme="dark"] .cards-drawer__priority--p1 { background: rgba(239,68,68,.2); color: #fca5a5; }
+html[data-theme="dark"] .cards-drawer__priority--p2 { background: rgba(249,115,22,.2); color: #fdba74; }
+html[data-theme="dark"] .cards-drawer__priority--p3 { background: rgba(234,179,8,.2); color: #fde047; }
+html[data-theme="dark"] .cards-drawer__priority--p4 { background: rgba(34,197,94,.2); color: #86efac; }
+html[data-theme="dark"] .cards-drawer__service-link { background: rgba(124,58,237,.25); color: #c4b5fd; }
+html[data-theme="dark"] .cards-drawer__service-link:hover { background: rgba(124,58,237,.4); }
+html[data-theme="dark"] .cards-drawer__empty { color: rgba(245,245,247,.3); }
+
+/* ── Mobile responsiveness ───────────────────────────────────────────────── */
+
+@media (max-width: 768px) {
+
+    /* ── Top bar ─────────────────────────────────────────────────────────── */
+
+    .jenga-top-bar {
+        padding: 0 8px;
+    }
+
+    /* Row wraps — 4 rows on mobile via flex-break divs */
+    .top-bar__row--search {
+        flex-wrap: wrap;
+        gap: 6px;
+        padding: 6px 0 4px;
+        align-items: center;
+    }
+
+    /* Break divs become full-width zero-height flex items that force new rows */
+    .top-bar__break {
+        display: block;
+        flex-basis: 100%;
+        height: 0;
+        margin: 0;
+        padding: 0;
+    }
+
+    /* Row 1: hamburger (order 1) + search (order 2) */
+    .top-bar__hamburger { order: 1; flex-shrink: 0; }
+    .jenga-top-bar .top-search {
+        order: 2;
+        flex: 1 1 0 !important;
+        max-width: none !important;
+        min-width: 0 !important;
+    }
+    .top-bar__break--1 { order: 3; }
+
+    /* Row 2: env + type (order 4) */
+    .jenga-filters--primary { order: 4; flex: 1 1 100%; }
+
+    .top-bar__break--2 { order: 5; }
+
+    /* Row 3: service (order 6) */
+    .jenga-filters--service { order: 6; flex: 1 1 100%; }
+
+    .top-bar__break--3 { order: 7; }
+
+    /* Row 4: month nav (order 8) + view toggle (order 9) + today (order 10) */
+    .jenga-month-nav   { order: 8; margin-left: 0; flex-shrink: 0; }
+    .jenga-view-toggle { order: 9; flex-shrink: 0; }
+    #jenga-today-btn   { order: 10; flex-shrink: 0; }
+
+    .jenga-month-label {
+        min-width: 100px;
+        font-size: 13px;
+    }
+
+    .jenga-month-btn,
+    .jenga-view-btn {
+        width: 30px;
+        height: 30px;
+        font-size: 14px;
+    }
+
+    /* Today button wider on mobile so it reads clearly */
+    .top-bar__action {
+        height: 30px;
+        padding: 0 16px;
+        font-size: 13px;
+    }
+
+    /* ── Calendar — mobile-optimised chip display ────────────────────────── */
+
+    .jenga-cal__week,
+    .jenga-cal__cell {
+        min-height: 90px;
+    }
+
+    .jenga-cal__dayname {
+        padding: 5px 2px;
+        font-size: 9px;
+    }
+
+    .jenga-cal__daynum {
+        font-size: 11px;
+        padding: 3px 2px 2px;
+    }
+
+    .jenga-cal__today-badge {
+        width: 18px;
+        height: 18px;
+        font-size: 9px;
+    }
+
+    /* On mobile: replace full chip list with compact summary badges.
+       Tap anywhere on the cell to open the full day drawer. */
+    .jenga-cal__chips  { display: none; }   /* hide full chip list */
+    .jenga-cal__mobile-summary { display: flex; } /* show summary */
+
+    /* Make the entire cell a tap target — cursor:pointer everywhere */
+    .jenga-cal__cell { cursor: pointer; }
+
+    /* ── Timeline ────────────────────────────────────────────────────────── */
+
+    /* Label column narrower */
+    .jtl-panel__label {
+        width: 80px;
+        padding: 10px 6px;
+    }
+
+    .jtl-panel__icon { font-size: 14px; }
+    .jtl-panel__title { font-size: 9px; }
+    .jtl-panel__subtitle { font-size: 9px; }
+    .jtl-panel__legend { display: none; } /* too cramped on mobile */
+
+    /* Insights bar wraps */
+    .jtl-insights-panel {
+        flex-wrap: wrap;
+        gap: 8px;
+        padding: 8px 12px;
+    }
+
+    .jtl-insights-panel__item {
+        min-width: 0;
+        flex: 1 1 calc(50% - 4px);
+    }
+
+    /* #jenga-timeline is the horizontal scroll container on mobile.
+       The insights panel lives outside it (body sibling) so stays viewport-sticky.
+       overflow-y: auto is forced by CSS spec when overflow-x is non-visible. */
+    #jenga-timeline {
+        overflow-x: auto !important;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch;
+    }
+    .jtl-main {
+        min-width: 900px;
+    }
+
+    /* ── Drawers ─────────────────────────────────────────────────────────── */
+
+    /* Event / day drawer: full width on mobile */
+    #drawer.drawer {
+        width: 100%;
+    }
+
+    /* Cards drawer: full width */
+    #cards-drawer {
+        width: 100%;
+        right: -100%;
+    }
+
+    /* ── JengaMultiSelect dropdown ───────────────────────────────────────── */
+
+    /* Prevent dropdown from overflowing viewport */
+    .jms__dropdown {
+        max-width: calc(100vw - 16px);
+        left: 0;
+        right: 0;
+    }
+
+    /* Filter bar — all dropdowns share space equally on mobile too */
+    .jenga-filters > .jms { min-width: 80px; }
+}
+
+@media (max-width: 480px) {
+
+    /* Calendar cells even more compact */
+    .jenga-cal__week,
+    .jenga-cal__cell {
+        min-height: 70px;
+    }
+
+    /* Timeline label column minimal */
+    .jtl-panel__label {
+        width: 60px;
+        padding: 8px 4px;
+    }
+
+    .jtl-panel__icon { font-size: 12px; }
+    .jtl-panel__title { font-size: 8px; letter-spacing: 0; }
+
+    /* Month label compact on very small screens */
+    .jenga-month-label {
+        font-size: 11px;
+        max-width: 72px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    /* Insights single column */
+    .jtl-insights-panel__item { flex: 1 1 100%; }
+}
+
+/* footer */
+footer {
+    text-align: center;
+    padding: 16px;
+    font-size: 12px;
+    color: #999;
+    border-top: 1px solid #eee;
+    margin-top: 24px;
+}
+html[data-theme="dark"] footer { border-top-color: rgba(255,255,255,.08); color: rgba(245,245,247,.4); }
+
+.jenga-cal__cell--pspw-red {
+    background: rgba(239,68,68,0.15);
+    border-top: 2px solid #ef4444;
+}
+
+.jenga-cal__cell--pspw-amber {
+    background: rgba(234,179,8,0.16);
+    border-top: 2px solid #eab308;
+}
+
+.jenga-cal__cell--pspw-blue {
+    background: rgba(59,130,246,0.15);
+    border-top: 2px solid #3b82f6;
+}
+
+.pspw-box {
+    margin: 12px 16px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    font-size: 12px;
+    line-height: 1.5;
+    border-left: 4px solid;
+}
+
+.pspw-red {
+    background: rgba(239,68,68,0.08);
+    border-color: #ef4444;
+}
+
+.pspw-amber {
+    background: rgba(234,179,8,0.12);
+    border-color: #eab308;
+}
+
+.pspw-blue {
+    background: rgba(59,130,246,0.08);
+    border-color: #3b82f6;
+}
+
+.pspw-box a {
+    color: #2563eb;
+    text-decoration: underline;
+}
+html[data-theme="dark"] .jenga-cal__cell--pspw-red {
+    background: rgba(239, 68, 68, 0.18);
+    border-top-color: #ef4444;
+}
+
+html[data-theme="dark"] .jenga-cal__cell--pspw-amber {
+    background: rgba(234, 179, 8, 0.18);
+    border-top-color: #eab308;
+}
+
+html[data-theme="dark"] .jenga-cal__cell--pspw-blue {
+    background: rgba(59, 130, 246, 0.18);
+    border-top-color: #3b82f6;
+}
+
+/* ── CAB marker for Peak Season Protection Window ───────────────────────── */
+.jenga-cal__cab-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin: 2px 4px 4px;
+    padding: 2px 6px;
+    border: 1px solid rgba(245, 158, 11, .45);
+    border-radius: 4px;
+    background: rgba(245, 158, 11, .12);
+    color: #92650a;
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 1.2;
+    cursor: pointer;
+    font-family: var(--brand-font, Inter, sans-serif);
+    max-width: calc(100% - 8px);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.jenga-cal__cab-badge:hover { background: rgba(245, 158, 11, .20); }
+
+.jtl-cab-marker {
+    position: absolute;
+    width: 24px;
+    height: 24px;
+    transform: translateX(-50%);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    border-radius: 999px;
+    background: rgba(245, 158, 11, .14);
+    cursor: pointer;
+    font-size: 15px;
+    z-index: 8;
+}
+.jtl-cab-marker:hover { background: rgba(245, 158, 11, .24); }
+html[data-theme="dark"] .jenga-cal__cab-badge {
+    background: rgba(245, 158, 11, .14);
+    border-color: rgba(245, 158, 11, .50);
+    color: #fbbf24;
+}
+html[data-theme="dark"] .jtl-cab-marker { background: rgba(245, 158, 11, .16); }
+
+/* ── CAB must be the first visible calendar item ─────────────────────────── */
+.jenga-cal__cab-badge {
+    position: absolute;
+    top: 24px;
+    left: 8px;
+    z-index: 30;
+    max-width: calc(100% - 44px);
+}
+
+/* Reserve a little vertical space below the day number so regular chips do not
+   visually compete with the CAB marker. Multiday/business bars are absolute,
+   so the high z-index above keeps CAB readable even when they overlap. */
+.jenga-cal__cell:has(.jenga-cal__cab-badge) .jenga-cal__multiday-placeholder {
+    min-height: 24px;
+}
+
+.jenga-cal__cell:has(.jenga-cal__cab-badge) .jenga-cal__chips {
+    padding-top: 22px;
+}
+
+/* ── Calendar CAB row above Business Events ──────────────────────────────── */
+/* The week needs one extra visual row only when CAB and a business event are
+   present in the same rendered week. CAB stays above; business bars move down. */
+.jenga-cal__week:has(.jenga-cal__cab-badge):has(.jenga-multiday-bar--business_event),
+.jenga-cal__week:has(.jenga-cal__cab-badge):has(.jenga-chip--business_event.jenga-chip--allday),
+.jenga-cal__week:has(.jenga-cal__cab-badge):has([class*="business_event"]) {
+    min-height: calc(190px + var(--jenga-cab-row-space));
+}
+
+.jenga-cal__week:has(.jenga-cal__cab-badge):has(.jenga-multiday-bar--business_event) .jenga-cal__cell,
+.jenga-cal__week:has(.jenga-cal__cab-badge):has(.jenga-chip--business_event.jenga-chip--allday) .jenga-cal__cell,
+.jenga-cal__week:has(.jenga-cal__cab-badge):has([class*="business_event"]) .jenga-cal__cell {
+    min-height: calc(190px + var(--jenga-cab-row-space));
+}
+
+/* Move business event spanning bars below the CAB row. This avoids overlap while
+   preserving the existing business-event layout when CAB is absent. */
+.jenga-cal__week:has(.jenga-cal__cab-badge) .jenga-multiday-bar--business_event,
+.jenga-cal__week:has(.jenga-cal__cab-badge) .jenga-chip--business_event.jenga-chip--allday,
+.jenga-cal__week:has(.jenga-cal__cab-badge) [class*="business_event"].jenga-multiday-bar {
+    transform: translateY(var(--jenga-cab-row-space));
+}
+
+/* Reserve enough vertical space for single-day chips below shifted business bars.
+   JS may set an inline placeholder height; min-height keeps the fix additive. */
+.jenga-cal__week:has(.jenga-cal__cab-badge):has(.jenga-multiday-bar--business_event) .jenga-cal__multiday-placeholder,
+.jenga-cal__week:has(.jenga-cal__cab-badge):has(.jenga-chip--business_event.jenga-chip--allday) .jenga-cal__multiday-placeholder,
+.jenga-cal__week:has(.jenga-cal__cab-badge):has([class*="business_event"]) .jenga-cal__multiday-placeholder {
+    min-height: calc(24px + var(--jenga-cab-row-space)) !important;
+}
+
+/* CAB itself remains the first visible item and above bars. */
+.jenga-cal__cab-badge {
+    z-index: 60 !important;
+}
+
+/* Mobile: keep the same logic but reduce the added row height and label size. */
+@media (max-width: 768px) {
+    .jenga-cal__week:has(.jenga-cal__cab-badge):has(.jenga-multiday-bar--business_event),
+    .jenga-cal__week:has(.jenga-cal__cab-badge):has(.jenga-chip--business_event.jenga-chip--allday),
+    .jenga-cal__week:has(.jenga-cal__cab-badge):has([class*="business_event"]) {
+        min-height: calc(90px + var(--jenga-cab-row-space));
+    }
+
+    .jenga-cal__week:has(.jenga-cal__cab-badge):has(.jenga-multiday-bar--business_event) .jenga-cal__cell,
+    .jenga-cal__week:has(.jenga-cal__cab-badge):has(.jenga-chip--business_event.jenga-chip--allday) .jenga-cal__cell,
+    .jenga-cal__week:has(.jenga-cal__cab-badge):has([class*="business_event"]) .jenga-cal__cell {
+        min-height: calc(90px + var(--jenga-cab-row-space));
+    }
+
+    .jenga-cal__cab-badge {
+        top: 20px;
+        left: 4px;
+        max-width: calc(100% - 12px);
+        padding: 1px 4px;
+        font-size: 9px;
+    }
+}
+
+@media (max-width: 480px) {
+    .jenga-cal__week:has(.jenga-cal__cab-badge):has(.jenga-multiday-bar--business_event),
+    .jenga-cal__week:has(.jenga-cal__cab-badge):has(.jenga-chip--business_event.jenga-chip--allday),
+    .jenga-cal__week:has(.jenga-cal__cab-badge):has([class*="business_event"]) {
+        min-height: calc(70px + var(--jenga-cab-row-space));
+    }
+
+    .jenga-cal__week:has(.jenga-cal__cab-badge):has(.jenga-multiday-bar--business_event) .jenga-cal__cell,
+    .jenga-cal__week:has(.jenga-cal__cab-badge):has(.jenga-chip--business_event.jenga-chip--allday) .jenga-cal__cell,
+    .jenga-cal__week:has(.jenga-cal__cab-badge):has([class*="business_event"]) .jenga-cal__cell {
+        min-height: calc(70px + var(--jenga-cab-row-space));
+    }
+
+    .jenga-cal__cab-badge {
+        top: 18px;
+        font-size: 8px;
+    }
+}
+
+/* ── Always-sticky top bar ────────────────────────────────────────────────── */
+/* The top bar is always sticky. The insights panel and the announcement bar
+   live inside it as rows, so they get stickiness and background for free. */
+.jenga-top-bar {
+    position: sticky;
+    top: 0;
+    z-index: 320;
+}
+/* Insights panel row is timeline-view-only — hidden in calendar/slideshow */
+body:not(.jenga-view--timeline) .jtl-insights-panel {
+    display: none !important;
+}
+
+/* Permit sticky timeline lanes to stick to the viewport instead of being trapped
+   by an overflow context. */
+#jenga-timeline,
+.jenga-timeline-wrap,
+.jtl-main {
+    overflow-y: visible !important;
+}
+.jtl-main {
+    overflow-x: visible !important;
+}
+
+.jenga-topbar-pin-control {
+    display: block;
+    margin: 8px 12px 10px;
+    padding: 10px 0;
+    border-top: 1px solid rgba(0,0,0,.08);
+    border-bottom: 1px solid rgba(0,0,0,.08);
+}
+.jenga-setting-switch {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    cursor: pointer;
+    user-select: none;
+}
+.jenga-setting-switch__text {
+    flex: 1;
+    min-width: 0;
+}
+.jenga-setting-switch__title {
+    display: block;
+    font-size: 12px;
+    font-weight: 750;
+    color: #222;
+}
+.jenga-setting-switch__sub {
+    display: block;
+    margin-top: 2px;
+    font-size: 10px;
+    line-height: 1.25;
+    color: #888;
+}
+.jenga-setting-switch input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+.jenga-setting-switch__track {
+    position: relative;
+    width: 38px;
+    height: 22px;
+    flex-shrink: 0;
+    border-radius: 999px;
+    background: #d1d5db;
+    transition: background 140ms ease;
+}
+.jenga-setting-switch__track::after {
+    content: '';
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 1px 3px rgba(0,0,0,.25);
+    transition: transform 140ms ease;
+}
+.jenga-setting-switch input:checked + .jenga-setting-switch__track {
+    background: #3b82f6;
+}
+.jenga-setting-switch input:checked + .jenga-setting-switch__track::after {
+    transform: translateX(16px);
+}
+
+.jtl-lane__controls {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 4px;
+    padding: 0 0 4px;
+    align-self: flex-end;
+}
+.jtl-lane__controls .jtl-lane__toggle,
+.jtl-lane__pin {
+    background: none !important;
+    border: none !important;
+    box-shadow: none !important;
+    color: rgba(255,255,255,.42);
+    cursor: pointer;
+    line-height: 1;
+}
+.jtl-lane__controls .jtl-lane__toggle {
+    padding: 0 2px;
+    font-size: 10px;
+}
+.jtl-lane__pin {
+    width: 18px;
+    height: 18px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    padding: 0;
+    font-size: 12px;
+}
+.jtl-lane__pin:hover,
+.jtl-lane__controls .jtl-lane__toggle:hover {
+    color: rgba(255,255,255,.9);
+    background: rgba(255,255,255,.08) !important;
+}
+.jtl-lane--pinned {
+    position: sticky !important;
+    top: var(--jtl-pinned-top, 0px) !important;
+    z-index: var(--jtl-pinned-z, 260) !important;
+    background: #111217;
+}
+.jtl-lane--pinned > .jtl-panel {
+    box-shadow: 0 8px 18px rgba(0,0,0,.28);
+}
+.jtl-lane--pinned .jtl-lane__pin {
+    color: #fbbf24;
+    background: rgba(251,191,36,.10) !important;
+}
+
+html:not([data-theme="dark"]) .jenga-topbar-pin-control {
+    border-top-color: #eee;
+    border-bottom-color: #eee;
+}
+html:not([data-theme="dark"]) .jenga-setting-switch__title { color: #222; }
+html:not([data-theme="dark"]) .jenga-setting-switch__sub { color: #777; }
+html:not([data-theme="dark"]) .jtl-lane__controls .jtl-lane__toggle,
+html:not([data-theme="dark"]) .jtl-lane__pin {
+    color: #aaa;
+}
+html:not([data-theme="dark"]) .jtl-lane__pin:hover,
+html:not([data-theme="dark"]) .jtl-lane__controls .jtl-lane__toggle:hover {
+    color: #333;
+    background: rgba(0,0,0,.06) !important;
+}
+html:not([data-theme="dark"]) .jtl-lane--pinned {
+    background: #fff;
+}
+html:not([data-theme="dark"]) .jtl-lane--pinned > .jtl-panel {
+    box-shadow: 0 6px 16px rgba(0,0,0,.12);
+}
+html:not([data-theme="dark"]) .jtl-lane--pinned .jtl-lane__pin {
+    color: #b45309;
+    background: rgba(245,158,11,.12) !important;
+}
+html[data-theme="dark"] .jenga-setting-switch__title { color: #f5f5f7; }
+html[data-theme="dark"] .jenga-setting-switch__sub { color: rgba(245,245,247,.45); }
+html[data-theme="dark"] .jenga-topbar-pin-control {
+    border-top-color: rgba(255,255,255,.08);
+    border-bottom-color: rgba(255,255,255,.08);
+}
+
+@media (max-width: 768px) {
+    .jtl-lane__controls { gap: 2px; }
+    .jtl-lane__pin {
+        width: 16px;
+        height: 16px;
+        font-size: 11px;
+    }
+    .jenga-setting-switch__sub { display: none; }
+}
+
+/* ── Sticky lane hardening: make pinned sections really stick ─────────────── */
+/* Existing base CSS has `.jtl-lane { overflow: hidden; }`, which clips sticky
+   movement. Once a lane is pinned it must be allowed to escape its normal flow. */
+.jtl-lane--pinned {
+    position: sticky !important;
+    top: var(--jtl-pinned-top, 0px) !important;
+    z-index: var(--jtl-pinned-z, 260) !important;
+    overflow: visible !important;
+    transform: none !important;
+    contain: none !important;
+    isolation: isolate;
+}
+
+.jtl-lane--pinned > .jtl-panel {
+    background: inherit;
+}
+
+/* Sticky fails if a vertical scrolling ancestor clips overflow. Keep all timeline
+   containers vertically visible; horizontal clipping is handled by the page. */
+#jenga-timeline,
+#jenga-timeline .jenga-timeline-wrap,
+#jenga-timeline .jtl-outer,
+#jenga-timeline .jtl-main {
+    overflow-y: visible !important;
+    contain: none !important;
+    transform: none !important;
+}
+
+#jenga-timeline .jtl-lane__controls,
+#jenga-timeline .jtl-lane__pin,
+#jenga-timeline .jtl-lane__toggle {
+    pointer-events: auto !important;
+    position: relative;
+    z-index: 5;
+}
+
+/* ── Final pin behaviour: fixed top bar + fixed pinned-lane stack ─────────── */
+/* The drawer switch and auto-pin from timeline lanes both toggle this body class.
+   Use fixed instead of sticky so the top search bar is not affected by ancestors. */
+html body.jenga-topbar-pinned {
+    padding-top: var(--jenga-topbar-height, 0px) !important;
+}
+html body.jenga-topbar-pinned .jenga-top-bar {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    z-index: 1200 !important;
+}
+html body:not(.jenga-topbar-pinned) {
+    padding-top: 0 !important;
+}
+
+/* Pinned timeline lanes sit below the fixed top bar and above normal content.
+   Each .jtl-lane wrapper stays in flow as placeholder; its direct panel is fixed. */
+#jenga-timeline .jtl-lane--pinned {
+    position: relative !important;
+    min-height: var(--jtl-placeholder-height, auto) !important;
+    overflow: visible !important;
+    z-index: var(--jtl-pinned-z, 1100) !important;
+    transform: none !important;
+    contain: none !important;
+}
+#jenga-timeline .jtl-lane--pinned > .jtl-panel {
+    position: fixed !important;
+    top: var(--jtl-pinned-top, 0px) !important;
+    left: var(--jtl-fixed-left, 0px) !important;
+    width: var(--jtl-fixed-width, 100%) !important;
+    z-index: var(--jtl-pinned-z, 1100) !important;
+    background: #111217;
+    box-shadow: 0 8px 24px rgba(0,0,0,.36);
+}
+html:not([data-theme="dark"]) #jenga-timeline .jtl-lane--pinned > .jtl-panel {
+    background: #fff;
+    box-shadow: 0 6px 18px rgba(0,0,0,.14);
+}
+#jenga-timeline .jtl-lane--pinned .jtl-panel__label,
+#jenga-timeline .jtl-lane--pinned .jtl-panel__chart {
+    background: inherit;
+}
+
+/* ── FINAL V3: visible top-bar switch + deterministic pinned-lane stack ───── */
+#side-drawer,
+.side-drawer,
+#drawer.drawer,
+.drawer.open {
+    z-index: 3000 !important;
+}
+#side-overlay,
+.side-overlay {
+    z-index: 2990 !important;
+}
+
+#jenga-pin-topbar-control.jenga-topbar-pin-control {
+    display: block !important;
+    width: calc(100% - 8px);
+    margin: 8px 4px;
+    padding: 10px 14px;
+    border: 1px solid rgba(255,255,255,.12);
+    border-radius: 8px;
+    background: rgba(255,255,255,.07);
+    color: inherit;
+}
+html:not([data-theme="dark"]) #jenga-pin-topbar-control.jenga-topbar-pin-control {
+    background: #f8f8f8;
+    border-color: #ddd;
+}
+#jenga-pin-topbar-control .jenga-setting-switch {
+    display: flex !important;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+}
+#jenga-pin-topbar-control .jenga-setting-switch__text {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+#jenga-pin-topbar-control .jenga-setting-switch__title {
+    display: block;
+    font-size: 13px;
+    font-weight: 700;
+}
+#jenga-pin-topbar-control .jenga-setting-switch__sub {
+    display: block;
+    margin-top: 2px;
+    font-size: 10px;
+    opacity: .58;
+}
+
+#jenga-timeline .jtl-lane--pinned {
+    position: relative !important;
+    min-height: var(--jtl-placeholder-height, auto) !important;
+    overflow: visible !important;
+    z-index: var(--jtl-pinned-z, 2100) !important;
+    transform: none !important;
+    contain: none !important;
+}
+#jenga-timeline .jtl-lane--pinned > .jtl-panel {
+    position: fixed !important;
+    top: var(--jtl-pinned-top, 0px) !important;
+    left: var(--jtl-fixed-left, 0px) !important;
+    width: var(--jtl-fixed-width, 100%) !important;
+    z-index: var(--jtl-pinned-z, 2100) !important;
+    background: #111217;
+    box-shadow: 0 8px 24px rgba(0,0,0,.38);
+    transform: translateZ(0);
+}
+html:not([data-theme="dark"]) #jenga-timeline .jtl-lane--pinned > .jtl-panel {
+    background: #fff;
+    box-shadow: 0 6px 18px rgba(0,0,0,.14);
+}
+#jenga-timeline .jtl-lane--pinned .jtl-panel__label,
+#jenga-timeline .jtl-lane--pinned .jtl-panel__chart {
+    background: inherit;
+}
+html body.jenga-topbar-pinned .jenga-top-bar {
+    z-index: 2200 !important;
+}
+
+/* ── Lane pin disabled: keep only collapse controls + fixed top bar ───────── */
+.jtl-lane__pin {
+    display: none !important;
+}
+#jenga-timeline .jtl-lane--pinned,
+.jtl-lane--pinned {
+    position: relative !important;
+    min-height: auto !important;
+    overflow: hidden !important;
+    z-index: auto !important;
+    transform: none !important;
+    contain: none !important;
+}
+#jenga-timeline .jtl-lane--pinned > .jtl-panel,
+.jtl-lane--pinned > .jtl-panel {
+    position: static !important;
+    top: auto !important;
+    left: auto !important;
+    width: auto !important;
+    z-index: auto !important;
+    box-shadow: none !important;
+}
+
+/* ── Timeline Insights: Search Issues input ──────────────────────────────── */
+.jtl-issue-search {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    height: 32px;
+    min-width: 220px;
+    max-width: 340px;
+    flex: 0 1 300px;
+    padding: 0 4px;
+    border-radius: 8px;
+    border: 1px solid rgba(255,255,255,.12);
+    background: rgba(255,255,255,.07);
+    box-shadow: none;
+}
+.jtl-issue-search:focus-within {
+    border-color: rgba(255,255,255,.30);
+    box-shadow: 0 0 0 2px rgba(255,255,255,.05);
+}
+.jtl-issue-search__icon,
+.jtl-issue-search__clear {
+    background: none !important;
+    border: none !important;
+    box-shadow: none !important;
+    color: rgba(245,245,247,.45);
+    cursor: pointer;
+    font-size: 13px;
+    padding: 4px 6px;
+    border-radius: 4px;
+    line-height: 1;
+}
+.jtl-issue-search__icon {
+    cursor: default;
+    pointer-events: none;
+}
+.jtl-issue-search__clear:hover {
+    color: #f5f5f7;
+    background: rgba(255,255,255,.08) !important;
+}
+.jtl-issue-search__input {
+    flex: 1;
+    min-width: 0;
+    border: none;
+    outline: none;
+    background: transparent;
+    color: #e5e7eb;
+    font-size: 12px;
+    font-family: var(--brand-font);
+    padding: 6px 2px;
+}
+.jtl-issue-search__input::placeholder {
+    color: rgba(245,245,247,.45);
+}
+html:not([data-theme="dark"]) .jtl-issue-search {
+    background: #fff;
+    border-color: #ddd;
+    box-shadow: 0 1px 2px rgba(0,0,0,.08);
+}
+html:not([data-theme="dark"]) .jtl-issue-search:focus-within {
+    border-color: #999;
+    box-shadow: 0 0 0 2px rgba(0,0,0,.06);
+}
+html:not([data-theme="dark"]) .jtl-issue-search__input {
+    color: #222;
+}
+html:not([data-theme="dark"]) .jtl-issue-search__input::placeholder {
+    color: #888;
+}
+html:not([data-theme="dark"]) .jtl-issue-search__icon,
+html:not([data-theme="dark"]) .jtl-issue-search__clear {
+    color: #aaa;
+}
+html:not([data-theme="dark"]) .jtl-issue-search__clear:hover {
+    color: #333;
+    background: rgba(0,0,0,.05) !important;
+}
+@media (max-width: 768px) {
+    .jtl-issue-search {
+        flex: 1 1 100%;
+        max-width: none;
+        min-width: 0;
+    }
+}
+
+/* Search Issues: remove browser-native clear X, keep only custom fixed X */
+.jtl-issue-search__input::-webkit-search-cancel-button,
+.jtl-issue-search__input::-webkit-search-decoration,
+.jtl-issue-search__input::-webkit-search-results-button,
+.jtl-issue-search__input::-webkit-search-results-decoration {
+    -webkit-appearance: none;
+    appearance: none;
+    display: none;
+}
+.jtl-issue-search__input::-ms-clear,
+.jtl-issue-search__input::-ms-reveal {
+    display: none;
+    width: 0;
+    height: 0;
+}
+
+/* ── FINAL: timeline lane collapse/expand normalization ──────────────────── */
+/*
+   Goals:
+   1. collapsed lane = minimal height;
+   2. collapsed label keeps its normal width, so the vertical divider is aligned;
+   3. real lane icon left and chevron right, vertically aligned;
+   4. after reopening a lane, no collapsed CSS height/display constraints remain.
+*/
+
+/* Expanded state reset: this prevents lanes from staying visually compressed after reopen. */
+.jtl-lane:not(.jtl-lane--collapsed),
+.jtl-lane:not(.jtl-lane--collapsed) .jtl-panel {
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+}
+
+.jtl-lane:not(.jtl-lane--collapsed) .jtl-panel__label {
+    height: auto !important;
+    min-height: 0 !important;
+    width: var(--jtl-label-width) !important;
+    min-width: var(--jtl-label-width) !important;
+}
+
+.jtl-lane:not(.jtl-lane--collapsed) .jtl-panel__chart,
+.jtl-lane:not(.jtl-lane--collapsed) .jtl-panel__chart--biz,
+.jtl-lane:not(.jtl-lane--collapsed) .jtl-panel__legend,
+.jtl-lane:not(.jtl-lane--collapsed) .jtl-panel__subtitle,
+.jtl-lane:not(.jtl-lane--collapsed) .jtl-panel__title,
+.jtl-lane:not(.jtl-lane--collapsed) .jtl-panel__icon {
+    display: revert !important;
+}
+
+.jtl-lane:not(.jtl-lane--collapsed) .jtl-panel__chart,
+.jtl-lane:not(.jtl-lane--collapsed) .jtl-panel__chart--biz {
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    width: auto !important;
+    overflow: hidden !important;
+}
+
+.jtl-lane:not(.jtl-lane--collapsed) .jtl-panel__chart svg,
+.jtl-lane:not(.jtl-lane--collapsed) .jtl-panel__chart--biz svg {
+    width: 100% !important;
+    max-width: none !important;
+}
+
+/* Collapsed compact state. */
+.jtl-lane--collapsed {
+    min-height: var(--jtl-collapsed-height) !important;
+}
+
+.jtl-lane--collapsed .jtl-panel {
+    min-height: var(--jtl-collapsed-height) !important;
+    height: var(--jtl-collapsed-height) !important;
+    align-items: center !important;
+    overflow: hidden !important;
+    border-bottom: 1px solid rgba(255,255,255,.05) !important;
+}
+
+.jtl-lane--collapsed .jtl-panel__chart,
+.jtl-lane--collapsed .jtl-panel__chart--biz,
+.jtl-lane--collapsed .jtl-panel__legend,
+.jtl-lane--collapsed .jtl-panel__subtitle,
+.jtl-lane--collapsed .jtl-panel__title {
+    display: none !important;
+}
+
+/* Stable label width: this keeps the vertical divider aligned with opened lanes. */
+.jtl-lane--collapsed .jtl-panel__label {
+    position: relative !important;
+    width: var(--jtl-label-width) !important;
+    min-width: var(--jtl-label-width) !important;
+    height: var(--jtl-collapsed-height) !important;
+    padding: 0 !important;
+    display: block !important;
+    overflow: hidden !important;
+    border-right: 1px solid rgba(255,255,255,.07) !important;
+}
+
+/* Real lane icon/flag left, centered vertically. */
+.jtl-lane--collapsed .jtl-panel__icon {
+    position: absolute !important;
+    left: 12px !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 18px !important;
+    height: 18px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    font-size: 16px !important;
+    line-height: 1 !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    z-index: 2 !important;
+}
+
+/* Chevron right, centered vertically. */
+.jtl-lane--collapsed .jtl-lane__toggle {
+    position: absolute !important;
+    right: 12px !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 18px !important;
+    height: 18px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    font-size: 10px !important;
+    line-height: 1 !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    z-index: 3 !important;
+}
+
+/* If a controls wrapper exists, neutralize its layout impact in collapsed mode. */
+.jtl-lane--collapsed .jtl-lane__controls {
+    position: static !important;
+    width: auto !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    display: contents !important;
+}
+
+/* Pin is currently disabled globally; the visible left element is the real lane icon. */
+.jtl-lane--collapsed .jtl-lane__pin {
+    display: none !important;
+}
+
+.jtl-lane--collapsed .jtl-lane__toggle:hover {
+    color: rgba(255,255,255,.9) !important;
+    background: rgba(255,255,255,.08) !important;
+}
+
+html:not([data-theme="dark"]) .jtl-lane--collapsed .jtl-panel {
+    border-bottom-color: #f0f0f2 !important;
+}
+
+html:not([data-theme="dark"]) .jtl-lane--collapsed .jtl-panel__label {
+    border-right-color: #eee !important;
+}
+
+html:not([data-theme="dark"]) .jtl-lane--collapsed .jtl-lane__toggle {
+    color: #777 !important;
+}
+
+html:not([data-theme="dark"]) .jtl-lane--collapsed .jtl-lane__toggle:hover {
+    color: #333 !important;
+    background: rgba(0,0,0,.06) !important;
+}
+
+@media (max-width: 768px) {
+    .jtl-lane:not(.jtl-lane--collapsed) .jtl-panel__label {
+        width: var(--jtl-label-width-mobile) !important;
+        min-width: var(--jtl-label-width-mobile) !important;
+    }
+
+    .jtl-lane--collapsed {
+        min-height: var(--jtl-collapsed-height-mobile) !important;
+    }
+
+    .jtl-lane--collapsed .jtl-panel {
+        min-height: var(--jtl-collapsed-height-mobile) !important;
+        height: var(--jtl-collapsed-height-mobile) !important;
+    }
+
+    .jtl-lane--collapsed .jtl-panel__label {
+        width: var(--jtl-label-width-mobile) !important;
+        min-width: var(--jtl-label-width-mobile) !important;
+        height: var(--jtl-collapsed-height-mobile) !important;
+    }
+
+    .jtl-lane--collapsed .jtl-panel__icon {
+        left: 6px !important;
+        width: 16px !important;
+        height: 16px !important;
+        font-size: 13px !important;
+    }
+
+    .jtl-lane--collapsed .jtl-lane__toggle {
+        right: 6px !important;
+        width: 16px !important;
+        height: 16px !important;
+        font-size: 9px !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .jtl-lane:not(.jtl-lane--collapsed) .jtl-panel__label,
+    .jtl-lane--collapsed .jtl-panel__label {
+        width: var(--jtl-label-width-compact) !important;
+        min-width: var(--jtl-label-width-compact) !important;
+    }
+
+    .jtl-lane--collapsed .jtl-panel__icon {
+        left: 4px !important;
+    }
+
+    .jtl-lane--collapsed .jtl-lane__toggle {
+        right: 4px !important;
+    }
+}
+
+/* ── Slideshow ──────────────────────────────────────────────────────────────── */
+
+.jenga-slideshow-container {
+    position: fixed;
+    inset: 0;
+    background: #fff;
+    overflow: hidden;
+    z-index: 800;
+}
+
+html[data-theme="dark"] .jenga-slideshow-container {
+    background: #1c1c1e;
+}
+
+.jenga-slide {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    opacity: 0;
+    transition: opacity 0.6s ease;
+    pointer-events: none;
+}
+
+.jenga-slide--visible {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* Slide 1: calendar — label at top, calendar fills remaining space */
+.jenga-slide--1 {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    overflow: hidden;
+    padding-top: 32px; /* reserved space for the month label */
+}
+
+.jenga-slide--1 .jenga-cal {
+    flex-shrink: 0;
+}
+
+/* Month label — shared base */
+.ss-month-label {
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgba(0, 0, 0, 0.45);
+    pointer-events: none;
+    white-space: nowrap;
+}
+
+html[data-theme="dark"] .ss-month-label {
+    color: rgba(255, 255, 255, 0.35);
+}
+
+/* Slide 1: pinned to the reserved top strip */
+.jenga-slide--1 .ss-month-label {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transform: none;
+}
+
+/* Slides 2/3: in-flow above the panels, centered */
+.ss-month-label--inline {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 0 6px;
+}
+
+/* Slides 2/3: timeline — fill height, center panels vertically */
+.jenga-slide--2,
+.jenga-slide--3 {
+    justify-content: center;
+}
+
+.jenga-slide--2 .jtl-main,
+.jenga-slide--3 .jtl-main {
+    flex: 0 1 auto;
+    width: 100%;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+/* Clip milestone labels that overflow the slide edge */
+/* Slide 2: centre the axis-header month label to match slides 1 and 3 */
+.jenga-slide--2 .jtl-month-label {
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    padding: 0 0 6px;
+    text-align: center;
+}
+
+.jenga-slide--2 .jtl-milestone-label,
+.jenga-slide--3 .jtl-milestone-label {
+    max-width: 260px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+@media (max-width: 768px) {
+    .jenga-slide--2,
+    .jenga-slide--3 {
+        justify-content: flex-start;
+        overflow-y: auto;
+    }
+
+    .jenga-slide--2 .jtl-main,
+    .jenga-slide--3 .jtl-main {
+        justify-content: flex-start;
+    }
+
+    .jenga-slide--2 .jtl-milestone-label,
+    .jenga-slide--3 .jtl-milestone-label {
+        max-width: 160px;
+    }
+}
+
+/* Hide filter/search chrome from timeline when in slideshow */
+.jenga-slide .jtl-filterbar,
+.jenga-slide .jtl-issue-search {
+    display: none !important;
+}
+
+/* Day-axis ruler for slide 2 — width + margin-left set dynamically in JS */
+.ss-day-axis {
+    position: relative;
+    height: 18px;
+    flex-shrink: 0;
+    border-bottom: 1px solid rgba(0,0,0,.1);
+    font-size: 10px;
+    color: #888;
+    user-select: none;
+}
+
+html[data-theme="dark"] .ss-day-axis {
+    border-bottom-color: rgba(255,255,255,.1);
+    color: rgba(255,255,255,.4);
+}
+
+.ss-day-axis__day {
+    position: absolute;
+    transform: translateX(-50%); /* centre number on tick */
+    line-height: 18px;
+}
+
+@media (max-width: 768px) {
+    .ss-day-axis__day:nth-child(even) {
+        display: none;
+    }
+}
+
+/* Command bar */
+.jenga-slideshow-bar {
+    position: fixed;
+    bottom: 32px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 900;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(0, 0, 0, 0.78);
+    color: #fff;
+    border-radius: 40px;
+    padding: 8px 20px;
+    backdrop-filter: blur(6px);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    transition: opacity 0.4s ease;
+}
+
+.jenga-slideshow-bar--hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.ss-btn {
+    background: none;
+    border: 1px solid rgba(255,255,255,0.3);
+    color: #fff;
+    border-radius: 20px;
+    padding: 4px 14px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.ss-btn:hover {
+    background: rgba(255,255,255,0.18);
+}
+
+.ss-btn--stop {
+    border-color: #ef4444;
+    color: #fca5a5;
+}
+
+.ss-btn--stop:hover {
+    background: rgba(239,68,68,0.2);
+}
+
+.ss-indicator {
+    font-size: 13px;
+    opacity: 0.7;
+    min-width: 40px;
+    text-align: center;
+}
+
+/* ── Major Incident Alert ──────────────────────────────────────────────────── */
+
+#major-incident-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.45);
+    padding: 16px;
+}
+
+.mia-card {
+    position: relative;
+    background: #fff;
+    color: #111;
+    font-family: var(--brand-font, Inter, sans-serif);
+    border: 1px solid #fecaca;
+    border-radius: 12px;
+    max-width: 480px;
+    width: 100%;
+    padding: 0;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18);
+    overflow: hidden;
+}
+
+/* P2-only → amber border */
+#major-incident-overlay[data-severity="p2"] .mia-card {
+    border-color: #fed7aa;
+}
+
+.mia-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 14px 16px;
+}
+
+.mia-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #ef4444;
+    flex-shrink: 0;
+}
+
+#major-incident-overlay[data-severity="p2"] .mia-dot {
+    background: #f59e0b;
+}
+
+.mia-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: #111;
+    flex: 1;
+    margin: 0;
+}
+
+.mia-close {
+    background: none;
+    border: none;
+    color: #888;
+    font-size: 16px;
+    cursor: pointer;
+    line-height: 1;
+    padding: 2px 4px;
+    border-radius: 4px;
+    transition: color 0.12s ease, background 0.12s ease;
+}
+
+.mia-close:hover {
+    color: #333;
+    background: #f0f0f0;
+}
+
+.mia-divider {
+    height: 1px;
+    background: #f0f0f0;
+    margin: 0;
+}
+
+.mia-incidents {
+    padding: 12px 16px;
+    max-height: 280px;
+    overflow-y: auto;
+}
+
+.mia-incident-item {
+    padding: 10px 12px;
+    border-radius: 8px;
+    background: #fafafa;
+    border: 1px solid #f0f0f0;
+    margin-bottom: 8px;
+}
+
+.mia-incident-item:last-child {
+    margin-bottom: 0;
+}
+
+.mia-incident-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 4px;
+}
+
+.mia-incident-link,
+.mia-incident-key {
+    font-size: 12px;
+    font-weight: 700;
+    color: #0078d4;
+    text-decoration: none;
+}
+
+.mia-incident-link:hover {
+    text-decoration: underline;
+}
+
+.mia-incident-summary {
+    font-size: 13px;
+    color: #333;
+    line-height: 1.4;
+    margin-bottom: 4px;
+}
+
+.mia-affected {
+    font-size: 11px;
+    color: #6b7280;
+}
+
+.mia-priority {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 1px 5px;
+    border-radius: 3px;
+}
+
+.mia-priority--p1 { background: #fee2e2; color: #991b1b; }
+.mia-priority--p2 { background: #ffedd5; color: #9a3412; }
+
+/* ── Dark mode ── */
+html[data-theme="dark"] .mia-card {
+    background: #1c1c1e;
+    color: #f5f5f7;
+    border-color: rgba(239, 68, 68, 0.25);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.65);
+}
+
+html[data-theme="dark"] #major-incident-overlay[data-severity="p2"] .mia-card {
+    border-color: rgba(245, 158, 11, 0.3);
+}
+
+html[data-theme="dark"] .mia-title {
+    color: #f5f5f7;
+}
+
+html[data-theme="dark"] .mia-close {
+    color: rgba(245, 245, 247, 0.5);
+}
+
+html[data-theme="dark"] .mia-close:hover {
+    color: #f5f5f7;
+    background: rgba(255, 255, 255, 0.08);
+}
+
+html[data-theme="dark"] .mia-divider {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+html[data-theme="dark"] .mia-incident-item {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(255, 255, 255, 0.08);
+}
+
+html[data-theme="dark"] .mia-incident-link,
+html[data-theme="dark"] .mia-incident-key {
+    color: #60a5fa;
+}
+
+html[data-theme="dark"] .mia-incident-summary {
+    color: rgba(245, 245, 247, 0.85);
+}
+
+html[data-theme="dark"] .mia-affected {
+    color: rgba(245, 245, 247, 0.5);
+}
+
+html[data-theme="dark"] .mia-priority--p1 { background: rgba(127, 29, 29, 0.6); color: #fecaca; }
+html[data-theme="dark"] .mia-priority--p2 { background: rgba(124, 45, 18, 0.6); color: #fed7aa; }
+
+.mia-roi {
+    font-size: 11px;
+    color: #6b7280;
+    margin-top: 2px;
+}
+
+html[data-theme="dark"] .mia-roi {
+    color: rgba(245, 245, 247, 0.5);
+}
+
+/* ── ROI badge (cards drawer, event drawer) ─────────────────────────────────── */
+
+.jenga-roi-badge {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 1px 6px;
+    border-radius: 3px;
+    background: #eff6ff;
+    color: #1d4ed8;
+    letter-spacing: 0.04em;
+}
+
+html[data-theme="dark"] .jenga-roi-badge {
+    background: rgba(37, 99, 235, 0.2);
+    color: #93c5fd;
+}
+
+/* ── ITSM comparison controls ───────────────────────────────────────────────── */
+
+/* ITSM lane: flex column wrapper that holds controls + chart + legend */
+.jtl-chart-col {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Controls row — right-aligned pill buttons above the D3 chart */
+.jtl-lane-controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 4px;
+    padding: 4px 8px 2px;
+}
+
+/* Wrapper that gives the dropdown a positioning context */
+.jtl-lane-ctrl-wrap {
+    position: relative;
+}
+
+/* Base pill button style shared by avg and compare buttons */
+.jtl-avg-btn,
+.jtl-compare-btn {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 7px;
+    height: 20px;
+    border-radius: 4px;
+    border: 1px solid rgba(255,255,255,.18);
+    background: rgba(255,255,255,.06);
+    color: rgba(255,255,255,.70);
+    font-size: 10px;
+    font-family: var(--brand-font, sans-serif);
+    cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
+    line-height: 1;
+}
+.jtl-avg-btn:hover,
+.jtl-compare-btn:hover {
+    background: rgba(255,255,255,.14);
+    color: #fff;
+}
+.jtl-compare-btn--active {
+    background: rgba(99,102,241,.30);
+    border-color: rgba(99,102,241,.55);
+    color: #c7d2fe;
+}
+.jtl-compare-btn--active:hover {
+    background: rgba(99,102,241,.40);
+}
+
+/* Light mode overrides */
+html:not([data-theme="dark"]) .jtl-avg-btn,
+html[data-theme="light"] .jtl-avg-btn,
+html:not([data-theme="dark"]) .jtl-compare-btn,
+html[data-theme="light"] .jtl-compare-btn {
+    border-color: #ddd;
+    background: #f4f4f5;
+    color: #555;
+}
+html:not([data-theme="dark"]) .jtl-avg-btn:hover,
+html[data-theme="light"] .jtl-avg-btn:hover,
+html:not([data-theme="dark"]) .jtl-compare-btn:hover,
+html[data-theme="light"] .jtl-compare-btn:hover {
+    background: #e4e4e7;
+    color: #111;
+}
+html:not([data-theme="dark"]) .jtl-compare-btn--active,
+html[data-theme="light"] .jtl-compare-btn--active {
+    background: #eef2ff;
+    border-color: #a5b4fc;
+    color: #3730a3;
+}
+
+/* Comparison dropdown panel */
+.jtl-compare-dropdown {
+    position: absolute;
+    top: calc(100% + 3px);
+    right: 0;
+    z-index: 10002;
+    min-width: 130px;
+    max-height: 200px;
+    overflow-y: auto;
+    border-radius: 6px;
+    border: 1px solid rgba(255,255,255,.15);
+    background: #1e1e24;
+    box-shadow: 0 6px 20px rgba(0,0,0,.45);
+    padding: 4px 0;
+}
+.jtl-compare-dropdown--months {
+    min-width: 150px;
+}
+.jtl-compare-dropdown__item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 10px;
+    font-size: 11px;
+    color: rgba(255,255,255,.75);
+    cursor: pointer;
+    user-select: none;
+}
+.jtl-compare-dropdown__item:hover {
+    background: rgba(255,255,255,.08);
+}
+.jtl-compare-dropdown__item--active {
+    color: #a5b4fc;
+}
+.jtl-compare-dropdown__item--empty {
+    color: rgba(255,255,255,.30);
+    cursor: default;
+}
+.jtl-compare-dropdown__check {
+    width: 12px;
+    font-size: 10px;
+    flex-shrink: 0;
+    color: #818cf8;
+}
+
+html:not([data-theme="dark"]) .jtl-compare-dropdown,
+html[data-theme="light"] .jtl-compare-dropdown {
+    background: #fff;
+    border-color: #e4e4e7;
+    box-shadow: 0 4px 16px rgba(0,0,0,.12);
+}
+html:not([data-theme="dark"]) .jtl-compare-dropdown__item,
+html[data-theme="light"] .jtl-compare-dropdown__item {
+    color: #374151;
+}
+html:not([data-theme="dark"]) .jtl-compare-dropdown__item:hover,
+html[data-theme="light"] .jtl-compare-dropdown__item:hover {
+    background: #f3f4f6;
+}
+html:not([data-theme="dark"]) .jtl-compare-dropdown__item--active,
+html[data-theme="light"] .jtl-compare-dropdown__item--active {
+    color: #4338ca;
+}
+html:not([data-theme="dark"]) .jtl-compare-dropdown__item--empty,
+html[data-theme="light"] .jtl-compare-dropdown__item--empty {
+    color: #9ca3af;
+}
+html:not([data-theme="dark"]) .jtl-compare-dropdown__check,
+html[data-theme="light"] .jtl-compare-dropdown__check {
+    color: #6366f1;
+}
+
+/* Per-lane comparison legend — appears below the chart when overlays are active */
+.jtl-lane-legend {
+    display: none;
+    flex-wrap: wrap;
+    gap: 4px 14px;
+    padding: 2px 8px 8px;
+    font-size: 10px;
+    color: rgba(255,255,255,.55);
+    font-family: var(--brand-font, sans-serif);
+}
+.jtl-lane-legend--active {
+    display: flex;
+}
+.jtl-lane-legend__item {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-weight: 500;
+}
+.jtl-lane-legend__item:hover {
+    color: rgba(255,255,255,.85);
+}
+.jtl-lane-legend__dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+.jtl-lane-legend__total {
+    font-size: 9px;
+    opacity: 0.6;
+    margin-left: 3px;
+}
+
+html:not([data-theme="dark"]) .jtl-lane-legend,
+html[data-theme="light"] .jtl-lane-legend {
+    color: rgba(0,0,0,.55);
+}
+html:not([data-theme="dark"]) .jtl-lane-legend__item:hover,
+html[data-theme="light"] .jtl-lane-legend__item:hover {
+    color: rgba(0,0,0,.85);
+}
+
+/* Avg curve and comparison lines — pointer-events handled inline */
+.jtl-avg-path  { pointer-events: none; }
+.jtl-cmp-path  { pointer-events: none; }
+
+/* ── Month picker (collision popover) ──────────────────────────────────────── */
+.jtl-month-picker {
+    position: fixed;
+    z-index: 10002;
+    background: #1c1c1e;
+    border: 1px solid rgba(255,255,255,.12);
+    border-radius: 8px;
+    padding: 4px 0;
+    box-shadow: 0 4px 16px rgba(0,0,0,.5);
+    min-width: 170px;
+}
+.jtl-month-picker__item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 7px 12px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: rgba(255,255,255,.85);
+    font-size: 12px;
+    font-family: var(--brand-font, inherit);
+    text-align: left;
+    white-space: nowrap;
+}
+.jtl-month-picker__item:hover { background: rgba(255,255,255,.08); }
+.jtl-month-picker__dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+.jtl-month-picker__label { flex: 1; }
+.jtl-month-picker__crit  { color: #f5c400; font-size: 14px; line-height: 1; flex-shrink: 0; filter: drop-shadow(0 0 2px rgba(0,0,0,.4)); }
+.jtl-month-picker__count { opacity: .6; font-variant-numeric: tabular-nums; }
+
+html:not([data-theme="dark"]) .jtl-month-picker,
+html[data-theme="light"]     .jtl-month-picker {
+    background: #fff;
+    border-color: rgba(0,0,0,.1);
+    box-shadow: 0 4px 16px rgba(0,0,0,.15);
+}
+html:not([data-theme="dark"]) .jtl-month-picker__item,
+html[data-theme="light"]     .jtl-month-picker__item { color: rgba(0,0,0,.85); }
+html:not([data-theme="dark"]) .jtl-month-picker__item:hover,
+html[data-theme="light"]     .jtl-month-picker__item:hover { background: rgba(0,0,0,.05); }
+
+/* ── Toast notifications ─────────────────────────────────────── */
+.toast-container {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    z-index: 10001;
+}
+.toast {
+    background: rgba(0, 0, 0, 0.85);
+    color: #fff;
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: var(--brand-font), sans-serif;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    opacity: 0;
+    transform: translateY(-20px);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+.toast.show { opacity: 1; transform: translateY(0); }

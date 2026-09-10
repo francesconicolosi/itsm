@@ -580,7 +580,7 @@ describe('isMobileDevice', () => {
 describe('openOutlookWebCompose', () => {
     test('calls window.open with an Outlook URL', () => {
         const openSpy = jest.spyOn(window, 'open').mockImplementation(() => {});
-        openOutlookWebCompose({ to: ['alice@gucci.com'], subject: 'Hello', body: 'World' });
+        openOutlookWebCompose({ to: ['alice@brand.com'], subject: 'Hello', body: 'World' });
         expect(openSpy).toHaveBeenCalledWith(
             expect.stringContaining('outlook.office.com'),
             '_blank',

@@ -7,7 +7,8 @@ module.exports = {
     entry: {
         main: './js/domino/init.js',
         second: './js/solitaire/init.js',
-        third: './js/me.js'
+        third: './js/me.js',
+        jenga: './js/jenga/init.js',
     },
     output: {
         filename: '[name].[contenthash].bundle.js',
@@ -63,6 +64,22 @@ module.exports = {
                 useShortDoctype: true
             }
         }),
+        new HtmlWebpackPlugin({
+            template: './src/jenga.html',
+            filename: 'jenga.html',
+            inject: 'body',
+            scriptLoading: 'blocking',
+            chunks: ['jenga'],
+            minify: {
+                collapseWhitespace: true,
+                keepClosingSlash: true,
+                removeComments: true,
+                removeRedundantAttributes: false, // do not remove type="text"
+                removeScriptTypeAttributes: true,
+                removeStyleLinkTypeAttributes: true,
+                useShortDoctype: true
+            }
+        }),
         new CopyWebpackPlugin({
             patterns: [
                 { from: 'brand-specific/brand.css', to: 'brand-specific/brand.css' },
@@ -71,6 +88,7 @@ module.exports = {
                 {from: 'src/service-catalog.csv', to: 'service-catalog.csv'},
                 {from: 'src/people-database.csv', to: 'people-database.csv'},
                 {from: 'src/jira-cards.csv', to: 'jira-cards.csv'},
+                {from: 'src/jenga-events.csv', to: 'jenga-events.csv'},
                 {from: 'src/custom-filters.csv', to: 'custom-filters.csv'},
                 {from: 'src/robots.txt', to: 'robots.txt'},
                 {from: 'src/sitemap.xml', to: 'sitemap.xml'},
@@ -87,6 +105,7 @@ module.exports = {
                 return d.toLocaleString('sv', { timeZone: 'Europe/Rome' }).slice(0, 16).replace('T', ' ') + ' CEST';
             })()),
             __FEATURE_LOD__: JSON.stringify(process.env.FEATURE_LOD !== 'false'),
+            __ITSM_RETENTION_DAYS__: JSON.stringify(Number(process.env.ITSM_RETENTION_DAYS || 100)),
         }),
     ],
     module: {
