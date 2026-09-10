@@ -464,7 +464,12 @@ export class SolitaireApp {
 
         const hideTipNow = () => { if (tipEl) tipEl.classList.remove('show'); };
 
-        const getFabAnchor = (target) => target?.closest?.('[data-tooltip], .contact-fab') || null;
+        const getFabAnchor = (target) => {
+            const a = target?.closest?.('[data-tooltip], .contact-fab') || null;
+            // Drawer header buttons use CSS ::after tooltips — skip the JS system for them
+            if (a && a.closest('#drawer header')) return null;
+            return a;
+        };
 
         if (isMouseLike) {
             document.addEventListener('mouseover', (e) => {
