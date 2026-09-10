@@ -9,6 +9,8 @@ import {
 export class TeamDetailDrawer {
     constructor(app) {
         this.app = app;
+        this._currentPermalink = null;
+        this._showDetails = false;
     }
 
     open({
@@ -57,32 +59,10 @@ export class TeamDetailDrawer {
 
         titleEl.textContent = `${title ?? ''}`;
 
-        if (_permalinkSearch) {
-            const copyBtn = document.createElement('button');
-            copyBtn.className = 'drawer-copy-btn';
-            copyBtn.title = 'Copy shareable link';
-            copyBtn.textContent = '🔗';
-            copyBtn.addEventListener('click', async (e) => {
-                e.stopPropagation();
-                const url = new URL(window.location.href);
-                url.searchParams.set('search', _permalinkSearch);
-                if (_showDetails) url.searchParams.set('showDetails', 'true');
-                try {
-                    await navigator.clipboard.writeText(url.toString());
-                } catch {
-                    const ta = document.createElement('textarea');
-                    ta.value = url.toString();
-                    ta.style.cssText = 'position:fixed;top:-9999px;left:-9999px';
-                    document.body.appendChild(ta);
-                    ta.select();
-                    document.execCommand('copy');
-                    ta.remove();
-                }
-                copyBtn.textContent = '✔️';
-                setTimeout(() => { copyBtn.textContent = '🔗'; }, 1500);
-            });
-            titleEl.appendChild(copyBtn);
-        }
+        this._currentPermalink = _permalinkSearch || null;
+        this._showDetails = _showDetails;
+        const copyBtn = document.getElementById('drawerCopyLink');
+        if (copyBtn) copyBtn.style.display = _permalinkSearch ? '' : 'none';
 
         descEl.replaceChildren();
         listEl.replaceChildren();
@@ -224,6 +204,33 @@ export class TeamDetailDrawer {
     initEvents() {
         const overlay = document.getElementById('drawer-overlay');
         const closeBtn = document.getElementById('drawer-close');
+        const header = document.querySelector('#drawer header');
+        if (header && closeBtn) {
+            const copyBtn = document.createElement('button');
+            copyBtn.id = 'drawerCopyLink';
+            copyBtn.setAttribute('data-tooltip', 'Copy link');
+            copyBtn.textContent = '🔗';
+            copyBtn.style.display = 'none';
+            copyBtn.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                if (!this._currentPermalink) return;
+                const url = new URL(window.location.href);
+                url.searchParams.set('search', this._currentPermalink);
+                if (this._showDetails) url.searchParams.set('showDetails', 'true');
+                try { await navigator.clipboard.writeText(url.toString()); }
+                catch {
+                    const ta = document.createElement('textarea');
+                    ta.value = url.toString();
+                    ta.style.cssText = 'position:fixed;top:-9999px;left:-9999px';
+                    document.body.appendChild(ta); ta.select();
+                    document.execCommand('copy'); ta.remove();
+                }
+                copyBtn.textContent = '✔';
+                setTimeout(() => { copyBtn.textContent = '🔗'; }, 1500);
+                this.app.showToast('Link copied to clipboard');
+            });
+            header.insertBefore(copyBtn, closeBtn);
+        }
         overlay?.addEventListener('click', () => this.close());
         closeBtn?.addEventListener('click', () => this.close());
     }
