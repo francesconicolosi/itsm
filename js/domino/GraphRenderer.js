@@ -784,15 +784,21 @@ export class GraphRenderer {
         this.nodeGraph?.classed('domino--selected', false);
         if (nodeId) {
             this.nodeGraph?.filter(d => d.id === nodeId).classed('domino--selected', true);
-            document.getElementById('map')?.classList.add('domino-node-selected');
+            this.nodeGraph?.style('opacity', d => d.id === nodeId ? null : 0.25);
+            this.labels?.style('opacity', d => d.id === nodeId ? null : 0.12);
+            this.linkGraph?.style('opacity', 0.12);
+            document.body.classList.add('domino-node-selected');
         } else {
-            document.getElementById('map')?.classList.remove('domino-node-selected');
+            this.clearSelection();
         }
     }
 
     clearSelection() {
         this.nodeGraph?.classed('domino--selected', false);
-        document.getElementById('map')?.classList.remove('domino-node-selected');
+        this.nodeGraph?.style('opacity', null);
+        this.labels?.style('opacity', null);
+        this.linkGraph?.style('opacity', null);
+        document.body.classList.remove('domino-node-selected');
     }
 
     _arrowColor() {
