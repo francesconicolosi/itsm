@@ -11,7 +11,10 @@ export class DetailDrawer {
         this.app = app;
         this.currentNode = null;
         this._sortOrder = localStorage.getItem('domino_drawer_attr_sort') || 'original';
+        this._onClose = null;
     }
+
+    onClose(fn) { this._onClose = fn; }
 
     _updateSortButtons() {
         ['az', 'za'].forEach(order => {
@@ -91,6 +94,7 @@ export class DetailDrawer {
     }
 
     closeDrawer() {
+        this._onClose?.();
         document.getElementById('drawer')?.classList.remove('open');
         document.getElementById('overlay')?.classList.remove('open');
     }

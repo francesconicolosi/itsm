@@ -966,3 +966,24 @@ html[data-theme="dark"] footer       { color: rgba(245,245,247,0.35); }
 .domino-jira-card__priority--p2 { background: #ea580c; }
 .domino-jira-card__priority--p3 { background: #ca8a04; }
 .domino-jira-card__priority--p4 { background: #6b7280; }
+
+/* ── Node selection glow ──────────────────────────────────────────────── */
+@keyframes domino-sel-ring {
+    0%, 100% { stroke: rgba(245,158,11,.90); }
+    50%       { stroke: rgba(245,158,11,.28); }
+}
+@keyframes domino-sel-ring-dark {
+    0%, 100% { stroke: rgba(251,191,36,.85); }
+    50%       { stroke: rgba(251,191,36,.25); }
+}
+.node-group.domino--selected > circle {
+    stroke: rgba(245,158,11,.90);
+    stroke-width: 4px;
+    animation: domino-sel-ring 1.8s ease-in-out infinite;
+    filter: drop-shadow(0 0 6px rgba(245,158,11,.50));
+}
+html[data-theme="dark"] .node-group.domino--selected > circle {
+    stroke: rgba(251,191,36,.85);
+    animation: domino-sel-ring-dark 1.8s ease-in-out infinite;
+    filter: drop-shadow(0 0 6px rgba(251,191,36,.40));
+}

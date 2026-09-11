@@ -31,6 +31,7 @@ export class DominoApp {
         this.graph.initDOM();
         this.listView.initDOM();
         this.drawer.initDOM();
+        this.drawer.onClose(() => this.graph.clearSelection());
 
         const toggleDecommissioned = document.getElementById('toggle-decommissioned');
         if (toggleDecommissioned) {

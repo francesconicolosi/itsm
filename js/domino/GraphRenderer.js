@@ -134,6 +134,7 @@ export class GraphRenderer {
                 if (event.target.closest('.node-icon')) return;
                 this.clickedNode = d;
                 drawer.showNodeDetails(d);
+                this.setSelectedNode(d.id);
             });
 
         nodeGroups.append('rect')
@@ -775,7 +776,17 @@ export class GraphRenderer {
         } else if (!this.clickedNode && nodeToZoom && (!search.hideStoppedServices || activeServiceNodeIds.has(nodeToZoom.id))) {
             this.centerAndZoomOnNode(nodeToZoom);
             drawer.showNodeDetails(nodeToZoom, showDrawer);
+            if (showDrawer) this.setSelectedNode(nodeToZoom.id);
         }
+    }
+
+    setSelectedNode(nodeId) {
+        this.nodeGraph?.classed('domino--selected', false);
+        if (nodeId) this.nodeGraph?.filter(d => d.id === nodeId).classed('domino--selected', true);
+    }
+
+    clearSelection() {
+        this.nodeGraph?.classed('domino--selected', false);
     }
 
     _arrowColor() {
