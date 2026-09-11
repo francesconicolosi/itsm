@@ -736,6 +736,10 @@ body, html{
     color: #ffb3b3;
 }
 
+.modern-eyebrow.accent-orange {
+    color: #ffd699;
+}
+
 .modern-eyebrow.muted {
     color: #cccccc;
 }
