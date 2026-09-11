@@ -4837,3 +4837,43 @@ html[data-theme="light"]     .jtl-month-picker__item:hover { background: rgba(0,
     transition: opacity 0.3s ease, transform 0.3s ease;
 }
 .toast.show { opacity: 1; transform: translateY(0); }
+
+/* ── Selection glow ──────────────────────────────────────────────────── */
+@keyframes jenga-glow {
+    0%, 100% { box-shadow: 0 0 0 3px rgba(96,165,250,.25), 0 0 8px rgba(96,165,250,.20); }
+    50%       { box-shadow: 0 0 0 5px rgba(96,165,250,.12), 0 0 16px rgba(96,165,250,.35); }
+}
+@keyframes jenga-cell-glow {
+    0%, 100% { box-shadow: inset 0 0 0 2px rgba(96,165,250,.50); }
+    50%       { box-shadow: inset 0 0 0 2px rgba(96,165,250,.30), 0 0 10px rgba(96,165,250,.15); }
+}
+@keyframes jenga-glow-dark {
+    0%, 100% { box-shadow: 0 0 0 3px rgba(147,197,253,.20), 0 0 8px rgba(147,197,253,.20); }
+    50%       { box-shadow: 0 0 0 5px rgba(147,197,253,.10), 0 0 16px rgba(147,197,253,.35); }
+}
+
+.jenga-chip.jenga--selected,
+.jenga-multiday-bar.jenga--selected,
+.jenga-cal__cab-badge.jenga--selected {
+    outline: 2px solid rgba(96,165,250,.85);
+    outline-offset: 1px;
+    animation: jenga-glow 2s ease-in-out infinite;
+    position: relative;
+    z-index: 2;
+}
+.jenga-cal__cell.jenga--selected {
+    outline: 2px solid rgba(96,165,250,.70);
+    outline-offset: -2px;
+    background: rgba(96,165,250,.06);
+    animation: jenga-cell-glow 2s ease-in-out infinite;
+}
+html[data-theme="dark"] .jenga-chip.jenga--selected,
+html[data-theme="dark"] .jenga-multiday-bar.jenga--selected,
+html[data-theme="dark"] .jenga-cal__cab-badge.jenga--selected {
+    outline-color: rgba(147,197,253,.85);
+    animation: jenga-glow-dark 2s ease-in-out infinite;
+}
+html[data-theme="dark"] .jenga-cal__cell.jenga--selected {
+    outline-color: rgba(147,197,253,.60);
+    background: rgba(147,197,253,.06);
+}

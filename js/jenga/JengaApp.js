@@ -289,12 +289,18 @@ export class JengaApp {
         // Direct chip click → event detail without day context
         this.calendar.onEventClick((ev, groupedEvents) => {
             this.drawer.open(ev, false, groupedEvents);
+            this.calendar.setSelectedKey(ev.key);
             // For grouped chips, encode the representative key as `group=` so the URL
             // deep-links back to the group drawer. For single events use `event=`.
             if (!groupedEvents) this._pushUrl({ event: ev.key }, true);
             else this._pushUrl({ group: ev.key }, true);
         });
-        this.calendar.onDayClick(date => this._openDayForDate(date));
+        this.calendar.onDayClick(date => {
+            this._openDayForDate(date);
+            this.calendar.setSelectedDate(localDateStr(date));
+        });
+        this.drawer.onClose(() => this.calendar.clearSelection());
+        this.cardsDrawer.onClose(() => this.calendar.clearSelection());
 
         this.timeline.onEventClick(ev => {
             this.drawer.open(ev, false);
@@ -629,13 +635,17 @@ export class JengaApp {
                         e.dueDate?.getTime() === due
                     );
                     this.drawer.open(rep, false, grouped.length > 1 ? grouped : null);
+                    this.calendar.setSelectedKey(groupKey);
                 }
                 return;
             }
             const eventKey = p.get('event');
             if (eventKey) {
                 const ev = this.store.events.find(e => e.key === eventKey);
-                if (ev) this.drawer.open(ev, false);
+                if (ev) {
+                    this.drawer.open(ev, false);
+                    this.calendar.setSelectedKey(eventKey);
+                }
                 return;
             }
             if (p.get('slideshow') === 'true') {
@@ -656,8 +666,10 @@ export class JengaApp {
                             issueSummaryQuery
                         );
                         this.cardsDrawer.open(date, cards, cardsList);
+                        this.calendar.setSelectedDate(day);
                     } else {
                         this._openDayForDate(date);
+                        this.calendar.setSelectedDate(day);
                     }
                 }
             }

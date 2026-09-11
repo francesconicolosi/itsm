@@ -288,6 +288,7 @@ export class CalendarRenderer {
     _makeCell(date, month, singleByDay, allEvents, peakDaySet) {
         const cell = document.createElement('div');
         cell.className = 'jenga-cal__cell';
+        cell.dataset.date = this._dayKey(date);
 
         const protectionColor = getDayProtectionColor(date, allEvents);
 
@@ -342,6 +343,7 @@ export class CalendarRenderer {
             const cab = document.createElement('button');
             cab.type = 'button';
             cab.className = 'jenga-cal__cab-badge';
+            cab.dataset.key = cabEvent.key;
             cab.textContent = '📢 Change Advisory board';
             cab.addEventListener('mouseenter', (e) => this._showHoverCard(e.clientX, e.clientY, this._cabTooltipFields(cabEvent)));
             cab.addEventListener('mouseleave', () => this._hideHoverCard());
@@ -543,6 +545,7 @@ export class CalendarRenderer {
 
             const bar = document.createElement('div');
             bar.className = `jenga-multiday-bar jenga-multiday-bar--${ev.type.toLowerCase()}`;
+            bar.dataset.key = ev.key;
             bar.style.cssText = `
                 left: calc(${startDow} * (100% / 7) + 2px);
                 width: calc(${endDow - startDow + 1} * (100% / 7) - 4px);
@@ -651,6 +654,7 @@ export class CalendarRenderer {
 
         const chip = document.createElement('div');
         chip.className = `jenga-chip jenga-chip--${ev.type.toLowerCase()}`;
+        chip.dataset.key = ev.key;
         chip.style.setProperty('--chip-bg',     colors.bg);
         chip.style.setProperty('--chip-border', colors.border);
         chip.style.setProperty('--chip-text',   colors.text);
@@ -952,6 +956,32 @@ export class CalendarRenderer {
             if (cur > lastDay && weeks.length >= 5) break;
         }
         return weeks;
+    }
+
+    setSelectedKey(key) {
+        document.getElementById('jenga-calendar')
+            ?.querySelectorAll('.jenga--selected')
+            .forEach(el => el.classList.remove('jenga--selected'));
+        if (!key) return;
+        document.getElementById('jenga-calendar')
+            ?.querySelector(`[data-key="${CSS.escape(key)}"]`)
+            ?.classList.add('jenga--selected');
+    }
+
+    setSelectedDate(dateStr) {
+        document.getElementById('jenga-calendar')
+            ?.querySelectorAll('.jenga--selected')
+            .forEach(el => el.classList.remove('jenga--selected'));
+        if (!dateStr) return;
+        document.getElementById('jenga-calendar')
+            ?.querySelector(`[data-date="${dateStr}"]`)
+            ?.classList.add('jenga--selected');
+    }
+
+    clearSelection() {
+        document.getElementById('jenga-calendar')
+            ?.querySelectorAll('.jenga--selected')
+            .forEach(el => el.classList.remove('jenga--selected'));
     }
 
     _dayKey(d) {

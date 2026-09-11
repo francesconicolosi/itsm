@@ -11,7 +11,10 @@ function _priorityOrder(p) {
 export class CardsDrawer {
     constructor() {
         this._open = false;
+        this._onClose = null;
     }
+
+    onClose(fn) { this._onClose = fn; }
 
     initEvents() {
         document.getElementById('cards-drawer-close')
@@ -57,6 +60,7 @@ export class CardsDrawer {
     }
 
     close() {
+        this._onClose?.();
         const drawer  = document.getElementById('cards-drawer');
         const overlay = document.getElementById('cards-overlay');
         drawer?.classList.remove('open');

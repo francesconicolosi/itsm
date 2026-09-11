@@ -28,11 +28,13 @@ function minutesToLabel(min) {
 export class DayDrawer {
     constructor() {
         this._onEventClick = null;
+        this._onClose = null;
         this._slotPopover = null;
         this._slotPopoverOutsideHandler = null;
     }
 
     onEventClick(fn) { this._onEventClick = fn; }
+    onClose(fn) { this._onClose = fn; }
 
     open(date, events) {
         const drawer  = document.getElementById('drawer');
@@ -84,6 +86,7 @@ export class DayDrawer {
     }
 
     closeAll() {
+        this._onClose?.();
         this._hideSlotPopover();
         const drawer  = document.getElementById('drawer');
         const overlay = document.getElementById('overlay');
