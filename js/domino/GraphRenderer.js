@@ -784,7 +784,7 @@ export class GraphRenderer {
         this.nodeGraph?.classed('domino--selected', false);
         if (nodeId) {
             this.nodeGraph?.filter(d => d.id === nodeId).classed('domino--selected', true);
-            this.nodeGraph?.style('opacity', d => d.id === nodeId ? null : 0.55);
+            this.nodeGraph?.style('filter', d => d.id === nodeId ? null : 'brightness(0.55)');
             this.labels?.style('opacity', d => d.id === nodeId ? null : 0.45);
             this.linkGraph?.style('opacity', 0.45);
             document.body.classList.add('domino-node-selected');
@@ -795,7 +795,7 @@ export class GraphRenderer {
 
     clearSelection() {
         this.nodeGraph?.classed('domino--selected', false);
-        this.nodeGraph?.style('opacity', null);
+        this.nodeGraph?.style('filter', null);
         this.labels?.style('opacity', null);
         this.linkGraph?.style('opacity', null);
         document.body.classList.remove('domino-node-selected');
