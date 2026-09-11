@@ -3380,6 +3380,11 @@ html[data-theme="dark"] .jtl-cab-marker { background: rgba(245, 158, 11, .16); }
     transform: translateY(var(--jenga-cab-row-space));
 }
 
+/* Shift peak-flame icons alongside their business event bars when CAB is present. */
+.jenga-cal__week:has(.jenga-cal__cab-badge) .jenga-peak-flame {
+    transform: translateY(var(--jenga-cab-row-space));
+}
+
 /* Reserve enough vertical space for single-day chips below shifted business bars.
    JS may set an inline placeholder height; min-height keeps the fix additive. */
 .jenga-cal__week:has(.jenga-cal__cab-badge):has(.jenga-multiday-bar--business_event) .jenga-cal__multiday-placeholder,
