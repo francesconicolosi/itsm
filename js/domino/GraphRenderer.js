@@ -784,9 +784,9 @@ export class GraphRenderer {
         this.nodeGraph?.classed('domino--selected', false);
         if (nodeId) {
             this.nodeGraph?.filter(d => d.id === nodeId).classed('domino--selected', true);
-            this.nodeGraph?.style('opacity', d => d.id === nodeId ? null : 0.25);
-            this.labels?.style('opacity', d => d.id === nodeId ? null : 0.12);
-            this.linkGraph?.style('opacity', 0.12);
+            this.nodeGraph?.style('opacity', d => d.id === nodeId ? null : 0.55);
+            this.labels?.style('opacity', d => d.id === nodeId ? null : 0.45);
+            this.linkGraph?.style('opacity', 0.45);
             document.body.classList.add('domino-node-selected');
         } else {
             this.clearSelection();
