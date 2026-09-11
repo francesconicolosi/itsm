@@ -971,6 +971,18 @@ html[data-theme="dark"] footer       { color: rgba(245,245,247,0.35); }
 body.domino-node-selected .overlay.open {
     background: transparent;
 }
+/* Light mode: dim the map canvas to recreate the gray overlay effect */
+body.domino-node-selected #map {
+    background: rgba(0, 0, 0, 0.35);
+}
+html[data-theme="dark"] body.domino-node-selected #map {
+    background: #070b18;
+}
+@media (prefers-color-scheme: dark) {
+    html:not([data-theme="light"]) body.domino-node-selected #map {
+        background: #070b18;
+    }
+}
 
 /* ── Node selection glow ──────────────────────────────────────────────── */
 @keyframes domino-sel-ring {
