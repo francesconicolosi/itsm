@@ -134,7 +134,6 @@ export class GraphRenderer {
                 if (event.target.closest('.node-icon')) return;
                 this.clickedNode = d;
                 drawer.showNodeDetails(d);
-                this.setSelectedNode(d.id);
             });
 
         nodeGroups.append('rect')
@@ -776,29 +775,7 @@ export class GraphRenderer {
         } else if (!this.clickedNode && nodeToZoom && (!search.hideStoppedServices || activeServiceNodeIds.has(nodeToZoom.id))) {
             this.centerAndZoomOnNode(nodeToZoom);
             drawer.showNodeDetails(nodeToZoom, showDrawer);
-            if (showDrawer) this.setSelectedNode(nodeToZoom.id);
         }
-    }
-
-    setSelectedNode(nodeId) {
-        this.nodeGraph?.classed('domino--selected', false);
-        if (nodeId) {
-            this.nodeGraph?.filter(d => d.id === nodeId).classed('domino--selected', true);
-            this.nodeGraph?.style('filter', d => d.id === nodeId ? null : 'brightness(0.55)');
-            this.labels?.style('opacity', d => d.id === nodeId ? null : 0.45);
-            this.linkGraph?.style('opacity', 0.45);
-            document.body.classList.add('domino-node-selected');
-        } else {
-            this.clearSelection();
-        }
-    }
-
-    clearSelection() {
-        this.nodeGraph?.classed('domino--selected', false);
-        this.nodeGraph?.style('filter', null);
-        this.labels?.style('opacity', null);
-        this.linkGraph?.style('opacity', null);
-        document.body.classList.remove('domino-node-selected');
     }
 
     _arrowColor() {
