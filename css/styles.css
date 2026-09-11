@@ -382,7 +382,7 @@ button:hover {
 
 /* Unified style for all drawer header action buttons: ↑A, ↓Z, 🔗, ✖ */
 /* Placed after the global button rule so it wins the cascade without !important */
-.drawer-sort-btn, #closeDrawer {
+.drawer-sort-btn, #closeDrawer, #closeDrawer2, #drawerShareBtn {
   background: transparent;
   border: none;
   cursor: pointer;
@@ -396,11 +396,13 @@ button:hover {
   position: relative;
   transition: opacity 0.15s, background-color 0.15s;
 }
-.drawer-sort-btn:hover, #closeDrawer:hover { opacity: 1; background-color: rgba(0,0,0,0.06); color: inherit; }
+.drawer-sort-btn:hover, #closeDrawer:hover, #closeDrawer2:hover, #drawerShareBtn:hover { opacity: 1; background-color: rgba(0,0,0,0.06); color: inherit; }
 .drawer-sort-btn--active { opacity: 1; font-weight: 600; }
 #drawerSort-az { margin-left: auto; }
 .drawer-sort-btn[data-tooltip]::after,
-#closeDrawer[data-tooltip]::after {
+#closeDrawer[data-tooltip]::after,
+#closeDrawer2[data-tooltip]::after,
+#drawerShareBtn[data-tooltip]::after {
   content: attr(data-tooltip);
   position: absolute;
   bottom: calc(100% + 6px);
@@ -419,7 +421,9 @@ button:hover {
   z-index: 1000;
 }
 .drawer-sort-btn:hover[data-tooltip]::after,
-#closeDrawer:hover[data-tooltip]::after { opacity: 1; }
+#closeDrawer:hover[data-tooltip]::after,
+#closeDrawer2:hover[data-tooltip]::after,
+#drawerShareBtn:hover[data-tooltip]::after { opacity: 1; }
 
 .fade-link {
   color: black;
@@ -866,9 +870,13 @@ html[data-theme="dark"] #drawerContent    { background: #0d1120; color: #f5f5f7;
 html[data-theme="dark"] .drawer-content td { border-bottom-color: rgba(255,255,255,0.07); color: #f5f5f7; }
 html[data-theme="dark"] .drawer-content td:first-child { color: rgba(245,245,247,0.55); }
 html[data-theme="dark"] .drawer-sort-btn,
-html[data-theme="dark"] #closeDrawer { color: rgba(245,245,247,0.65); background: transparent; border-color: transparent; }
+html[data-theme="dark"] #closeDrawer,
+html[data-theme="dark"] #closeDrawer2,
+html[data-theme="dark"] #drawerShareBtn { color: rgba(245,245,247,0.65); background: transparent; border-color: transparent; }
 html[data-theme="dark"] .drawer-sort-btn:hover,
-html[data-theme="dark"] #closeDrawer:hover { background: rgba(255,255,255,0.08); color: #f5f5f7; opacity: 1; }
+html[data-theme="dark"] #closeDrawer:hover,
+html[data-theme="dark"] #closeDrawer2:hover,
+html[data-theme="dark"] #drawerShareBtn:hover { background: rgba(255,255,255,0.08); color: #f5f5f7; opacity: 1; }
 html[data-theme="dark"] .drawer-sort-btn--active { color: #f5f5f7; opacity: 1; }
 
 /* Shared widgets */
