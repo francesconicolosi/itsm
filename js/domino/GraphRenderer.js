@@ -782,11 +782,17 @@ export class GraphRenderer {
 
     setSelectedNode(nodeId) {
         this.nodeGraph?.classed('domino--selected', false);
-        if (nodeId) this.nodeGraph?.filter(d => d.id === nodeId).classed('domino--selected', true);
+        if (nodeId) {
+            this.nodeGraph?.filter(d => d.id === nodeId).classed('domino--selected', true);
+            document.getElementById('map')?.classList.add('domino-node-selected');
+        } else {
+            document.getElementById('map')?.classList.remove('domino-node-selected');
+        }
     }
 
     clearSelection() {
         this.nodeGraph?.classed('domino--selected', false);
+        document.getElementById('map')?.classList.remove('domino-node-selected');
     }
 
     _arrowColor() {

@@ -967,6 +967,11 @@ html[data-theme="dark"] footer       { color: rgba(245,245,247,0.35); }
 .domino-jira-card__priority--p3 { background: #ca8a04; }
 .domino-jira-card__priority--p4 { background: #6b7280; }
 
+/* ── Node selection: lift map above overlay so selected node stays bright */
+#map.domino-node-selected {
+    z-index: 999;
+}
+
 /* ── Node selection glow ──────────────────────────────────────────────── */
 @keyframes domino-sel-ring {
     0%, 100% { stroke: rgba(245,158,11,.90); }
