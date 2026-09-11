@@ -299,7 +299,7 @@ export class JengaApp {
             this._openDayForDate(date);
             this.calendar.setSelectedDate(localDateStr(date));
         });
-        this.drawer.onClose(() => this.calendar.clearSelection());
+        this.dayDrawer.onClose(() => this.calendar.clearSelection());
         this.cardsDrawer.onClose(() => this.calendar.clearSelection());
 
         this.timeline.onEventClick(ev => {
