@@ -964,8 +964,8 @@ export class CalendarRenderer {
             .forEach(el => el.classList.remove('jenga--selected'));
         if (!key) return;
         document.getElementById('jenga-calendar')
-            ?.querySelector(`[data-key="${CSS.escape(key)}"]`)
-            ?.classList.add('jenga--selected');
+            ?.querySelectorAll(`[data-key="${CSS.escape(key)}"]`)
+            .forEach(el => el.classList.add('jenga--selected'));
     }
 
     setSelectedDate(dateStr) {
@@ -974,8 +974,8 @@ export class CalendarRenderer {
             .forEach(el => el.classList.remove('jenga--selected'));
         if (!dateStr) return;
         document.getElementById('jenga-calendar')
-            ?.querySelector(`[data-date="${dateStr}"]`)
-            ?.classList.add('jenga--selected');
+            ?.querySelectorAll(`[data-date="${dateStr}"]`)
+            .forEach(el => el.classList.add('jenga--selected'));
     }
 
     clearSelection() {
