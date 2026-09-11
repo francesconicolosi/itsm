@@ -36,7 +36,13 @@ export class EventDrawer {
      * @param {boolean} [fromDay=false] — when true, show as level-2 panel over DayDrawer
      * @param {object[]|null} [groupedEvents=null] — all events in a grouped chip
      */
+    _setShareBtn(visible) {
+        const btn = document.getElementById('drawerShareBtn');
+        if (btn) btn.style.display = visible ? '' : 'none';
+    }
+
     open(event, fromDay = false, groupedEvents = null) {
+        this._setShareBtn(true);
         this._fromDay = fromDay;
         const title   = document.getElementById('drawer-title');
         const content = document.getElementById('drawerContent');
@@ -311,6 +317,7 @@ export class EventDrawer {
     }
 
     showAbout() {
+        this._setShareBtn(false);
         const title   = document.getElementById('drawer-title');
         const content = document.getElementById('drawerContent');
         if (!content) return;

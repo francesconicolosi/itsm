@@ -194,6 +194,7 @@ export class DetailDrawer {
     }
 
     showNodeDetails(node, openDrawer = true) {
+        this._setDrawerActions(true);
         this.currentNode = node;
         const { search, listView } = this.app;
         const keyRaw = String(node['Key'] ?? '').trim();
@@ -266,7 +267,15 @@ export class DetailDrawer {
         }
     }
 
+    _setDrawerActions(visible) {
+        ['drawerSort-az', 'drawerSort-za', 'drawerCopyLink'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.style.display = visible ? '' : 'none';
+        });
+    }
+
     showAbout() {
+        this._setDrawerActions(false);
         const drawer = document.getElementById('drawer');
         const overlay = document.getElementById('overlay');
         const drawerContent = document.getElementById('drawerContent');

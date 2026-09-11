@@ -762,6 +762,11 @@ circle {
   padding-top: 14px;
 }
 
+/* ── About panel dark mode ──────────────────────────────────────────────── */
+html[data-theme="dark"] .about-content    { color: #f5f5f7; }
+html[data-theme="dark"] .about-section h4 { color: rgba(245,245,247,.55); border-bottom-color: rgba(255,255,255,.10); }
+html[data-theme="dark"] .about-footer     { color: rgba(245,245,247,.45); border-top-color: rgba(255,255,255,.10); }
+
 /* ── Export modal ───────────────────────────────────────────────────────── */
 .export-modal-backdrop {
   position: fixed;

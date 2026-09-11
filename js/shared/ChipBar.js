@@ -144,7 +144,7 @@ export class ChipBar {
         this._clearChips();
         if (!searchTerm) {
             this._input.dataset.activeFields = '';
-            this._showInput();
+            this._showInput(false);
             return;
         }
 
@@ -290,13 +290,15 @@ export class ChipBar {
         this._revealModePrefix = null;
     }
 
-    _showInput() {
+    _showInput(focus = true) {
         this._clearChips();
         this._revealModePrefix = null;
         this._input.style.display = '';
-        this._input.focus();
-        // Trigger autocomplete suggestions immediately on reveal.
-        this._input.dispatchEvent(new Event('input', { bubbles: true }));
+        if (focus) {
+            this._input.focus();
+            // Trigger autocomplete suggestions immediately on reveal.
+            this._input.dispatchEvent(new Event('input', { bubbles: true }));
+        }
     }
 
     // Reveal the input alongside existing chips (no chip removal).
