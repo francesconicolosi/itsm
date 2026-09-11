@@ -978,11 +978,6 @@ body.domino-node-selected #map {
 html[data-theme="dark"] body.domino-node-selected #map {
     background: #070b18;
 }
-@media (prefers-color-scheme: dark) {
-    html:not([data-theme="light"]) body.domino-node-selected #map {
-        background: #070b18;
-    }
-}
 
 /* ── Node selection glow ──────────────────────────────────────────────── */
 @keyframes domino-sel-ring {
