@@ -552,15 +552,14 @@ circle {
   cursor: pointer;
 }
 @keyframes domino-sel-glow {
-  0%, 100% { filter: drop-shadow(0 0 10px rgba(245,158,11,.95)); }
-  50%       { filter: drop-shadow(0 0 5px rgba(245,158,11,.35)); }
+  0%, 100% { filter: brightness(1.5) drop-shadow(0 0 18px rgba(180,83,9,.90)); }
+  50%       { filter: brightness(1.5) drop-shadow(0 0 9px  rgba(180,83,9,.45)); }
 }
 @keyframes domino-sel-glow-dark {
   0%, 100% { filter: drop-shadow(0 0 8px rgba(251,191,36,.85)); }
   50%       { filter: drop-shadow(0 0 4px rgba(251,191,36,.20)); }
 }
 .node-group--selected {
-  filter: brightness(1.5);
 }
 .node-group--selected > circle {
   animation: domino-sel-glow 1.8s ease-in-out infinite;
