@@ -13,7 +13,7 @@ export class GraphRenderer {
         this.nodeGraph = null;
         this.labels = null;
         this.clickedNode = null;
-        this.positionLocked = false;
+        this.positionLocked = true;
         this.width = 0;
         this.height = 0;
     }
@@ -128,7 +128,20 @@ export class GraphRenderer {
                 })
                 .on('drag', (event, d) => {
                     d.fx = event.x; d.fy = event.y;
-                    if (this.positionLocked) this.simulation.tick(1);
+                    if (this.positionLocked) {
+                        d.x = event.x; d.y = event.y;
+                        this.nodeGraph.filter(n => n === d).attr('transform', `translate(${d.x},${d.y})`);
+                        this.labels.filter(l => l === d).attr('x', d.x).attr('y', d.y - 30);
+                        this.linkGraph.filter(l => l.source === d || l.target === d).each(function(l) {
+                            const dx = l.target.x - l.source.x;
+                            const dy = l.target.y - l.source.y;
+                            const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+                            d3.select(this)
+                                .attr('x1', l.source.x).attr('y1', l.source.y)
+                                .attr('x2', l.target.x - (dx / dist) * 31)
+                                .attr('y2', l.target.y - (dy / dist) * 31);
+                        });
+                    }
                 })
                 .on('end', (event, d) => {
                     if (!this.positionLocked && !event.active) this.simulation.alphaTarget(0);
