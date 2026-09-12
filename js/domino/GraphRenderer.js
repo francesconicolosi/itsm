@@ -47,6 +47,11 @@ export class GraphRenderer {
         this.clickedNode = null;
     }
 
+    clearSelection() {
+        d3.selectAll('.node-group--selected').classed('node-group--selected', false);
+        this.clickedNode = null;
+    }
+
     createMap() {
         const { store, search, listView, drawer } = this.app;
         const { nodes, links } = store;
@@ -132,7 +137,9 @@ export class GraphRenderer {
             })
             .on('click', (event, d) => {
                 if (event.target.closest('.node-icon')) return;
+                d3.selectAll('.node-group--selected').classed('node-group--selected', false);
                 this.clickedNode = d;
+                d3.select(event.currentTarget).classed('node-group--selected', true).raise();
                 drawer.showNodeDetails(d);
             });
 
@@ -224,7 +231,7 @@ export class GraphRenderer {
             const remBtn = e.target.closest('.search-remove');
 
             if (trigger) {
-                this.clickedNode = null;
+                this.clearSelection();
                 e.preventDefault();
                 const key = decodeURIComponent(trigger.getAttribute('data-key'));
                 const isAccurateSearch = key === 'Depends on' || key === 'Used by' || key === 'id';
@@ -464,7 +471,7 @@ export class GraphRenderer {
         const value = String(serviceId || '').trim();
         if (!value) return;
 
-        this.clickedNode = null;
+        this.clearSelection();
         this._closeJiraCardsPopup?.();
         this.app?.search?.updateSearchAndRefresh?.(`id:"${value}"`, false);
         window.scrollTo({ top: 0, behavior: 'smooth' });

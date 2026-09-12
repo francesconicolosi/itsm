@@ -11,6 +11,7 @@ export class DetailDrawer {
         this.app = app;
         this.currentNode = null;
         this._sortOrder = localStorage.getItem('domino_drawer_attr_sort') || 'original';
+        this.onClose = null;
     }
 
     _updateSortButtons() {
@@ -93,6 +94,7 @@ export class DetailDrawer {
     closeDrawer() {
         document.getElementById('drawer')?.classList.remove('open');
         document.getElementById('overlay')?.classList.remove('open');
+        this.onClose?.();
     }
 
     getPeopleDbLink(value, fieldKey = null) {

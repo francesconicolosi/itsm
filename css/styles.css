@@ -523,6 +523,23 @@ circle {
   stroke-width: 1px;
   cursor: pointer;
 }
+@keyframes domino-sel-glow {
+  0%, 100% { filter: drop-shadow(0 0 8px rgba(245,158,11,.90)); }
+  50%       { filter: drop-shadow(0 0 4px rgba(245,158,11,.20)); }
+}
+@keyframes domino-sel-glow-dark {
+  0%, 100% { filter: drop-shadow(0 0 8px rgba(251,191,36,.85)); }
+  50%       { filter: drop-shadow(0 0 4px rgba(251,191,36,.20)); }
+}
+.node-group--selected {
+  filter: brightness(1.7);
+}
+.node-group--selected > circle {
+  animation: domino-sel-glow 1.8s ease-in-out infinite;
+}
+html[data-theme="dark"] .node-group--selected > circle {
+  animation: domino-sel-glow-dark 1.8s ease-in-out infinite;
+}
 .node-icon {
   opacity: 0;
   pointer-events: none;

@@ -31,6 +31,7 @@ export class DominoApp {
         this.graph.initDOM();
         this.listView.initDOM();
         this.drawer.initDOM();
+        this.drawer.onClose = () => this.graph.clearSelection();
 
         const toggleDecommissioned = document.getElementById('toggle-decommissioned');
         if (toggleDecommissioned) {
@@ -83,7 +84,7 @@ export class DominoApp {
         });
 
         document.getElementById('act-clear')?.addEventListener('click', () => {
-            this.graph.clickedNode = null;
+            this.graph.clearSelection();
             this.search.searchTerm = '';
             this.search._refreshChips();
             const input = document.getElementById('drawer-search-input');
@@ -95,7 +96,7 @@ export class DominoApp {
         });
 
         document.getElementById('toggle-decommissioned')?.addEventListener('change', (e) => {
-            this.graph.clickedNode = null;
+            this.graph.clearSelection();
             this.search.hideStoppedServices = !e.target.checked;
             this.graph.updateVisualization();
         });
