@@ -57,7 +57,7 @@ export class GraphRenderer {
         this.positionLocked = locked;
         if (locked) {
             this.simulation?.nodes().forEach(d => { d.fx = d.x; d.fy = d.y; });
-            this.simulation?.stop();
+            this.simulation?.alphaTarget(0).stop();
         } else {
             this.simulation?.nodes().forEach(d => { d.fx = null; d.fy = null; });
             this.simulation?.alphaTarget(0.03).restart();
@@ -118,10 +118,18 @@ export class GraphRenderer {
             .call(d3.drag()
                 .filter(event => !event.target.closest('.node-icon'))
                 .on('start', (event, d) => {
-                    if (!this.positionLocked && !event.active) this.simulation.alphaTarget(0.3).restart();
+                    if (this.positionLocked) {
+                        this.simulation.nodes().forEach(n => { n.fx = n.x; n.fy = n.y; });
+                        this.simulation.alphaTarget(0).stop();
+                    } else if (!event.active) {
+                        this.simulation.alphaTarget(0.3).restart();
+                    }
                     d.fx = d.x; d.fy = d.y;
                 })
-                .on('drag', (event, d) => { d.fx = event.x; d.fy = event.y; })
+                .on('drag', (event, d) => {
+                    d.fx = event.x; d.fy = event.y;
+                    if (this.positionLocked) this.simulation.tick(1);
+                })
                 .on('end', (event, d) => {
                     if (!this.positionLocked && !event.active) this.simulation.alphaTarget(0);
                     d.fx = d.x; d.fy = d.y;

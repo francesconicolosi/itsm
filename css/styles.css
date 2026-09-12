@@ -559,6 +559,9 @@ circle {
   0%, 100% { filter: drop-shadow(0 0 8px rgba(251,191,36,.85)); }
   50%       { filter: drop-shadow(0 0 4px rgba(251,191,36,.20)); }
 }
+.node-group--selected {
+  filter: brightness(1.5);
+}
 .node-group--selected > circle {
   animation: domino-sel-glow 1.8s ease-in-out infinite;
 }
