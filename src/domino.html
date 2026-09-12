@@ -23,60 +23,79 @@
 <div id="side-overlay" tabindex="-1"></div>
 
 <aside id="side-drawer" aria-hidden="true" aria-labelledby="side-title" role="dialog">
-    <header class="drawer-header">
-        <h1>Domino ⚅ Dependency Mapping Visualization Tool</h1>
-        <button id="side-close" aria-label="Close">✖</button>
-    </header>
+    <div class="drawer-panels">
 
-    <nav class="content">
-        <ul class="actions">
-            <li><button id="act-about">ℹ️ About</button></li>
-            <li><button id="act-upload">📤 Upload CSV</button></li>
-            <li><button id="act-fit">↺ Fit to content</button></li>
+        <div class="drawer-panel drawer-panel--main">
+            <header class="drawer-header">
+                <h1>Domino ⚅ Dependency Mapping Visualization Tool</h1>
+                <button id="side-close" class="drawer-icon-btn" aria-label="Close">×</button>
+            </header>
+            <nav class="content">
+                <ul class="actions">
+                    <li><button id="act-about">ℹ️ About</button></li>
+                    <li><button id="act-upload">📤 Upload CSV</button></li>
+                    <li><button id="act-fit">↺ Fit to content</button></li>
+                    <li><button id="act-display-settings">⚙️ Display Settings ›</button></li>
+                    <li><button id="act-introduce">➕ Introduce New Service</button></li>
+                    <li><button id="act-update">✏️ Update Service Info</button></li>
+                    <li><button id="act-switch" onclick="window.location.href='./solitaire.html'">♤ Solitaire</button></li>
+                    <li><button id="act-switch-hub" onclick="window.location.href='./index.html'">🏠 Portfolio Index</button></li>
+                </ul>
+            </nav>
+            <footer class="drawer-footer">
+                <small id="side-last-update"></small>
+                <small id="build-info" style="opacity:0.55;display:block;margin-top:2px"></small>
+            </footer>
+        </div>
 
-            <li>
-                <label class="switch-label">
-                    🚫 Show Decommissioned
-                    <input type="checkbox" id="toggle-decommissioned">
-                    <span class="slider"></span>
-                </label>
-            </li>
-            <li>
-                <label class="switch-label">
-                    🎛️ Relaxed Search
-                    <input type="checkbox" id="relaxed-search">
-                    <span class="slider"></span>
-                </label>
-            </li>
-            <li>
-                <label class="switch-label">
-                    🔗 Show Connections
-                    <input type="checkbox" id="toggle-show-connections" checked>
-                    <span class="slider"></span>
-                </label>
-            </li>
+        <div class="drawer-panel drawer-panel--sub">
+            <header class="drawer-header">
+                <button id="sub-back" class="drawer-icon-btn" aria-label="Back">‹</button>
+                <h1 id="sub-drawer-title">Display Settings</h1>
+                <button id="sub-close" class="drawer-icon-btn" aria-label="Close">×</button>
+            </header>
+            <nav class="content">
+                <ul class="actions">
+                    <li>
+                        <label class="switch-label">
+                            🚫 Show Decommissioned
+                            <input type="checkbox" id="toggle-decommissioned">
+                            <span class="slider"></span>
+                        </label>
+                    </li>
+                    <li>
+                        <label class="switch-label">
+                            🎛️ Relaxed Search
+                            <input type="checkbox" id="relaxed-search">
+                            <span class="slider"></span>
+                        </label>
+                    </li>
+                    <li>
+                        <label class="switch-label">
+                            🔗 Show Connections
+                            <input type="checkbox" id="toggle-show-connections" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </li>
+                    <li>
+                        <label class="switch-label">
+                            🔄 Readjust Positions
+                            <input type="checkbox" id="toggle-readjust-positions" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </li>
+                    <li>
+                        <label class="switch-label">
+                            🌙 Dark Mode
+                            <input type="checkbox" id="toggle-dark-mode">
+                            <span class="slider"></span>
+                        </label>
+                    </li>
+                </ul>
+            </nav>
+        </div>
 
-
-            <li>
-                <label class="switch-label">
-                    🌙 Dark Mode
-                    <input type="checkbox" id="toggle-dark-mode">
-                    <span class="slider"></span>
-                </label>
-            </li>
-
-            <li><button id="act-introduce">➕ Introduce New Service</button></li>
-            <li><button id="act-update">✏️ Update Service Info</button></li>
-            <li><button id="act-switch" onclick="window.location.href='./solitaire.html'">♤ Solitaire</button></li>
-            <li><button id="act-switch-hub" onclick="window.location.href='./index.html'">🏠 Portfolio Index</button></li>
-
-        </ul>
-    </nav>
-
-    <footer class="drawer-footer">
-        <small id="side-last-update"></small>
-        <small id="build-info" style="opacity:0.55;display:block;margin-top:2px"></small>
-    </footer>
+    </div>
 </aside>
 
 <div class="top-bar">

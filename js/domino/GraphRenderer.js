@@ -13,6 +13,7 @@ export class GraphRenderer {
         this.nodeGraph = null;
         this.labels = null;
         this.clickedNode = null;
+        this.positionLocked = false;
         this.width = 0;
         this.height = 0;
     }
@@ -50,6 +51,17 @@ export class GraphRenderer {
     clearSelection() {
         d3.selectAll('.node-group--selected').classed('node-group--selected', false);
         this.clickedNode = null;
+    }
+
+    setPositionLocked(locked) {
+        this.positionLocked = locked;
+        if (locked) {
+            this.simulation?.nodes().forEach(d => { d.fx = d.x; d.fy = d.y; });
+            this.simulation?.stop();
+        } else {
+            this.simulation?.nodes().forEach(d => { d.fx = null; d.fy = null; });
+            this.simulation?.alphaTarget(0.03).restart();
+        }
     }
 
     createMap() {
@@ -106,12 +118,12 @@ export class GraphRenderer {
             .call(d3.drag()
                 .filter(event => !event.target.closest('.node-icon'))
                 .on('start', (event, d) => {
-                    if (!event.active) this.simulation.alphaTarget(0.3).restart();
+                    if (!this.positionLocked && !event.active) this.simulation.alphaTarget(0.3).restart();
                     d.fx = d.x; d.fy = d.y;
                 })
                 .on('drag', (event, d) => { d.fx = event.x; d.fy = event.y; })
                 .on('end', (event, d) => {
-                    if (!event.active) this.simulation.alphaTarget(0);
+                    if (!this.positionLocked && !event.active) this.simulation.alphaTarget(0);
                     d.fx = d.x; d.fy = d.y;
                 }))
             .on('mouseover', (event, d) => {

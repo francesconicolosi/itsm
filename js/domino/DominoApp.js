@@ -35,7 +35,18 @@ export class DominoApp {
 
         const toggleDecommissioned = document.getElementById('toggle-decommissioned');
         if (toggleDecommissioned) {
+            const savedDecomm = localStorage.getItem('domino_show_decommissioned');
+            if (savedDecomm !== null) toggleDecommissioned.checked = savedDecomm === 'true';
             this.search.hideStoppedServices = !toggleDecommissioned.checked;
+        }
+
+        const toggleReadjust = document.getElementById('toggle-readjust-positions');
+        if (toggleReadjust) {
+            const savedReadjust = localStorage.getItem('domino_readjust_positions');
+            if (savedReadjust !== null) {
+                toggleReadjust.checked = savedReadjust !== 'false';
+                this.graph.positionLocked = !toggleReadjust.checked;
+            }
         }
 
         const buildInfoEl = document.getElementById('build-info');
@@ -71,6 +82,12 @@ export class DominoApp {
         this.search.initShowConnectionsPersistence();
         this._ensureUploadCsvAction();
 
+        const openSub = () => document.getElementById('side-drawer')?.classList.add('sub-open');
+        const closeSub = () => document.getElementById('side-drawer')?.classList.remove('sub-open');
+        document.getElementById('act-display-settings')?.addEventListener('click', openSub);
+        document.getElementById('sub-back')?.addEventListener('click', closeSub);
+        document.getElementById('sub-close')?.addEventListener('click', closeSideDrawer);
+
         document.getElementById('act-introduce')?.addEventListener('click', () => {
             window.open(BRAND.urls.jiraNewRequest, '_blank', 'noopener');
         });
@@ -95,10 +112,16 @@ export class DominoApp {
             closeSideDrawer();
         });
 
+        document.getElementById('toggle-readjust-positions')?.addEventListener('change', (e) => {
+            this.graph.setPositionLocked(!e.target.checked);
+            localStorage.setItem('domino_readjust_positions', e.target.checked ? 'true' : 'false');
+        });
+
         document.getElementById('toggle-decommissioned')?.addEventListener('change', (e) => {
             this.graph.clearSelection();
             this.search.hideStoppedServices = !e.target.checked;
             this.graph.updateVisualization();
+            localStorage.setItem('domino_show_decommissioned', e.target.checked ? 'true' : 'false');
         });
 
         document.getElementById('toggle-dark-mode')?.addEventListener('change', (e) => {
