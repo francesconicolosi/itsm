@@ -53,6 +53,14 @@ export class GraphRenderer {
         this.clickedNode = null;
     }
 
+    selectNode(d) {
+        d3.selectAll('.node-group--selected').classed('node-group--selected', false);
+        this.clickedNode = d;
+        if (d && this.nodeGraph) {
+            this.nodeGraph.filter(n => n === d).classed('node-group--selected', true).raise();
+        }
+    }
+
     setPositionLocked(locked) {
         this.positionLocked = locked;
         if (locked) {
@@ -815,6 +823,7 @@ export class GraphRenderer {
         } else if (!this.clickedNode && nodeToZoom && (!search.hideStoppedServices || activeServiceNodeIds.has(nodeToZoom.id))) {
             this.centerAndZoomOnNode(nodeToZoom);
             drawer.showNodeDetails(nodeToZoom, showDrawer);
+            this.selectNode(nodeToZoom);
         }
     }
 
