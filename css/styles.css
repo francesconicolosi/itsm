@@ -552,8 +552,25 @@ circle {
   cursor: pointer;
 }
 @keyframes domino-sel-glow {
-  0%, 100% { filter: brightness(1.5) drop-shadow(0 0 18px rgba(180,83,9,.90)); }
-  50%       { filter: brightness(1.5) drop-shadow(0 0 9px  rgba(180,83,9,.45)); }
+  0%, 100% {
+    filter:
+            brightness(1.25)
+            saturate(1.08)
+            drop-shadow(0 0 2px rgba(251,191,36,1))
+            drop-shadow(0 0 5px rgba(251,191,36,1))
+            drop-shadow(0 0 9px rgba(251,191,36,.95))
+            drop-shadow(0 0 13px rgba(251,191,36,.90));
+  }
+
+  50% {
+    filter:
+            brightness(1.10)
+            saturate(1.04)
+            drop-shadow(0 0 1px rgba(251,191,36,.90))
+            drop-shadow(0 0 3px rgba(251,191,36,.80))
+            drop-shadow(0 0 6px rgba(251,191,36,.70))
+            drop-shadow(0 0 9px rgba(251,191,36,.60));
+  }
 }
 @keyframes domino-sel-glow-dark {
   0%, 100% { filter: drop-shadow(0 0 8px rgba(251,191,36,.85)); }
