@@ -3290,6 +3290,21 @@ html[data-theme="dark"] footer { border-top-color: rgba(255,255,255,.08); color:
     color: #2563eb;
     text-decoration: underline;
 }
+
+.day-peak-banner {
+    margin: 12px 16px 0;
+    padding: 10px 12px;
+    border-radius: 8px;
+    font-size: 12px;
+    line-height: 1.5;
+    border-left: 4px solid #f97316;
+    background: rgba(249, 115, 22, 0.08);
+}
+
+html[data-theme="dark"] .day-peak-banner {
+    background: rgba(249, 115, 22, 0.14);
+}
+
 html[data-theme="dark"] .jenga-cal__cell--pspw-red {
     background: rgba(239, 68, 68, 0.18);
     border-top-color: #ef4444;

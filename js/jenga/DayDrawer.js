@@ -182,6 +182,21 @@ may be deployed without CAB. All others require CAB approval.
         return container;
     }
 
+    _buildPeakEventsBanner(date, events) {
+        const peakEvents = events.filter(e =>
+            e.type === 'BUSINESS_EVENT' &&
+            e.peakDates?.length > 0 &&
+            e.peakDates.some(r => date >= r.start && date <= r.end)
+        );
+        if (!peakEvents.length) return null;
+
+        const names = peakEvents.map(e => `<strong>${e.summary}</strong>`).join(', ');
+        const box = document.createElement('div');
+        box.className = 'day-peak-banner';
+        box.innerHTML = `🔥 Peak traffic day for: ${names}`;
+        return box;
+    }
+
     _buildContent(date, events) {
         const frag = document.createDocumentFragment();
 
@@ -229,6 +244,9 @@ may be deployed without CAB. All others require CAB approval.
             });
         }
         frag.appendChild(allDaySection);
+
+        const peakBanner = this._buildPeakEventsBanner(date, events);
+        if (peakBanner) frag.appendChild(peakBanner);
 
         const protectionBox = this._buildProtectionInfo(events);
         if (protectionBox) {
