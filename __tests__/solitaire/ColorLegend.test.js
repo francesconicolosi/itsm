@@ -149,7 +149,7 @@ describe('ColorLegend.renderAll', () => {
         });
         const root = document.getElementById('legend-root');
         expect(root).toBeTruthy();
-        expect(root.querySelector('.legend__title').textContent).toBe('Test Legend');
+        expect(root.querySelector('.legend__title').textContent).toBe('2 Test Legend');
     });
 
     test('reuses existing #legend-root', () => {
@@ -454,5 +454,322 @@ describe('ColorLegend.enableDrag (drag to move legend)', () => {
         const handle = document.querySelector('.legend__header');
         // button: 2 (right-click) should be ignored
         expect(() => handle.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true, button: 2, clientX: 50, clientY: 50 }))).not.toThrow();
+    });
+});
+
+// ─── ColorLegend — in-legend search ──────────────────────────────────────────
+
+describe('ColorLegend in-legend search', () => {
+    beforeEach(() => {
+        localStorage.clear();
+        document.body.innerHTML = '';
+    });
+
+    afterEach(() => {
+        document.body.innerHTML = '';
+    });
+
+    function renderWithKeys(keys = ['Engineer', 'Manager', 'Designer']) {
+        const app = makeApp();
+        const cl = new ColorLegend(app);
+        const counts = new Map(keys.map(k => [k, 1]));
+        cl.renderAll({ title: 'T', fieldName: ROLE_FIELD_WITH_MAPPING, keys, counts, topKey: keys[0] || null, colorOf: emptyScale() });
+        return { cl, app };
+    }
+
+    test('renders .legend__search-toggle button', () => {
+        renderWithKeys();
+        expect(document.querySelector('.legend__search-toggle')).toBeTruthy();
+    });
+
+    test('renders .legend__search-input (initially hidden via wrapper)', () => {
+        renderWithKeys();
+        const wrap = document.querySelector('.legend__search-wrap');
+        expect(wrap).toBeTruthy();
+        expect(wrap.hidden).toBe(true);
+    });
+
+    test('clicking toggle shows search wrap and hides title', () => {
+        renderWithKeys();
+        const toggle = document.querySelector('.legend__search-toggle');
+        const wrap   = document.querySelector('.legend__search-wrap');
+        const title  = document.querySelector('.legend__title');
+        toggle.click();
+        expect(wrap.hidden).toBe(false);
+        expect(title.hidden).toBe(true);
+        expect(toggle.getAttribute('aria-pressed')).toBe('true');
+    });
+
+    test('clicking toggle again closes search and restores title', () => {
+        renderWithKeys();
+        const toggle = document.querySelector('.legend__search-toggle');
+        const wrap   = document.querySelector('.legend__search-wrap');
+        const title  = document.querySelector('.legend__title');
+        toggle.click();  // open
+        toggle.click();  // close
+        expect(wrap.hidden).toBe(true);
+        expect(title.hidden).toBe(false);
+        expect(toggle.getAttribute('aria-pressed')).toBe('false');
+    });
+
+    test('typing a query hides non-matching items and shows counter', () => {
+        renderWithKeys(['Engineer', 'Manager', 'Senior Manager']);
+        const toggle  = document.querySelector('.legend__search-toggle');
+        const input   = document.querySelector('.legend__search-input');
+        const counter = document.querySelector('.legend__search-count');
+        toggle.click();
+
+        input.value = 'manager';
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+
+        const items = document.querySelectorAll('.legend__item');
+        const visible  = [...items].filter(el => !el.hidden);
+        const hidden   = [...items].filter(el => el.hidden);
+        expect(visible.length).toBe(2);   // Manager + Senior Manager
+        expect(hidden.length).toBe(1);    // Engineer
+        expect(counter.textContent).toBe('2');
+        expect(counter.hidden).toBe(false);
+    });
+
+    test('clearing the query restores all items and hides counter', () => {
+        renderWithKeys(['Engineer', 'Manager']);
+        const toggle  = document.querySelector('.legend__search-toggle');
+        const input   = document.querySelector('.legend__search-input');
+        const counter = document.querySelector('.legend__search-count');
+        toggle.click();
+
+        input.value = 'manager';
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+
+        input.value = '';
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+
+        const items = document.querySelectorAll('.legend__item');
+        expect([...items].every(el => !el.hidden)).toBe(true);
+        expect(counter.hidden).toBe(true);
+    });
+
+    test('pressing Escape closes search and restores all items', () => {
+        renderWithKeys(['Engineer', 'Manager']);
+        const toggle = document.querySelector('.legend__search-toggle');
+        const input  = document.querySelector('.legend__search-input');
+        const wrap   = document.querySelector('.legend__search-wrap');
+        const title  = document.querySelector('.legend__title');
+        toggle.click();
+
+        input.value = 'manager';
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+        input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+
+        expect(wrap.hidden).toBe(true);
+        expect(title.hidden).toBe(false);
+        const items = document.querySelectorAll('.legend__item');
+        expect([...items].every(el => !el.hidden)).toBe(true);
+    });
+
+    test('search toggle pointerdown does not propagate (no error)', () => {
+        renderWithKeys();
+        const toggle = document.querySelector('.legend__search-toggle');
+        expect(() => toggle.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true }))).not.toThrow();
+    });
+
+    test('renders .legend__search-close button (initially hidden)', () => {
+        renderWithKeys();
+        const closeBtn = document.querySelector('.legend__search-close');
+        expect(closeBtn).toBeTruthy();
+        expect(closeBtn.hidden).toBe(true);
+    });
+
+    test('X close button appears when search opens', () => {
+        renderWithKeys();
+        const toggle   = document.querySelector('.legend__search-toggle');
+        const closeBtn = document.querySelector('.legend__search-close');
+        toggle.click();
+        expect(closeBtn.hidden).toBe(false);
+    });
+
+    test('X close button click closes search and restores title', () => {
+        renderWithKeys();
+        const toggle   = document.querySelector('.legend__search-toggle');
+        const closeBtn = document.querySelector('.legend__search-close');
+        const wrap     = document.querySelector('.legend__search-wrap');
+        const title    = document.querySelector('.legend__title');
+        toggle.click();
+        closeBtn.click();
+        expect(wrap.hidden).toBe(true);
+        expect(title.hidden).toBe(false);
+        expect(closeBtn.hidden).toBe(true);
+        expect(toggle.getAttribute('aria-pressed')).toBe('false');
+    });
+
+    test('clicking outside the legend root closes search', () => {
+        renderWithKeys();
+        const toggle = document.querySelector('.legend__search-toggle');
+        const wrap   = document.querySelector('.legend__search-wrap');
+        const title  = document.querySelector('.legend__title');
+        toggle.click();
+        expect(wrap.hidden).toBe(false);
+        document.body.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+        expect(wrap.hidden).toBe(true);
+        expect(title.hidden).toBe(false);
+    });
+
+    test('pressing Enter scrolls to first visible item', () => {
+        HTMLElement.prototype.scrollIntoView = jest.fn();
+        const spy = jest.spyOn(HTMLElement.prototype, 'scrollIntoView');
+        renderWithKeys(['Engineer', 'Manager', 'Designer']);
+        const toggle = document.querySelector('.legend__search-toggle');
+        const input  = document.querySelector('.legend__search-input');
+        toggle.click();
+        input.value = 'manager';
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+        input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+        expect(spy).toHaveBeenCalled();
+        spy.mockRestore();
+        delete HTMLElement.prototype.scrollIntoView;
+    });
+
+    test('lens click when search is open with query scrolls without closing', () => {
+        HTMLElement.prototype.scrollIntoView = jest.fn();
+        const spy = jest.spyOn(HTMLElement.prototype, 'scrollIntoView');
+        renderWithKeys(['Engineer', 'Manager', 'Designer']);
+        const toggle = document.querySelector('.legend__search-toggle');
+        const input  = document.querySelector('.legend__search-input');
+        const wrap   = document.querySelector('.legend__search-wrap');
+        toggle.click();
+        input.value = 'manager';
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+        toggle.click();
+        expect(spy).toHaveBeenCalled();
+        expect(wrap.hidden).toBe(false);
+        spy.mockRestore();
+        delete HTMLElement.prototype.scrollIntoView;
+    });
+
+    test('lens click when search is open with no query closes search', () => {
+        renderWithKeys();
+        const toggle = document.querySelector('.legend__search-toggle');
+        const wrap   = document.querySelector('.legend__search-wrap');
+        const title  = document.querySelector('.legend__title');
+        toggle.click();
+        toggle.click();
+        expect(wrap.hidden).toBe(true);
+        expect(title.hidden).toBe(false);
+    });
+
+    test('pressing Enter multiple times cycles through all matching items', () => {
+        HTMLElement.prototype.scrollIntoView = jest.fn();
+        renderWithKeys(['Manager', 'Senior Manager', 'Engineer']);
+        const toggle = document.querySelector('.legend__search-toggle');
+        const input  = document.querySelector('.legend__search-input');
+        toggle.click();
+        input.value = 'manager';
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+
+        const items = [...document.querySelectorAll('.legend__item:not([hidden])')];
+        expect(items.length).toBe(2);
+
+        // First Enter → index 0 (Manager)
+        input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+        expect(HTMLElement.prototype.scrollIntoView).toHaveBeenCalledTimes(1);
+        expect(items[0].classList.contains('legend__item--highlight')).toBe(true);
+
+        // Second Enter → index 1 (Senior Manager)
+        input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+        expect(HTMLElement.prototype.scrollIntoView).toHaveBeenCalledTimes(2);
+        expect(items[1].classList.contains('legend__item--highlight')).toBe(true);
+
+        // Third Enter → wraps back to index 0 (Manager)
+        input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+        expect(HTMLElement.prototype.scrollIntoView).toHaveBeenCalledTimes(3);
+        expect(items[0].classList.contains('legend__item--highlight')).toBe(true);
+
+        delete HTMLElement.prototype.scrollIntoView;
+    });
+
+    test('changing query resets cycling cursor to first match', () => {
+        HTMLElement.prototype.scrollIntoView = jest.fn();
+        renderWithKeys(['Manager', 'Senior Manager', 'Engineer']);
+        const toggle = document.querySelector('.legend__search-toggle');
+        const input  = document.querySelector('.legend__search-input');
+        toggle.click();
+        input.value = 'manager';
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+
+        // Advance cursor past first item
+        input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+        input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+
+        // Change query → cursor resets
+        input.value = 'engineer';
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+        input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+
+        const visible = [...document.querySelectorAll('.legend__item:not([hidden])')];
+        expect(visible.length).toBe(1);
+        expect(visible[0].querySelector('.legend__label').textContent).toBe('Engineer');
+        expect(visible[0].classList.contains('legend__item--highlight')).toBe(true);
+
+        delete HTMLElement.prototype.scrollIntoView;
+    });
+});
+
+// ─── ColorLegend — resize handle ─────────────────────────────────────────────
+
+describe('ColorLegend resize handle', () => {
+    beforeEach(() => {
+        localStorage.clear();
+        document.body.innerHTML = '';
+    });
+
+    afterEach(() => {
+        document.body.innerHTML = '';
+    });
+
+    test('renders .legend__resize-handle after enableDrag', () => {
+        const cl = new ColorLegend(makeApp());
+        cl.renderAll({ title: 'T', fieldName: ROLE_FIELD_WITH_MAPPING, keys: [], counts: new Map(), topKey: null, colorOf: emptyScale() });
+        expect(document.querySelector('.legend__resize-handle')).toBeTruthy();
+    });
+
+    test('restores saved size from localStorage', () => {
+        localStorage.setItem('legend-size-v1', JSON.stringify({ width: '400px', maxListHeight: '300px' }));
+        const cl = new ColorLegend(makeApp());
+        cl.renderAll({ title: 'T', fieldName: ROLE_FIELD_WITH_MAPPING, keys: [], counts: new Map(), topKey: null, colorOf: emptyScale() });
+        const root = document.getElementById('legend-root');
+        const list = root.querySelector('.legend__list');
+        expect(root.style.width).toBe('400px');
+        expect(list.style.maxHeight).toBe('300px');
+    });
+
+    test('pointerdown on resize handle does not throw', () => {
+        const cl = new ColorLegend(makeApp());
+        cl.renderAll({ title: 'T', fieldName: ROLE_FIELD_WITH_MAPPING, keys: [], counts: new Map(), topKey: null, colorOf: emptyScale() });
+        const handle = document.querySelector('.legend__resize-handle');
+        expect(() => handle.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true, button: 0, clientX: 200, clientY: 200 }))).not.toThrow();
+    });
+
+    test('pointermove after resize pointerdown updates styles', () => {
+        const cl = new ColorLegend(makeApp());
+        cl.renderAll({ title: 'T', fieldName: ROLE_FIELD_WITH_MAPPING, keys: [], counts: new Map(), topKey: null, colorOf: emptyScale() });
+        const root   = document.getElementById('legend-root');
+        const handle = document.querySelector('.legend__resize-handle');
+
+        handle.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true, button: 0, clientX: 100, clientY: 100 }));
+        handle.dispatchEvent(new MouseEvent('pointermove', { bubbles: true, clientX: 250, clientY: 250 }));
+        handle.dispatchEvent(new MouseEvent('pointerup',   { bubbles: true }));
+
+        // After drag, root.style.width should be set (clamped between 200–600)
+        expect(root.style.width).toMatch(/\d+px/);
+    });
+
+    test('non-primary-button pointerdown on resize handle is ignored', () => {
+        const cl = new ColorLegend(makeApp());
+        cl.renderAll({ title: 'T', fieldName: ROLE_FIELD_WITH_MAPPING, keys: [], counts: new Map(), topKey: null, colorOf: emptyScale() });
+        const root   = document.getElementById('legend-root');
+        const handle = document.querySelector('.legend__resize-handle');
+        handle.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true, button: 2, clientX: 200, clientY: 200 }));
+        // right-click should not set width
+        expect(root.style.width).toBe('');
     });
 });

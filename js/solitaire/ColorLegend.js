@@ -129,6 +129,7 @@ export class ColorLegend extends LegendBase {
         };
 
         this._wireListEvents(list, (el) => activate(el));
+        this._wireSearch(root);
 
         list.style.setProperty('--legend-row', '24px');
         list.style.maxHeight = `calc(${maxVisible} * var(--legend-row))`;
@@ -207,5 +208,6 @@ export class ColorLegend extends LegendBase {
     enableDrag({ handleSelector = null } = {}) {
         const root = document.getElementById('legend-root');
         this._enableDrag(root, { handleSelector, storageKey: 'legend-pos-v1', cornerAnchor: true });
+        this._enableResize(root, 'legend-size-v1');
     }
 }

@@ -1423,7 +1423,8 @@ g.card.card--fabs-visible .contact-fabs-svg.contact-fabs--left {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 200px;
+    flex: 1;
+    min-width: 0;
 }
 
 #legend-root .legend__count{
@@ -1645,6 +1646,9 @@ body.side-drawer-open #legend-root {
     color:#333;
     flex: 1;
     min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 /* chevron button */
@@ -1714,6 +1718,109 @@ body.side-drawer-open #legend-root {
 #legend-root .legend__collapse:hover .chevron,
 #legend-root .legend__collapse:focus-visible .chevron{
     border-color: #fff;
+}
+
+/* — Legend header actions (search toggle + collapse grouped) — */
+#legend-root .legend__header-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+/* Search toggle + close buttons — identical geometry, shared styles */
+#legend-root .legend__search-toggle,
+#legend-root .legend__search-close {
+    width: 28px;
+    height: 28px;
+    border: 1px solid rgba(0,0,0,.12);
+    background: rgba(255,255,255,0.70);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    border-radius: 8px;
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+    padding: 0;
+    color: #444;
+    transition: background-color .2s ease, border-color .2s ease, color .2s ease;
+}
+#legend-root .legend__search-toggle:hover,
+#legend-root .legend__search-toggle[aria-pressed="true"],
+#legend-root .legend__search-close:hover {
+    background: #111;
+    border-color: #111;
+    color: #fff;
+}
+#legend-root .legend__search-toggle:active,
+#legend-root .legend__search-close:active { transform: translateY(1px); }
+#legend-root .legend__search-toggle:focus-visible,
+#legend-root .legend__search-close:focus-visible { outline: 2px solid #0078d4; outline-offset: 2px; }
+#legend-root .legend__search-close[hidden] { display: none; }
+
+/* Search input area — visible when search is open */
+#legend-root .legend__search-wrap {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex: 1;
+    min-width: 0;
+}
+#legend-root .legend__search-wrap[hidden] { display: none; }
+
+#legend-root .legend__search-input {
+    flex: 1;
+    min-width: 0;
+    border: none;
+    background: transparent;
+    font: inherit;
+    font-size: 13px;
+    color: inherit;
+    outline: none;
+    appearance: none;
+    -webkit-appearance: none;
+}
+#legend-root .legend__search-input::-webkit-search-cancel-button { display: none; }
+
+#legend-root .legend__search-count {
+    font-size: 11px;
+    color: #888;
+    white-space: nowrap;
+    background: rgba(0,0,0,0.07);
+    border-radius: 10px;
+    padding: 1px 7px;
+}
+#legend-root .legend__search-count[hidden] { display: none; }
+
+/* Resize handle — bottom-right corner grip */
+#legend-root { position: relative; }
+#legend-root .legend__resize-handle {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 18px;
+    height: 18px;
+    cursor: nwse-resize;
+    opacity: 0;
+    transition: opacity 0.15s;
+    background-image:
+        radial-gradient(circle, #888 1.5px, transparent 1.5px),
+        radial-gradient(circle, #888 1.5px, transparent 1.5px),
+        radial-gradient(circle, #888 1.5px, transparent 1.5px);
+    background-size: 5px 5px;
+    background-position: 13px 13px, 8px 13px, 13px 8px;
+    background-repeat: no-repeat;
+}
+#legend-root:hover .legend__resize-handle { opacity: 0.55; }
+#legend-root .legend__resize-handle:hover { opacity: 1 !important; }
+
+/* Legend item highlight — flash on scroll-to-match */
+@keyframes legendItemHighlight {
+    0%   { background: rgba(0, 122, 255, 0.18); border-radius: 4px; }
+    100% { background: transparent; }
+}
+#legend-root .legend__item--highlight {
+    animation: legendItemHighlight 1s ease-out forwards;
 }
 
 /* marquee selection box */
@@ -2085,6 +2192,27 @@ html[data-theme="dark"] #legend-root .legend__list {
 html[data-theme="dark"] #legend-root .legend__list::-webkit-scrollbar { width: 5px; }
 html[data-theme="dark"] #legend-root .legend__list::-webkit-scrollbar-track { background: transparent; }
 html[data-theme="dark"] #legend-root .legend__list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.25); border-radius: 3px; }
+html[data-theme="dark"] #legend-root .legend__search-toggle,
+html[data-theme="dark"] #legend-root .legend__search-close { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.10); color: rgba(245,245,247,0.70); }
+html[data-theme="dark"] #legend-root .legend__search-toggle:hover,
+html[data-theme="dark"] #legend-root .legend__search-toggle[aria-pressed="true"],
+html[data-theme="dark"] #legend-root .legend__search-close:hover { background: rgba(255,255,255,0.20); border-color: rgba(255,255,255,0.35); color: #f5f5f7; }
+html[data-theme="dark"] #legend-root .legend__search-input { color: #f5f5f7; }
+html[data-theme="dark"] #legend-root .legend__search-input::placeholder { color: rgba(245,245,247,0.35); }
+html[data-theme="dark"] #legend-root .legend__search-count { color: rgba(245,245,247,0.50); background: rgba(255,255,255,0.10); }
+html[data-theme="dark"] #legend-root .legend__resize-handle {
+    background-image:
+        radial-gradient(circle, rgba(245,245,247,0.50) 1.5px, transparent 1.5px),
+        radial-gradient(circle, rgba(245,245,247,0.50) 1.5px, transparent 1.5px),
+        radial-gradient(circle, rgba(245,245,247,0.50) 1.5px, transparent 1.5px);
+}
+html[data-theme="dark"] #legend-root .legend__item--highlight {
+    animation-name: legendItemHighlightDark;
+}
+@keyframes legendItemHighlightDark {
+    0%   { background: rgba(10, 132, 255, 0.28); border-radius: 4px; }
+    100% { background: transparent; }
+}
 
 /* — Modal — */
 html[data-theme="dark"] .modal-box          { background: #1c1c1e; color: #f5f5f7; border-color: rgba(255,255,255,0.12); box-shadow: 0 20px 60px rgba(0,0,0,0.65); }
