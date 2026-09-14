@@ -1406,6 +1406,7 @@ g.card.card--fabs-visible .contact-fabs-svg.contact-fabs--left {
     line-height: 24px;
     color: #222;
 }
+#legend-root .legend__item[hidden] { display: none; }
 
 #legend-root .legend__swatch{
     width: 14px;
@@ -1613,7 +1614,7 @@ body.side-drawer-open #legend-root {
 }
 
 #legend-root .legend__collapse{
-    width: 30px;
+    width: 22px;
     height: 22px;
     border-radius: 7px;
     border: 1px solid rgba(0,0,0,.14);
@@ -1653,8 +1654,8 @@ body.side-drawer-open #legend-root {
 
 /* chevron button */
 #legend-root .legend__collapse{
-    width: 28px;
-    height: 28px;
+    width: 22px;
+    height: 22px;
     border: 1px solid rgba(0,0,0,.12);
     background: rgba(255,255,255,0.70);
     border-radius: 8px;
@@ -1731,8 +1732,8 @@ body.side-drawer-open #legend-root {
 /* Search toggle + close buttons — identical geometry, shared styles */
 #legend-root .legend__search-toggle,
 #legend-root .legend__search-close {
-    width: 28px;
-    height: 28px;
+    width: 22px;
+    height: 22px;
     border: 1px solid rgba(0,0,0,.12);
     background: rgba(255,255,255,0.70);
     backdrop-filter: blur(6px);
@@ -1757,6 +1758,34 @@ body.side-drawer-open #legend-root {
 #legend-root .legend__search-toggle:focus-visible,
 #legend-root .legend__search-close:focus-visible { outline: 2px solid #0078d4; outline-offset: 2px; }
 #legend-root .legend__search-close[hidden] { display: none; }
+
+/* Filter toggle button — same geometry as search-toggle */
+#legend-root .legend__filter-toggle {
+    width: 22px;
+    height: 22px;
+    border: 1px solid rgba(0,0,0,.12);
+    background: rgba(255,255,255,0.70);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    border-radius: 8px;
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+    padding: 0;
+    color: #444;
+    transition: background-color .2s ease, border-color .2s ease, color .2s ease;
+}
+#legend-root .legend__filter-toggle:hover,
+#legend-root .legend__filter-toggle[aria-pressed="true"] {
+    background: #111;
+    border-color: #111;
+    color: #fff;
+}
+#legend-root .legend__filter-toggle[aria-pressed="true"] svg path {
+    fill: currentColor;
+}
+#legend-root .legend__filter-toggle:active { transform: translateY(1px); }
+#legend-root .legend__filter-toggle:focus-visible { outline: 2px solid #0078d4; outline-offset: 2px; }
 
 /* Search input area — visible when search is open */
 #legend-root .legend__search-wrap {
@@ -1792,17 +1821,23 @@ body.side-drawer-open #legend-root {
 }
 #legend-root .legend__search-count[hidden] { display: none; }
 
-/* Resize handle — bottom-right corner grip */
+/* Resize handles — all four corners */
 #legend-root { position: relative; }
 #legend-root .legend__resize-handle {
     position: absolute;
-    bottom: 0;
-    right: 0;
     width: 18px;
     height: 18px;
-    cursor: nwse-resize;
     opacity: 0;
     transition: opacity 0.15s;
+    z-index: 2;
+}
+#legend-root .legend__resize-handle--nw { top: 0;    left: 0;  cursor: nwse-resize; }
+#legend-root .legend__resize-handle--ne { top: 0;    right: 0; cursor: nesw-resize; }
+#legend-root .legend__resize-handle--sw { bottom: 0; left: 0;  cursor: nesw-resize; }
+#legend-root .legend__resize-handle--se {
+    bottom: 0;
+    right: 0;
+    cursor: nwse-resize;
     background-image:
         radial-gradient(circle, #888 1.5px, transparent 1.5px),
         radial-gradient(circle, #888 1.5px, transparent 1.5px),
@@ -1811,8 +1846,9 @@ body.side-drawer-open #legend-root {
     background-position: 13px 13px, 8px 13px, 13px 8px;
     background-repeat: no-repeat;
 }
-#legend-root:hover .legend__resize-handle { opacity: 0.55; }
-#legend-root .legend__resize-handle:hover { opacity: 1 !important; }
+#legend-root:hover .legend__resize-handle    { opacity: 0.30; }
+#legend-root:hover .legend__resize-handle--se { opacity: 0.55; }
+#legend-root .legend__resize-handle:hover    { opacity: 1 !important; }
 
 /* Legend item highlight — flash on scroll-to-match */
 @keyframes legendItemHighlight {
@@ -2200,7 +2236,7 @@ html[data-theme="dark"] #legend-root .legend__search-close:hover { background: r
 html[data-theme="dark"] #legend-root .legend__search-input { color: #f5f5f7; }
 html[data-theme="dark"] #legend-root .legend__search-input::placeholder { color: rgba(245,245,247,0.35); }
 html[data-theme="dark"] #legend-root .legend__search-count { color: rgba(245,245,247,0.50); background: rgba(255,255,255,0.10); }
-html[data-theme="dark"] #legend-root .legend__resize-handle {
+html[data-theme="dark"] #legend-root .legend__resize-handle--se {
     background-image:
         radial-gradient(circle, rgba(245,245,247,0.50) 1.5px, transparent 1.5px),
         radial-gradient(circle, rgba(245,245,247,0.50) 1.5px, transparent 1.5px),

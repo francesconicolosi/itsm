@@ -29,6 +29,7 @@
 #legend.legend--collapsed .chevron::before { transform: rotate(-90deg); }
 #legend .legend__list  { padding: 0 4px; overflow-y: auto; }
 #legend .legend__item  { display: flex; align-items: center; gap: 8px; padding: 3px 8px; border-radius: 4px; cursor: pointer; font-size: 13px; }
+#legend .legend__item[hidden] { display: none; }
 #legend .legend__item:hover { background: rgba(0,0,0,.06); }
 #legend .legend__swatch { width: 12px; height: 12px; border-radius: 3px; flex-shrink: 0; }
 #legend .legend__label  { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -53,6 +54,22 @@
 #legend .legend__search-close:focus-visible { outline: 2px solid #0078d4; outline-offset: 2px; }
 #legend .legend__search-close[hidden] { display: none; }
 
+/* Filter toggle button */
+#legend .legend__filter-toggle {
+    width: 24px; height: 24px;
+    border: 1px solid rgba(0,0,0,.12);
+    background: rgba(0,0,0,0.05);
+    border-radius: 6px;
+    display: grid; place-items: center;
+    cursor: pointer; padding: 0; color: #555;
+    transition: background-color .2s ease, border-color .2s ease, color .2s ease;
+}
+#legend .legend__filter-toggle:hover,
+#legend .legend__filter-toggle[aria-pressed="true"] { background: #111; border-color: #111; color: #fff; }
+#legend .legend__filter-toggle[aria-pressed="true"] svg path { fill: currentColor; }
+#legend .legend__filter-toggle:active { transform: translateY(1px); }
+#legend .legend__filter-toggle:focus-visible { outline: 2px solid #0078d4; outline-offset: 2px; }
+
 /* Search input area */
 #legend .legend__search-wrap { display: flex; align-items: center; gap: 6px; flex: 1; min-width: 0; }
 #legend .legend__search-wrap[hidden] { display: none; }
@@ -61,10 +78,14 @@
 #legend .legend__search-count { font-size: 11px; color: #888; white-space: nowrap; background: rgba(0,0,0,0.07); border-radius: 10px; padding: 1px 7px; }
 #legend .legend__search-count[hidden] { display: none; }
 
-/* Resize handle */
-#legend .legend__resize-handle {
-    position: absolute; bottom: 0; right: 0; width: 16px; height: 16px;
-    cursor: nwse-resize; opacity: 0; transition: opacity 0.15s;
+/* Resize handles — all four corners */
+#legend { position: relative; }
+#legend .legend__resize-handle { position: absolute; width: 16px; height: 16px; opacity: 0; transition: opacity 0.15s; z-index: 2; }
+#legend .legend__resize-handle--nw { top: 0;    left: 0;  cursor: nwse-resize; }
+#legend .legend__resize-handle--ne { top: 0;    right: 0; cursor: nesw-resize; }
+#legend .legend__resize-handle--sw { bottom: 0; left: 0;  cursor: nesw-resize; }
+#legend .legend__resize-handle--se {
+    bottom: 0; right: 0; cursor: nwse-resize;
     background-image:
         radial-gradient(circle, #888 1.5px, transparent 1.5px),
         radial-gradient(circle, #888 1.5px, transparent 1.5px),
@@ -73,8 +94,9 @@
     background-position: 11px 11px, 6px 11px, 11px 6px;
     background-repeat: no-repeat;
 }
-#legend:hover .legend__resize-handle { opacity: 0.55; }
-#legend .legend__resize-handle:hover { opacity: 1 !important; }
+#legend:hover .legend__resize-handle    { opacity: 0.30; }
+#legend:hover .legend__resize-handle--se { opacity: 0.55; }
+#legend .legend__resize-handle:hover    { opacity: 1 !important; }
 
 /* Item highlight animation */
 @keyframes dominoLegendItemHighlight {

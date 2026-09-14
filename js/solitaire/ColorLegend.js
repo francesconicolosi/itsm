@@ -130,6 +130,7 @@ export class ColorLegend extends LegendBase {
 
         this._wireListEvents(list, (el) => activate(el));
         this._wireSearch(root);
+        this._wireFilterToggle(root, 'legend-filter-v1');
 
         list.style.setProperty('--legend-row', '24px');
         list.style.maxHeight = `calc(${maxVisible} * var(--legend-row))`;
