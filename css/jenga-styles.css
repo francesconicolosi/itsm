@@ -3341,7 +3341,8 @@ html[data-theme="dark"] .jenga-cal__cell--pspw-blue {
     overflow: hidden;
     text-overflow: ellipsis;
 }
-.jenga-cal__cab-badge:hover { background: rgba(245, 158, 11, .20); }
+.jenga-cal__cab-badge:hover { background: rgba(245, 158, 11, .20); color: #92650a; }
+html[data-theme="dark"] .jenga-cal__cab-badge:hover { background: rgba(245, 158, 11, .24); color: #fbbf24; }
 
 .jtl-cab-marker {
     position: absolute;
@@ -3382,9 +3383,6 @@ html[data-theme="dark"] .jtl-cab-marker { background: rgba(245, 158, 11, .16); }
     min-height: 24px;
 }
 
-.jenga-cal__cell:has(.jenga-cal__cab-badge) .jenga-cal__chips {
-    padding-top: 22px;
-}
 
 /* ── Calendar CAB row above Business Events ──────────────────────────────── */
 /* The week needs one extra visual row only when CAB and a business event are
@@ -4862,6 +4860,15 @@ html[data-theme="light"]     .jtl-month-picker__item:hover { background: rgba(0,
     0%, 100% { outline-color: rgba(251,191,36,.85); }
     50%       { outline-color: rgba(251,191,36,.25); }
 }
+/* CAB badge has an amber background — pulse background too so it's visibly highlighted */
+@keyframes jenga-cab-sel-ring {
+    0%, 100% { outline-color: rgba(245,158,11,.90); background: rgba(245,158,11,.40); }
+    50%       { outline-color: rgba(245,158,11,.28); background: rgba(245,158,11,.12); }
+}
+@keyframes jenga-cab-sel-ring-dark {
+    0%, 100% { outline-color: rgba(251,191,36,.85); background: rgba(251,191,36,.32); }
+    50%       { outline-color: rgba(251,191,36,.25); background: rgba(251,191,36,.10); }
+}
 
 /* Chips: position static by default → need position: relative for z-index */
 .jenga-chip.jenga--selected {
@@ -4873,6 +4880,13 @@ html[data-theme="light"]     .jtl-month-picker__item:hover { background: rgba(0,
     outline-offset: 1px;
     animation: jenga-sel-ring 1.8s ease-in-out infinite;
     z-index: 999;
+}
+/* CAB badge: already position: absolute — override animation to also pulse background.
+   z-index !important needed to beat the z-index: 60 !important base rule so the badge
+   rises above the overlay (z-index: 998) and appears bright like other selected items. */
+.jenga-cal__cab-badge.jenga--selected {
+    animation: jenga-cab-sel-ring 1.8s ease-in-out infinite;
+    z-index: 999 !important;
 }
 
 /* Bars: already position: absolute — only override z-index, no position change */
@@ -4896,6 +4910,9 @@ html[data-theme="dark"] .jenga-chip.jenga--selected,
 html[data-theme="dark"] .jenga-cal__cab-badge.jenga--selected {
     outline-color: rgba(251,191,36,.85);
     animation: jenga-sel-ring-dark 1.8s ease-in-out infinite;
+}
+html[data-theme="dark"] .jenga-cal__cab-badge.jenga--selected {
+    animation: jenga-cab-sel-ring-dark 1.8s ease-in-out infinite;
 }
 html[data-theme="dark"] .jenga-multiday-bar.jenga--selected {
     outline-color: rgba(251,191,36,.85);

@@ -55,8 +55,12 @@ export function parseTimeSlot(summary) {
     const match = last.match(RE_TIME_SLOT);
     if (!match) return null;
     const startMin = timeToMinutes(match[1]);
-    const endMin   = timeToMinutes(match[2]);
+    let endMin   = timeToMinutes(match[2]);
     if (startMin === null || endMin === null) return null;
+    // When endMin ≤ startMin the end-time AM/PM is likely a noon-boundary typo
+    // (Jira automation writes "12:14 AM" when it should be "12:14 PM").
+    // Fall back to a 60-minute window so column layout and block height remain correct.
+    if (endMin <= startMin) endMin = startMin + 60;
     return { timeStart: match[1].trim(), timeEnd: match[2].trim(), startMin, endMin };
 }
 
