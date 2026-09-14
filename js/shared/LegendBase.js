@@ -40,7 +40,7 @@ export class LegendBase {
           <line x1="12" y1="2" x2="2" y2="12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></line>
         </svg>
       </button>
-      <button class="legend__filter-toggle" type="button" aria-label="Filter chart by legend search" aria-pressed="false">
+      <button class="legend__filter-toggle" type="button" aria-label="Filter chart by legend search" aria-pressed="false" hidden>
         <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
           <path d="M1 1.5h10L7 6v4.5L5 10.5V6L1 1.5z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>
         </svg>
@@ -110,9 +110,10 @@ export class LegendBase {
         // Open or close the legend's search-wrap to match filter state.
         // Deferred so _wireSearch event handlers are already registered.
         const syncSearchWrap = (on) => {
-            const wrap       = root.querySelector('.legend__search-wrap');
+            const wrap         = root.querySelector('.legend__search-wrap');
             const searchToggle = root.querySelector('.legend__search-toggle');
-            const closeBtn   = root.querySelector('.legend__search-close');
+            const closeBtn     = root.querySelector('.legend__search-close');
+            const filterBtnEl  = root.querySelector('.legend__filter-toggle');
             if (on) {
                 if (wrap?.hidden) {
                     // Directly open without auto-focusing (less jarring on page load)
@@ -120,6 +121,7 @@ export class LegendBase {
                     if (title) title.hidden = true;
                     wrap.hidden = false;
                     if (closeBtn) closeBtn.hidden = false;
+                    if (filterBtnEl) filterBtnEl.hidden = false;
                     if (searchToggle) searchToggle.setAttribute('aria-pressed', 'true');
                 }
             } else {
@@ -139,6 +141,11 @@ export class LegendBase {
             btn.setAttribute('aria-pressed', String(active));
             try { localStorage.setItem(lsKey, active ? '1' : '0'); } catch {}
             syncSearchWrap(active);
+            // If turning filter ON while search is already open, re-apply immediately
+            if (active) {
+                const si = root.querySelector('.legend__search-input');
+                if (si) si.dispatchEvent(new Event('input'));
+            }
         });
         btn.addEventListener('pointerdown', (e) => e.stopPropagation());
     }
@@ -159,19 +166,24 @@ export class LegendBase {
         const updateFilter = () => {
             matchIndex = 0;
             const q = input.value.trim().toLowerCase();
+            const filterOn = this._isFilterActive(root);
             let matches = 0;
             list.querySelectorAll('.legend__item').forEach(item => {
                 const label = (item.querySelector('.legend__label')?.textContent || '').toLowerCase();
-                const visible = !q || label.includes(q);
-                item.hidden = !visible;
-                if (visible) matches++;
+                const matched = !q || label.includes(q);
+                item.classList.toggle('legend__item--filtered-out', filterOn && !matched);
+                item.dataset.matched = (q && matched) ? 'true' : '';
+                if (matched) matches++;
             });
             counter.textContent = q ? String(matches) : '';
             counter.hidden = !q;
         };
 
         const scrollToNextMatch = () => {
-            const items = [...list.querySelectorAll('.legend__item:not([hidden])')];
+            const filterOn = this._isFilterActive(root);
+            const items = [...list.querySelectorAll(
+                filterOn ? '.legend__item:not(.legend__item--filtered-out)' : '.legend__item[data-matched="true"]'
+            )];
             if (!items.length) return;
             if (matchIndex >= items.length) matchIndex = 0;
             const target = items[matchIndex];
@@ -196,8 +208,13 @@ export class LegendBase {
             title.hidden = false;
             wrap.hidden = true;
             if (closeBtn) closeBtn.hidden = true;
+            const filterBtn = root.querySelector('.legend__filter-toggle');
+            if (filterBtn) filterBtn.hidden = true;
             toggle.setAttribute('aria-pressed', 'false');
-            list.querySelectorAll('.legend__item').forEach(item => { item.hidden = false; });
+            list.querySelectorAll('.legend__item').forEach(item => {
+                item.classList.remove('legend__item--filtered-out');
+                item.dataset.matched = '';
+            });
             counter.textContent = '';
             counter.hidden = true;
             if (outsideClickFn) {
@@ -210,6 +227,14 @@ export class LegendBase {
             title.hidden = true;
             wrap.hidden = false;
             if (closeBtn) closeBtn.hidden = false;
+            const filterBtn = root.querySelector('.legend__filter-toggle');
+            if (filterBtn) {
+                filterBtn.classList.add('legend__filter-toggle--entering');
+                filterBtn.hidden = false;
+                requestAnimationFrame(() => requestAnimationFrame(() =>
+                    filterBtn.classList.remove('legend__filter-toggle--entering')
+                ));
+            }
             toggle.setAttribute('aria-pressed', 'true');
             input.focus();
             updateFilter();

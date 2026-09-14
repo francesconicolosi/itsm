@@ -1407,6 +1407,16 @@ g.card.card--fabs-visible .contact-fabs-svg.contact-fabs--left {
     color: #222;
 }
 #legend-root .legend__item[hidden] { display: none; }
+#legend-root .legend__item {
+    max-height: 40px;
+    overflow: hidden;
+    transition: max-height .18s ease-out, opacity .14s ease, margin .18s ease-out;
+}
+#legend-root .legend__item--filtered-out {
+    max-height: 0 !important;
+    opacity: 0;
+    pointer-events: none;
+}
 
 #legend-root .legend__swatch{
     width: 14px;
@@ -1773,8 +1783,13 @@ body.side-drawer-open #legend-root {
     cursor: pointer;
     padding: 0;
     color: #444;
-    transition: background-color .2s ease, border-color .2s ease, color .2s ease;
+    opacity: 1;
+    transform: translateX(0);
+    transition: background-color .2s ease, border-color .2s ease, color .2s ease,
+                opacity .18s ease, transform .18s ease;
 }
+#legend-root .legend__filter-toggle[hidden] { display: none; }
+#legend-root .legend__filter-toggle--entering { opacity: 0 !important; transform: translateX(6px); }
 #legend-root .legend__filter-toggle:hover,
 #legend-root .legend__filter-toggle[aria-pressed="true"] {
     background: #111;
