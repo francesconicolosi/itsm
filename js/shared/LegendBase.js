@@ -25,6 +25,7 @@ export class LegendBase {
     <div class="legend__title" role="heading" aria-level="2"></div>
     <div class="legend__search-wrap" hidden>
       <input class="legend__search-input" type="text" autocomplete="off" spellcheck="false" aria-label="Search legend" />
+      <button class="legend__search-clear" type="button" aria-label="Clear search" hidden>&#xD7;</button>
       <span class="legend__search-count" aria-live="polite" hidden></span>
     </div>
     <div class="legend__header-actions">
@@ -32,12 +33,6 @@ export class LegendBase {
         <svg width="12" height="12" viewBox="0 0 14 14" fill="none" aria-hidden="true">
           <circle cx="6" cy="6" r="4.5" stroke="currentColor" stroke-width="1.5"></circle>
           <line x1="9.5" y1="9.5" x2="13" y2="13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></line>
-        </svg>
-      </button>
-      <button class="legend__search-close" type="button" aria-label="Close search" hidden>
-        <svg width="12" height="12" viewBox="0 0 14 14" fill="none" aria-hidden="true">
-          <line x1="2" y1="2" x2="12" y2="12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></line>
-          <line x1="12" y1="2" x2="2" y2="12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></line>
         </svg>
       </button>
       <button class="legend__filter-toggle" type="button" aria-label="Filter chart by legend search" aria-pressed="false" hidden>
@@ -107,28 +102,20 @@ export class LegendBase {
         btn.setAttribute('aria-pressed', String(active));
         btn.dataset.legendFilterKey = lsKey;
 
-        // Open or close the legend's search-wrap to match filter state.
-        // Deferred so _wireSearch event handlers are already registered.
+        // Open search-wrap if not already open (used on page-load restore and filter-ON).
+        // Turning filter OFF does NOT close search — it just re-applies the filter (shows all).
         const syncSearchWrap = (on) => {
+            if (!on) return;
             const wrap         = root.querySelector('.legend__search-wrap');
             const searchToggle = root.querySelector('.legend__search-toggle');
-            const closeBtn     = root.querySelector('.legend__search-close');
             const filterBtnEl  = root.querySelector('.legend__filter-toggle');
-            if (on) {
-                if (wrap?.hidden) {
-                    // Directly open without auto-focusing (less jarring on page load)
-                    const title = root.querySelector('.legend__title');
-                    if (title) title.hidden = true;
-                    wrap.hidden = false;
-                    if (closeBtn) closeBtn.hidden = false;
-                    if (filterBtnEl) filterBtnEl.hidden = false;
-                    if (searchToggle) searchToggle.setAttribute('aria-pressed', 'true');
-                }
-            } else {
-                if (!wrap?.hidden) {
-                    // Use the X button so _wireSearch's close() runs and cleans up
-                    if (closeBtn) closeBtn.click();
-                }
+            if (wrap?.hidden) {
+                // Open without auto-focusing (less jarring on page load)
+                const title = root.querySelector('.legend__title');
+                if (title) title.hidden = true;
+                wrap.hidden = false;
+                if (filterBtnEl) filterBtnEl.hidden = false;
+                if (searchToggle) searchToggle.setAttribute('aria-pressed', 'true');
             }
         };
 
@@ -140,12 +127,10 @@ export class LegendBase {
             active = !active;
             btn.setAttribute('aria-pressed', String(active));
             try { localStorage.setItem(lsKey, active ? '1' : '0'); } catch {}
-            syncSearchWrap(active);
-            // If turning filter ON while search is already open, re-apply immediately
-            if (active) {
-                const si = root.querySelector('.legend__search-input');
-                if (si) si.dispatchEvent(new Event('input'));
-            }
+            if (active) syncSearchWrap(true);
+            // Re-apply filter: when ON hides non-matches, when OFF shows all items again
+            const si = root.querySelector('.legend__search-input');
+            if (si) si.dispatchEvent(new Event('input'));
         });
         btn.addEventListener('pointerdown', (e) => e.stopPropagation());
     }
@@ -154,9 +139,9 @@ export class LegendBase {
         const title    = root.querySelector('.legend__title');
         const wrap     = root.querySelector('.legend__search-wrap');
         const input    = root.querySelector('.legend__search-input');
+        const clearBtn = root.querySelector('.legend__search-clear');
         const counter  = root.querySelector('.legend__search-count');
         const toggle   = root.querySelector('.legend__search-toggle');
-        const closeBtn = root.querySelector('.legend__search-close');
         const list     = root.querySelector('.legend__list');
         if (!toggle || !input) return;
 
@@ -194,20 +179,12 @@ export class LegendBase {
             matchIndex = (matchIndex + 1) % items.length;
         };
 
-        const turnOffFilter = () => {
-            const fb = root.querySelector('.legend__filter-toggle');
-            if (!fb || fb.getAttribute('aria-pressed') !== 'true') return;
-            fb.setAttribute('aria-pressed', 'false');
-            const k = fb.dataset.legendFilterKey;
-            if (k) try { localStorage.setItem(k, '0'); } catch {}
-        };
-
         const close = () => {
             matchIndex = 0;
             input.value = '';
             title.hidden = false;
             wrap.hidden = true;
-            if (closeBtn) closeBtn.hidden = true;
+            if (clearBtn) clearBtn.hidden = true;
             const filterBtn = root.querySelector('.legend__filter-toggle');
             if (filterBtn) filterBtn.hidden = true;
             toggle.setAttribute('aria-pressed', 'false');
@@ -226,7 +203,6 @@ export class LegendBase {
         const open = () => {
             title.hidden = true;
             wrap.hidden = false;
-            if (closeBtn) closeBtn.hidden = false;
             const filterBtn = root.querySelector('.legend__filter-toggle');
             if (filterBtn) {
                 filterBtn.classList.add('legend__filter-toggle--entering');
@@ -238,7 +214,7 @@ export class LegendBase {
             toggle.setAttribute('aria-pressed', 'true');
             input.focus();
             updateFilter();
-            // Outside click closes only when the filter toggle is NOT keeping the search open
+            // Outside click closes only when filter is NOT pinning the search open
             outsideClickFn = (e) => {
                 if (!root.contains(e.target) && !this._isFilterActive(root)) close();
             };
@@ -257,18 +233,23 @@ export class LegendBase {
         });
         toggle.addEventListener('pointerdown', (e) => e.stopPropagation());
 
-        if (closeBtn) {
-            closeBtn.addEventListener('click', (e) => {
+        if (clearBtn) {
+            clearBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
-                turnOffFilter();
-                close();
+                input.value = '';
+                clearBtn.hidden = true;
+                updateFilter();
+                input.focus();
             });
-            closeBtn.addEventListener('pointerdown', (e) => e.stopPropagation());
+            clearBtn.addEventListener('pointerdown', (e) => e.stopPropagation());
         }
 
-        input.addEventListener('input', updateFilter);
+        input.addEventListener('input', () => {
+            updateFilter();
+            if (clearBtn) clearBtn.hidden = !input.value;
+        });
         input.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') { e.stopPropagation(); turnOffFilter(); close(); }
+            if (e.key === 'Escape') { e.stopPropagation(); if (!this._isFilterActive(root)) close(); }
             if (e.key === 'Enter')  { e.preventDefault();  scrollToNextMatch(); }
         });
     }
