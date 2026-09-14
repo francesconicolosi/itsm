@@ -587,6 +587,14 @@ html[data-theme="dark"] .node-group--selected {
 html[data-theme="dark"] .node-group--selected > circle {
   animation: domino-sel-glow-dark 1.8s ease-in-out infinite;
 }
+.label--selected {
+  font-size: 13px;
+  font-weight: 700;
+  fill: #111;
+}
+html[data-theme="dark"] .label--selected {
+  fill: #fff;
+}
 .node-icon {
   opacity: 0;
   pointer-events: none;

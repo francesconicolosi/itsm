@@ -50,14 +50,17 @@ export class GraphRenderer {
 
     clearSelection() {
         d3.selectAll('.node-group--selected').classed('node-group--selected', false);
+        if (this.labels) this.labels.classed('label--selected', false);
         this.clickedNode = null;
     }
 
     selectNode(d) {
         d3.selectAll('.node-group--selected').classed('node-group--selected', false);
+        if (this.labels) this.labels.classed('label--selected', false);
         this.clickedNode = d;
         if (d && this.nodeGraph) {
             this.nodeGraph.filter(n => n === d).classed('node-group--selected', true).raise();
+            if (this.labels) this.labels.filter(l => l === d).classed('label--selected', true);
         }
     }
 
@@ -178,9 +181,7 @@ export class GraphRenderer {
             })
             .on('click', (event, d) => {
                 if (event.target.closest('.node-icon')) return;
-                d3.selectAll('.node-group--selected').classed('node-group--selected', false);
-                this.clickedNode = d;
-                d3.select(event.currentTarget).classed('node-group--selected', true).raise();
+                this.selectNode(d);
                 drawer.showNodeDetails(d);
             });
 
@@ -823,7 +824,7 @@ export class GraphRenderer {
         } else if (!this.clickedNode && nodeToZoom && (!search.hideStoppedServices || activeServiceNodeIds.has(nodeToZoom.id))) {
             this.centerAndZoomOnNode(nodeToZoom);
             drawer.showNodeDetails(nodeToZoom, showDrawer);
-            this.selectNode(nodeToZoom);
+            if (showDrawer) this.selectNode(nodeToZoom);
         }
     }
 
