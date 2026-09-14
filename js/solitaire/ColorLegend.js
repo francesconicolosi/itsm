@@ -209,6 +209,6 @@ export class ColorLegend extends LegendBase {
     enableDrag({ handleSelector = null } = {}) {
         const root = document.getElementById('legend-root');
         this._enableDrag(root, { handleSelector, storageKey: 'legend-pos-v1', cornerAnchor: true });
-        this._enableResize(root, 'legend-size-v1');
+        this._enableResize(root, 'legend-size-v1', 'legend-pos-v1');
     }
 }

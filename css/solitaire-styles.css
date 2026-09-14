@@ -1864,6 +1864,15 @@ body.side-drawer-open #legend-root {
 #legend-root:hover .legend__resize-handle    { opacity: 0.30; }
 #legend-root:hover .legend__resize-handle--se { opacity: 0.55; }
 #legend-root .legend__resize-handle:hover    { opacity: 1 !important; }
+/* Side edge handles */
+#legend-root .legend__resize-handle--n,
+#legend-root .legend__resize-handle--s { width: auto; height: 6px; left: 16px; right: 16px; }
+#legend-root .legend__resize-handle--e,
+#legend-root .legend__resize-handle--w { width: 6px; height: auto; top: 16px; bottom: 16px; }
+#legend-root .legend__resize-handle--n { top: 0;    cursor: ns-resize; }
+#legend-root .legend__resize-handle--s { bottom: 0; cursor: ns-resize; }
+#legend-root .legend__resize-handle--e { right: 0;  cursor: ew-resize; }
+#legend-root .legend__resize-handle--w { left: 0;   cursor: ew-resize; }
 
 /* Legend item highlight — flash on scroll-to-match */
 @keyframes legendItemHighlight {

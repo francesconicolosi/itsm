@@ -21,12 +21,9 @@
 #legend.legend--anchor-tl { top:    70px; left:   20px; bottom: auto;  right:  auto; }
 #legend.legend--anchor-tr { top:    70px; right:  20px; bottom: auto;  left:   auto; }
 
-#legend .legend__header { display: flex; align-items: center; flex-wrap: nowrap; gap: 6px; padding: 4px 8px 6px 12px; cursor: move; }
+#legend .legend__header { display: flex; align-items: center; justify-content: space-between; flex-wrap: nowrap; gap: 6px; padding: 4px 8px 6px 12px; cursor: move; user-select: none; }
 #legend .legend__title  { font-weight: 600; font-size: 13px; text-transform: uppercase; letter-spacing: .04em; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 #legend .legend__header-actions { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
-#legend .legend__collapse { background: none; border: none; cursor: pointer; padding: 2px 4px; }
-#legend .legend__collapse .chevron::before { content: '\25BE'; display: inline-block; transition: transform .2s; transform: rotate(180deg); }
-#legend.legend--collapsed .chevron::before { transform: rotate(-90deg); }
 #legend .legend__list  { padding: 0 4px; overflow-y: auto; }
 #legend .legend__item  { display: flex; align-items: center; gap: 8px; padding: 3px 8px; border-radius: 4px; cursor: pointer; font-size: 13px; }
 #legend .legend__item[hidden] { display: none; }
@@ -35,12 +32,36 @@
 #legend .legend__swatch { width: 12px; height: 12px; border-radius: 3px; flex-shrink: 0; }
 #legend .legend__label  { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-/* Search toggle button */
-#legend .legend__search-toggle {
-    width: 24px; height: 24px;
+/* Collapse button — matches Solitaire geometry */
+#legend .legend__collapse {
+    width: 22px; height: 22px;
     border: 1px solid rgba(0,0,0,.12);
     background: rgba(0,0,0,0.05);
-    border-radius: 6px;
+    border-radius: 8px;
+    display: grid; place-items: center;
+    cursor: pointer; padding: 0;
+    transition: background-color .2s ease, border-color .2s ease, transform .12s ease;
+}
+#legend .legend__collapse:hover { background: #111; border-color: #111; }
+#legend .legend__collapse:active { transform: translateY(1px); }
+#legend .legend__collapse:focus-visible { outline: 2px solid #0078d4; outline-offset: 2px; }
+#legend .legend__collapse .chevron {
+    width: 8px; height: 8px;
+    border-right: 2px solid #444;
+    border-bottom: 2px solid #444;
+    transform: rotate(-135deg);
+    transition: transform .2s ease, opacity .2s ease;
+    opacity: .75;
+}
+#legend.legend--collapsed .legend__collapse .chevron { transform: rotate(-45deg); }
+#legend .legend__collapse:hover .chevron { border-color: #fff; opacity: 1; }
+
+/* Search toggle button */
+#legend .legend__search-toggle {
+    width: 22px; height: 22px;
+    border: 1px solid rgba(0,0,0,.12);
+    background: rgba(0,0,0,0.05);
+    border-radius: 8px;
     display: grid; place-items: center;
     cursor: pointer; padding: 0; color: #555;
     transition: background-color .2s ease, border-color .2s ease, color .2s ease;
@@ -51,16 +72,16 @@
 #legend .legend__search-toggle:focus-visible { outline: 2px solid #0078d4; outline-offset: 2px; }
 
 /* Small inline clear (×) button inside search-wrap */
-#legend .legend__search-clear { background: none; border: none; padding: 0 2px; cursor: pointer; color: #aaa; font-size: 12px; line-height: 1; flex-shrink: 0; transition: color .15s ease; }
+#legend .legend__search-clear { background: none; border: none; padding: 0 2px; cursor: pointer; color: #aaa; font-size: 22px; line-height: 1; flex-shrink: 0; transition: color .15s ease; }
 #legend .legend__search-clear[hidden] { display: none; }
 #legend .legend__search-clear:hover { color: #333; }
 
 /* Filter toggle button */
 #legend .legend__filter-toggle {
-    width: 24px; height: 24px;
+    width: 22px; height: 22px;
     border: 1px solid rgba(0,0,0,.12);
     background: rgba(0,0,0,0.05);
-    border-radius: 6px;
+    border-radius: 8px;
     display: grid; place-items: center;
     cursor: pointer; padding: 0; color: #555;
     opacity: 1; transform: translateX(0);
@@ -79,12 +100,12 @@
 #legend .legend__search-wrap { display: flex; align-items: center; gap: 6px; flex: 1; min-width: 0; }
 #legend .legend__search-wrap[hidden] { display: none; }
 #legend .legend__search-input { flex: 1; min-width: 0; border: none; background: transparent; font: inherit; font-size: 13px; color: inherit; outline: none; appearance: none; -webkit-appearance: none; }
+#legend .legend__search-input::placeholder { color: #aaa; }
 #legend .legend__search-input::-webkit-search-cancel-button { display: none; }
 #legend .legend__search-count { font-size: 11px; color: #888; white-space: nowrap; background: rgba(0,0,0,0.07); border-radius: 10px; padding: 1px 7px; }
 #legend .legend__search-count[hidden] { display: none; }
 
-/* Resize handles — all four corners */
-#legend { position: relative; }
+/* Resize handles — corners + sides; position:fixed already creates a containing block */
 #legend .legend__resize-handle { position: absolute; width: 16px; height: 16px; opacity: 0; transition: opacity 0.15s; z-index: 2; }
 #legend .legend__resize-handle--nw { top: 0;    left: 0;  cursor: nwse-resize; }
 #legend .legend__resize-handle--ne { top: 0;    right: 0; cursor: nesw-resize; }
@@ -99,6 +120,15 @@
     background-position: 11px 11px, 6px 11px, 11px 6px;
     background-repeat: no-repeat;
 }
+/* Side edge handles */
+#legend .legend__resize-handle--n,
+#legend .legend__resize-handle--s { width: auto; height: 6px; left: 14px; right: 14px; }
+#legend .legend__resize-handle--e,
+#legend .legend__resize-handle--w { width: 6px; height: auto; top: 14px; bottom: 14px; }
+#legend .legend__resize-handle--n { top: 0;    cursor: ns-resize; }
+#legend .legend__resize-handle--s { bottom: 0; cursor: ns-resize; }
+#legend .legend__resize-handle--e { right: 0;  cursor: ew-resize; }
+#legend .legend__resize-handle--w { left: 0;   cursor: ew-resize; }
 #legend:hover .legend__resize-handle    { opacity: 0.30; }
 #legend:hover .legend__resize-handle--se { opacity: 0.55; }
 #legend .legend__resize-handle:hover    { opacity: 1 !important; }
@@ -985,12 +1015,16 @@ html[data-theme="dark"] #search-input::placeholder { color: rgba(245,245,247,0.3
 /* Legend panel */
 html[data-theme="dark"] #legend { background: #1c1c2e; border-color: #2e2e4a; box-shadow: 0 2px 12px rgba(0,0,0,.4); color: #c8d0e8; }
 html[data-theme="dark"] #legend .legend__item:hover { background: rgba(255,255,255,.08); }
-html[data-theme="dark"] #legend .legend__collapse   { color: #c8d0e8; }
+html[data-theme="dark"] #legend .legend__collapse { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.10); color: rgba(245,245,247,0.70); }
+html[data-theme="dark"] #legend .legend__collapse .chevron { border-color: rgba(245,245,247,0.70); }
+html[data-theme="dark"] #legend .legend__collapse:hover { background: rgba(255,255,255,0.20); border-color: rgba(255,255,255,0.35); }
+html[data-theme="dark"] #legend .legend__collapse:hover .chevron { border-color: #f5f5f7; }
 html[data-theme="dark"] #legend .legend__search-toggle,
-html[data-theme="dark"] #legend .legend__search-close { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.10); color: rgba(245,245,247,0.70); }
+html[data-theme="dark"] #legend .legend__filter-toggle { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.10); color: rgba(245,245,247,0.70); }
 html[data-theme="dark"] #legend .legend__search-toggle:hover,
 html[data-theme="dark"] #legend .legend__search-toggle[aria-pressed="true"],
-html[data-theme="dark"] #legend .legend__search-close:hover { background: rgba(255,255,255,0.20); border-color: rgba(255,255,255,0.35); color: #f5f5f7; }
+html[data-theme="dark"] #legend .legend__filter-toggle:hover,
+html[data-theme="dark"] #legend .legend__filter-toggle[aria-pressed="true"] { background: rgba(255,255,255,0.20); border-color: rgba(255,255,255,0.35); color: #f5f5f7; }
 html[data-theme="dark"] #legend .legend__search-input { color: #c8d0e8; }
 html[data-theme="dark"] #legend .legend__search-input::placeholder { color: rgba(200,208,232,0.40); }
 html[data-theme="dark"] #legend .legend__search-count { color: rgba(200,208,232,0.55); background: rgba(255,255,255,0.10); }

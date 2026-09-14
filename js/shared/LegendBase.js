@@ -47,9 +47,13 @@ export class LegendBase {
   </div>
   <div class="legend__list" aria-label="Legend list"></div>
   <div class="legend__resize-handle legend__resize-handle--nw" aria-hidden="true"></div>
+  <div class="legend__resize-handle legend__resize-handle--n"  aria-hidden="true"></div>
   <div class="legend__resize-handle legend__resize-handle--ne" aria-hidden="true"></div>
-  <div class="legend__resize-handle legend__resize-handle--sw" aria-hidden="true"></div>
+  <div class="legend__resize-handle legend__resize-handle--e"  aria-hidden="true"></div>
   <div class="legend__resize-handle legend__resize-handle--se" aria-hidden="true"></div>
+  <div class="legend__resize-handle legend__resize-handle--s"  aria-hidden="true"></div>
+  <div class="legend__resize-handle legend__resize-handle--sw" aria-hidden="true"></div>
+  <div class="legend__resize-handle legend__resize-handle--w"  aria-hidden="true"></div>
 `;
         root.querySelector('.legend__title').textContent = title;
     }
@@ -260,7 +264,7 @@ export class LegendBase {
         makeLegendDraggable(root, opts);
     }
 
-    _enableResize(root, storageKey = 'legend-size-v1') {
+    _enableResize(root, storageKey = 'legend-size-v1', posKey = null) {
         if (!root || this._resizeAttached) return;
         this._resizeAttached = true;
 
@@ -269,18 +273,25 @@ export class LegendBase {
 
         try {
             const saved = JSON.parse(localStorage.getItem(storageKey) || 'null');
-            if (saved?.width)         root.style.width     = saved.width;
-            if (saved?.maxListHeight) list.style.maxHeight  = saved.maxListHeight;
+            if (saved?.width)         root.style.width    = saved.width;
+            if (saved?.maxListHeight) list.style.maxHeight = saved.maxListHeight;
         } catch {}
 
-        const corners = [
-            { cls: 'nw', wSign: -1, hSign: -1 },
-            { cls: 'ne', wSign:  1, hSign: -1 },
-            { cls: 'sw', wSign: -1, hSign:  1 },
-            { cls: 'se', wSign:  1, hSign:  1 },
+        const MIN_W = 180, MAX_W = 600, MIN_H = 80;
+        const ANCHOR_CLASSES = ['legend--anchor-tl', 'legend--anchor-tr', 'legend--anchor-bl', 'legend--anchor-br'];
+
+        const handles = [
+            { cls: 'nw', movesLeft: true,  movesTop: true  },
+            { cls: 'n',                    movesTop: true  },
+            { cls: 'ne',                   movesTop: true,  movesRight: true },
+            { cls: 'e',                                     movesRight: true },
+            { cls: 'se',                                    movesRight: true, movesBottom: true },
+            { cls: 's',                                                       movesBottom: true },
+            { cls: 'sw', movesLeft: true,                                     movesBottom: true },
+            { cls: 'w',  movesLeft: true  },
         ];
 
-        corners.forEach(({ cls, wSign, hSign }) => {
+        handles.forEach(({ cls, movesLeft, movesRight, movesTop, movesBottom }) => {
             const handle = root.querySelector(`.legend__resize-handle--${cls}`);
             if (!handle) return;
 
@@ -290,17 +301,43 @@ export class LegendBase {
                 e.stopPropagation();
                 try { handle.setPointerCapture(e.pointerId); } catch {}
 
-                const r      = root.getBoundingClientRect();
-                const startX = e.clientX;
-                const startY = e.clientY;
-                const startW = r.width;
-                const startH = list.getBoundingClientRect().height;
+                const r         = root.getBoundingClientRect();
+                const startX    = e.clientX;
+                const startY    = e.clientY;
+                const startW    = r.width;
+                const startH    = list.getBoundingClientRect().height;
+                const startLeft = r.left;
+                const startTop  = r.top;
+
+                // Pin position so left/top edge drags work correctly
+                if (movesLeft || movesTop) {
+                    ANCHOR_CLASSES.forEach(c => root.classList.remove(c));
+                    root.style.left   = startLeft + 'px';
+                    root.style.top    = startTop  + 'px';
+                    root.style.right  = 'auto';
+                    root.style.bottom = 'auto';
+                }
 
                 const onMove = (me) => {
-                    const rawDx = me.clientX - startX;
-                    const rawDy = me.clientY - startY;
-                    root.style.width     = `${Math.max(200, Math.min(600, startW + rawDx * wSign))}px`;
-                    list.style.maxHeight = `${Math.max(120, startH + rawDy * hSign)}px`;
+                    const dx = me.clientX - startX;
+                    const dy = me.clientY - startY;
+
+                    if (movesRight) {
+                        root.style.width = Math.max(MIN_W, Math.min(MAX_W, startW + dx)) + 'px';
+                    }
+                    if (movesLeft) {
+                        const newW = Math.max(MIN_W, Math.min(MAX_W, startW - dx));
+                        root.style.width = newW + 'px';
+                        root.style.left  = (startLeft + startW - newW) + 'px';
+                    }
+                    if (movesBottom) {
+                        list.style.maxHeight = Math.max(MIN_H, startH + dy) + 'px';
+                    }
+                    if (movesTop) {
+                        const newH = Math.max(MIN_H, startH - dy);
+                        list.style.maxHeight = newH + 'px';
+                        root.style.top = (startTop + startH - newH) + 'px';
+                    }
                 };
 
                 const onUp = () => {
@@ -312,6 +349,12 @@ export class LegendBase {
                             maxListHeight: list.style.maxHeight,
                         }));
                     } catch {}
+                    if (posKey && (movesLeft || movesTop)) {
+                        try {
+                            const fr = root.getBoundingClientRect();
+                            localStorage.setItem(posKey, JSON.stringify({ type: 'free', x: fr.left, y: fr.top }));
+                        } catch {}
+                    }
                 };
 
                 handle.addEventListener('pointermove', onMove);

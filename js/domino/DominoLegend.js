@@ -38,7 +38,7 @@ export class DominoLegend extends LegendBase {
         this._wireSearch(root);
         this._wireFilterToggle(root, 'domino-legend-filter-v1');
         this._enableDrag(root, { handleSelector: '.legend__header', storageKey: 'domino-legend-pos-v1', cornerAnchor: true });
-        this._enableResize(root, 'domino-legend-size-v1');
+        this._enableResize(root, 'domino-legend-size-v1', 'domino-legend-pos-v1');
     }
 
     reset() {
