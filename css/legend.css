@@ -1,0 +1,359 @@
+/* ============================================================
+   Shared Legend widget — BEM styles for .legend--generic
+   Applies to all legend instances (Domino, Solitaire, Jenga…).
+   App-specific overrides (z-index, corner offsets) stay in
+   each app's own CSS file scoped to its #id selector.
+   ============================================================ */
+
+/* --- Container --- */
+.legend--generic {
+    position: fixed;
+    left: max(16px, env(safe-area-inset-left));
+    right: auto;
+    bottom: 16px;
+    max-width: 320px;
+    background: rgba(255,255,255,0.92);
+    border: 1px solid #e5e5e5;
+    border-radius: 10px;
+    padding: 8px 10px;
+    box-shadow: 0 6px 16px rgba(0,0,0,.12);
+    -webkit-backdrop-filter: saturate(180%) blur(6px);
+    backdrop-filter: saturate(180%) blur(6px);
+    font-size: 13px;
+    font-family: var(--brand-font, inherit);
+    user-select: none;
+    cursor: default;
+}
+
+/* Corner anchors */
+.legend--generic.legend--anchor-bl { bottom: 16px; left: max(16px, env(safe-area-inset-left)); top: auto; right: auto; }
+.legend--generic.legend--anchor-br { bottom: 16px; right: 16px; top: auto; left: auto; }
+.legend--generic.legend--anchor-tl { top: 70px; left: max(16px, env(safe-area-inset-left)); bottom: auto; right: auto; }
+.legend--generic.legend--anchor-tr { top: 70px; right: 16px; bottom: auto; left: auto; }
+
+/* --- Header --- */
+.legend--generic .legend__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: nowrap;
+    gap: 10px;
+    margin-bottom: 6px;
+    cursor: move;
+    user-select: none;
+}
+
+.legend--generic .legend__title {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    color: #333;
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    cursor: move;
+    pointer-events: auto;
+}
+.legend--generic .legend__title.is-dragging { cursor: grabbing; }
+
+/* --- Header action buttons group --- */
+.legend--generic .legend__header-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+/* Shared button base (collapse + search-toggle + filter-toggle) */
+.legend--generic .legend__collapse,
+.legend--generic .legend__search-toggle,
+.legend--generic .legend__filter-toggle {
+    width: 22px;
+    height: 22px;
+    border: 1px solid rgba(0,0,0,.12);
+    background: rgba(255,255,255,0.70);
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
+    border-radius: 8px;
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+    padding: 0;
+    color: #444;
+    transition: background-color .2s ease, border-color .2s ease, color .2s ease, transform .12s ease;
+}
+.legend--generic .legend__collapse { color: inherit; }
+
+.legend--generic .legend__collapse:hover,
+.legend--generic .legend__search-toggle:hover,
+.legend--generic .legend__filter-toggle:hover,
+.legend--generic .legend__search-toggle[aria-pressed="true"],
+.legend--generic .legend__filter-toggle[aria-pressed="true"] {
+    background: #111;
+    border-color: #111;
+    color: #fff;
+}
+.legend--generic .legend__collapse:active,
+.legend--generic .legend__search-toggle:active,
+.legend--generic .legend__filter-toggle:active { transform: translateY(1px); }
+.legend--generic .legend__collapse:focus-visible,
+.legend--generic .legend__search-toggle:focus-visible,
+.legend--generic .legend__filter-toggle:focus-visible { outline: 2px solid #0078d4; outline-offset: 2px; }
+
+/* Filter toggle: filled icon when active */
+.legend--generic .legend__filter-toggle[aria-pressed="true"] svg path { fill: currentColor; }
+
+/* Filter toggle entrance animation */
+.legend--generic .legend__filter-toggle {
+    opacity: 1;
+    transform: translateX(0);
+    transition: background-color .2s ease, border-color .2s ease, color .2s ease,
+                opacity .18s ease, transform .18s ease;
+}
+.legend--generic .legend__filter-toggle[hidden] { display: none; }
+.legend--generic .legend__filter-toggle--entering { opacity: 0 !important; transform: translateX(6px); }
+
+/* --- Collapse chevron --- */
+.legend--generic .legend__collapse .chevron {
+    width: 8px;
+    height: 8px;
+    border-right: 2px solid #444;
+    border-bottom: 2px solid #444;
+    transform: rotate(-135deg);   /* open → points up */
+    transition: transform .2s ease, opacity .2s ease;
+    opacity: .75;
+}
+.legend--generic.legend--collapsed .legend__collapse .chevron { transform: rotate(-45deg); }
+.legend--generic .legend__collapse:hover .chevron,
+.legend--generic .legend__collapse:focus-visible .chevron { border-color: #fff; opacity: 1; }
+
+/* Collapse hides the list */
+.legend--generic.legend--collapsed .legend__list { display: none; }
+
+/* --- Search wrap (replaces title in header when open) --- */
+.legend--generic .legend__search-wrap {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex: 1;
+    min-width: 0;
+}
+.legend--generic .legend__search-wrap[hidden] { display: none; }
+
+.legend--generic .legend__search-input {
+    flex: 1;
+    min-width: 0;
+    border: none;
+    background: transparent;
+    font: inherit;
+    font-size: 13px;
+    color: inherit;
+    outline: none;
+    appearance: none;
+    -webkit-appearance: none;
+    margin: 0;
+    padding: 0;
+}
+.legend--generic .legend__search-input::placeholder { color: #aaa; }
+.legend--generic .legend__search-input::-webkit-search-cancel-button { display: none; }
+
+/* Inline clear (×) button */
+.legend--generic .legend__search-clear {
+    background: none;
+    border: none;
+    padding: 0 2px;
+    cursor: pointer;
+    color: #aaa;
+    font-size: 22px;
+    line-height: 1;
+    flex-shrink: 0;
+    transition: color .15s ease;
+}
+.legend--generic .legend__search-clear[hidden] { display: none; }
+.legend--generic .legend__search-clear:hover { color: #333; }
+
+/* Match counter badge */
+.legend--generic .legend__search-count {
+    font-size: 11px;
+    font-variant-numeric: tabular-nums;
+    color: #777;
+    white-space: nowrap;
+    background: rgba(0,0,0,0.07);
+    border-radius: 10px;
+    padding: 1px 7px;
+}
+.legend--generic .legend__search-count[hidden] { display: none; }
+
+/* --- List and items --- */
+.legend--generic .legend__list {
+    overflow-y: auto;
+    padding-right: 6px;
+}
+
+.legend--generic .legend__item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 24px;
+    line-height: 24px;
+    color: #222;
+    cursor: pointer;
+    user-select: none;
+    border-radius: 4px;
+}
+.legend--generic .legend__item[hidden]           { display: none; }
+.legend--generic .legend__item--filtered-out     { display: none; }
+.legend--generic .legend__item:hover             { background: rgba(0,0,0,.04); }
+.legend--generic .legend__item:hover .legend__label,
+.legend--generic .legend__item:focus-visible .legend__label { text-decoration: underline; }
+
+.legend--generic .legend__item--disabled {
+    cursor: default;
+    opacity: 0.45;
+    pointer-events: none;
+}
+
+.legend--generic .legend__swatch {
+    width: 14px;
+    height: 14px;
+    border-radius: 3px;
+    border: 1px solid rgba(0,0,0,.15);
+    box-sizing: border-box;
+    flex-shrink: 0;
+}
+.legend--generic .legend__swatch--white { border-color: #777; }
+
+.legend--generic .legend__label {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex: 1;
+    min-width: 0;
+}
+
+.legend--generic .legend__count {
+    margin-left: auto;
+    color: #666;
+    font-variant-numeric: tabular-nums;
+}
+
+/* --- Resize handles (8 directions) --- */
+.legend--generic .legend__resize-handle {
+    position: absolute;
+    width: 18px;
+    height: 18px;
+    opacity: 0;
+    transition: opacity 0.15s;
+    z-index: 2;
+}
+/* Side edge handles */
+.legend--generic .legend__resize-handle--n,
+.legend--generic .legend__resize-handle--s { width: auto; height: 6px; left: 16px; right: 16px; }
+.legend--generic .legend__resize-handle--e,
+.legend--generic .legend__resize-handle--w { width: 6px; height: auto; top: 16px; bottom: 16px; }
+.legend--generic .legend__resize-handle--n  { top: 0;    cursor: ns-resize;   }
+.legend--generic .legend__resize-handle--s  { bottom: 0; cursor: ns-resize;   }
+.legend--generic .legend__resize-handle--e  { right: 0;  cursor: ew-resize;   }
+.legend--generic .legend__resize-handle--w  { left: 0;   cursor: ew-resize;   }
+.legend--generic .legend__resize-handle--nw { top: 0;    left: 0;  cursor: nwse-resize; }
+.legend--generic .legend__resize-handle--ne { top: 0;    right: 0; cursor: nesw-resize; }
+.legend--generic .legend__resize-handle--sw { bottom: 0; left: 0;  cursor: nesw-resize; }
+.legend--generic .legend__resize-handle--se {
+    bottom: 0;
+    right: 0;
+    cursor: nwse-resize;
+    background-image:
+        radial-gradient(circle, #888 1.5px, transparent 1.5px),
+        radial-gradient(circle, #888 1.5px, transparent 1.5px),
+        radial-gradient(circle, #888 1.5px, transparent 1.5px);
+    background-size: 5px 5px;
+    background-position: 13px 13px, 8px 13px, 13px 8px;
+    background-repeat: no-repeat;
+}
+.legend--generic:hover .legend__resize-handle     { opacity: 0.30; }
+.legend--generic:hover .legend__resize-handle--se { opacity: 0.55; }
+.legend--generic .legend__resize-handle:hover     { opacity: 1 !important; }
+
+/* --- Highlight animation (scroll-to-match) --- */
+@keyframes legendItemHighlight {
+    0%   { background: rgba(0, 122, 255, 0.18); border-radius: 4px; }
+    100% { background: transparent; }
+}
+.legend--generic .legend__item--highlight {
+    animation: legendItemHighlight 1s ease-out forwards;
+}
+
+/* ============================================================
+   Dark mode
+   ============================================================ */
+html[data-theme="dark"] .legend--generic {
+    background: rgba(28,28,30,.96);
+    border-color: rgba(255,255,255,.12);
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+}
+html[data-theme="dark"] .legend--generic .legend__title {
+    color: rgba(245,245,247,.60);
+}
+html[data-theme="dark"] .legend--generic .legend__item {
+    color: #f5f5f7;
+}
+html[data-theme="dark"] .legend--generic .legend__item:hover {
+    background: rgba(255,255,255,.08);
+}
+html[data-theme="dark"] .legend--generic .legend__count {
+    color: rgba(245,245,247,.45);
+}
+html[data-theme="dark"] .legend--generic .legend__collapse,
+html[data-theme="dark"] .legend--generic .legend__search-toggle,
+html[data-theme="dark"] .legend--generic .legend__filter-toggle {
+    background: rgba(255,255,255,.08);
+    border-color: rgba(255,255,255,.12);
+    color: rgba(245,245,247,.70);
+}
+html[data-theme="dark"] .legend--generic .legend__collapse:hover,
+html[data-theme="dark"] .legend--generic .legend__search-toggle:hover,
+html[data-theme="dark"] .legend--generic .legend__filter-toggle:hover,
+html[data-theme="dark"] .legend--generic .legend__search-toggle[aria-pressed="true"],
+html[data-theme="dark"] .legend--generic .legend__filter-toggle[aria-pressed="true"] {
+    background: rgba(255,255,255,.18);
+    border-color: rgba(255,255,255,.25);
+    color: #fff;
+}
+html[data-theme="dark"] .legend--generic .legend__collapse .chevron {
+    border-color: rgba(255,255,255,.65);
+}
+html[data-theme="dark"] .legend--generic .legend__collapse:hover .chevron,
+html[data-theme="dark"] .legend--generic .legend__collapse:focus-visible .chevron {
+    border-color: #fff;
+}
+html[data-theme="dark"] .legend--generic .legend__search-input {
+    color: #f5f5f7;
+}
+html[data-theme="dark"] .legend--generic .legend__search-clear {
+    color: rgba(255,255,255,.35);
+}
+html[data-theme="dark"] .legend--generic .legend__search-clear:hover {
+    color: #f5f5f7;
+}
+html[data-theme="dark"] .legend--generic .legend__search-count {
+    color: rgba(245,245,247,.50);
+    background: rgba(255,255,255,.10);
+}
+html[data-theme="dark"] .legend--generic .legend__resize-handle--se {
+    background-image:
+        radial-gradient(circle, rgba(255,255,255,.45) 1.5px, transparent 1.5px),
+        radial-gradient(circle, rgba(255,255,255,.45) 1.5px, transparent 1.5px),
+        radial-gradient(circle, rgba(255,255,255,.45) 1.5px, transparent 1.5px);
+}
+@keyframes legendItemHighlightDark {
+    0%   { background: rgba(10, 132, 255, 0.28); border-radius: 4px; }
+    100% { background: transparent; }
+}
+html[data-theme="dark"] .legend--generic .legend__item--highlight {
+    animation-name: legendItemHighlightDark;
+}
