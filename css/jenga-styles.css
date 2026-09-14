@@ -4864,12 +4864,14 @@ html[data-theme="light"]     .jtl-month-picker__item:hover { background: rgba(0,
 }
 
 /* Chips: position static by default → need position: relative for z-index */
+.jenga-chip.jenga--selected {
+    position: relative;
+}
 .jenga-chip.jenga--selected,
 .jenga-cal__cab-badge.jenga--selected {
     outline: 2px solid rgba(245,158,11,.90);
     outline-offset: 1px;
     animation: jenga-sel-ring 1.8s ease-in-out infinite;
-    position: relative;
     z-index: 999;
 }
 
