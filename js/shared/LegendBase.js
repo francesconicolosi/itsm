@@ -4,6 +4,8 @@ export class LegendBase {
     constructor() {
         this._dragAttached = false;
         this._resizeAttached = false;
+        this._tooltipAttached = false;
+        this._tooltipEl = null;
     }
 
     _getOrCreateRoot(id) {
@@ -29,18 +31,18 @@ export class LegendBase {
       <span class="legend__search-count" aria-live="polite" hidden></span>
     </div>
     <div class="legend__header-actions">
-      <button class="legend__search-toggle" type="button" aria-label="Search in legend" aria-pressed="false">
+      <button class="legend__search-toggle" type="button" aria-label="Search in legend" aria-pressed="false" data-legend-tooltip="Search legend">
         <svg width="12" height="12" viewBox="0 0 14 14" fill="none" aria-hidden="true">
-          <circle cx="6" cy="6" r="4.5" stroke="currentColor" stroke-width="1.5"></circle>
-          <line x1="9.5" y1="9.5" x2="13" y2="13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></line>
+          <circle cx="6" cy="6" r="4.5" stroke="currentColor" stroke-width="1.5" style="stroke:currentColor"></circle>
+          <line x1="9.5" y1="9.5" x2="13" y2="13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" style="stroke:currentColor"></line>
         </svg>
       </button>
-      <button class="legend__filter-toggle" type="button" aria-label="Filter chart by legend search" aria-pressed="false" hidden>
+      <button class="legend__filter-toggle" type="button" aria-label="Filter chart by legend search" aria-pressed="false" data-legend-tooltip="Show only matching legend items" hidden>
         <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
-          <path d="M1 1.5h10L7 6v4.5L5 10.5V6L1 1.5z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>
+          <path d="M1 1.5h10L7 6v4.5L5 10.5V6L1 1.5z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" style="stroke:currentColor"/>
         </svg>
       </button>
-      <button class="legend__collapse" type="button" aria-label="Toggle legend" aria-expanded="true">
+      <button class="legend__collapse" type="button" aria-label="Toggle legend" aria-expanded="true" data-legend-tooltip="Collapse legend">
         <span class="chevron" aria-hidden="true"></span>
       </button>
     </div>
@@ -56,6 +58,7 @@ export class LegendBase {
   <div class="legend__resize-handle legend__resize-handle--w"  aria-hidden="true"></div>
 `;
         root.querySelector('.legend__title').textContent = title;
+        this._wireTooltips(root);
     }
 
     _wireCollapse(root, lsKey) {
@@ -65,7 +68,9 @@ export class LegendBase {
             root.classList.toggle('legend--collapsed', collapsed);
             list.hidden = collapsed;
             btn.setAttribute('aria-expanded', String(!collapsed));
-            btn.setAttribute('aria-label', collapsed ? 'Expand legend' : 'Collapse legend');
+            const label = collapsed ? 'Expand legend' : 'Collapse legend';
+            btn.setAttribute('aria-label', label);
+            btn.dataset.legendTooltip = label;
             try { localStorage.setItem(lsKey, collapsed ? '1' : '0'); } catch {}
         };
         let initial = false;
@@ -104,6 +109,9 @@ export class LegendBase {
         let active = false;
         try { active = localStorage.getItem(lsKey) === '1'; } catch {}
         btn.setAttribute('aria-pressed', String(active));
+        btn.dataset.legendTooltip = active
+            ? 'Show all legend items'
+            : 'Show only matching legend items';
         btn.dataset.legendFilterKey = lsKey;
 
         // Open search-wrap if not already open (used on page-load restore and filter-ON).
@@ -130,6 +138,9 @@ export class LegendBase {
             e.stopPropagation();
             active = !active;
             btn.setAttribute('aria-pressed', String(active));
+            btn.dataset.legendTooltip = active
+                ? 'Show all legend items'
+                : 'Show only matching legend items';
             try { localStorage.setItem(lsKey, active ? '1' : '0'); } catch {}
             if (active) syncSearchWrap(true);
             // Re-apply filter: when ON hides non-matches, when OFF shows all items again
@@ -192,6 +203,7 @@ export class LegendBase {
             const filterBtn = root.querySelector('.legend__filter-toggle');
             if (filterBtn) filterBtn.hidden = true;
             toggle.setAttribute('aria-pressed', 'false');
+            toggle.dataset.legendTooltip = 'Search legend';
             list.querySelectorAll('.legend__item').forEach(item => {
                 item.classList.remove('legend__item--filtered-out');
                 item.dataset.matched = '';
@@ -216,6 +228,7 @@ export class LegendBase {
                 ));
             }
             toggle.setAttribute('aria-pressed', 'true');
+            toggle.dataset.legendTooltip = 'Close search';
             input.focus();
             updateFilter();
             // Outside click closes only when filter is NOT pinning the search open
@@ -256,6 +269,77 @@ export class LegendBase {
             if (e.key === 'Escape') { e.stopPropagation(); if (!this._isFilterActive(root)) close(); }
             if (e.key === 'Enter')  { e.preventDefault();  scrollToNextMatch(); }
         });
+    }
+
+    _wireTooltips(root) {
+        if (!root || this._tooltipAttached) return;
+        this._tooltipAttached = true;
+
+        const ensureTooltip = () => {
+            if (this._tooltipEl?.isConnected) return this._tooltipEl;
+            const tip = document.createElement('div');
+            tip.className = 'legend-tooltip';
+            tip.setAttribute('role', 'tooltip');
+            Object.assign(tip.style, {
+                position: 'fixed',
+                zIndex: '2147483647',
+                maxWidth: '220px',
+                padding: '6px 9px',
+                color: '#fff',
+                background: 'rgba(0, 0, 0, 0.88)',
+                borderRadius: '6px',
+                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.22)',
+                fontFamily: 'var(--brand-font, system-ui, sans-serif)',
+                fontSize: '12px',
+                lineHeight: '1.3',
+                whiteSpace: 'nowrap',
+                pointerEvents: 'none',
+                opacity: '0',
+                visibility: 'hidden',
+                transition: 'opacity 120ms ease, visibility 120ms ease'
+            });
+            document.body.appendChild(tip);
+            this._tooltipEl = tip;
+            return tip;
+        };
+
+        let showTimer = null;
+        const hide = () => {
+            clearTimeout(showTimer);
+            if (!this._tooltipEl) return;
+            this._tooltipEl.style.opacity = '0';
+            this._tooltipEl.style.visibility = 'hidden';
+        };
+        const show = (button) => {
+            const text = button?.dataset.legendTooltip || button?.getAttribute('aria-label');
+            if (!text) return;
+            const tip = ensureTooltip();
+            const rect = button.getBoundingClientRect();
+            tip.textContent = text;
+            tip.style.left = `${Math.round(rect.left + rect.width / 2)}px`;
+            tip.style.top = `${Math.round(rect.top - 8)}px`;
+            tip.style.transform = 'translate(-50%, -100%)';
+            tip.style.visibility = 'visible';
+            tip.style.opacity = '1';
+        };
+
+        root.addEventListener('pointerover', (e) => {
+            const button = e.target.closest?.('[data-legend-tooltip]');
+            if (!button || !root.contains(button)) return;
+            clearTimeout(showTimer);
+            showTimer = setTimeout(() => show(button), 180);
+        });
+        root.addEventListener('pointerout', (e) => {
+            if (e.target.closest?.('[data-legend-tooltip]')) hide();
+        });
+        root.addEventListener('focusin', (e) => {
+            const button = e.target.closest?.('[data-legend-tooltip]');
+            if (button) show(button);
+        });
+        root.addEventListener('focusout', hide);
+        root.addEventListener('pointerdown', hide);
+        window.addEventListener('scroll', hide, { passive: true });
+        window.addEventListener('resize', hide);
     }
 
     _enableDrag(root, opts = {}) {
