@@ -146,7 +146,6 @@
 
 .legend--generic .legend__search-input {
     flex: 1;
-    min-width: 0;
     border: none;
     background: transparent;
     font: inherit;
