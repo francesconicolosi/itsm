@@ -519,15 +519,17 @@ text {
   font-size: 12px;
   pointer-events: none;
 }
-line {
+#map > svg line {
   stroke: #999;
   stroke-width: 2px;
 }
-circle {
+
+#map > svg circle {
   stroke: #000;
   stroke-width: 1px;
   cursor: pointer;
 }
+
 @keyframes domino-sel-glow {
   0%, 100% {
     filter:
@@ -884,8 +886,14 @@ html[data-theme="dark"] #search-input::placeholder { color: rgba(245,245,247,0.3
 /* SVG graph — luminescent space style */
 html[data-theme="dark"] #map   { background: #070b18; }
 html[data-theme="dark"] text   { fill: #f5f5f7; }
-html[data-theme="dark"] line   { stroke: rgba(140,160,210,0.45); }
-html[data-theme="dark"] circle { stroke: rgba(255,255,255,0.25); stroke-width: 2px; }
+html[data-theme="dark"] #map > svg line {
+  stroke: rgba(140, 160, 210, 0.45);
+}
+
+html[data-theme="dark"] #map > svg circle {
+  stroke: rgba(255, 255, 255, 0.25);
+  stroke-width: 2px;
+}
 html[data-theme="dark"] .node-icon circle { stroke: #f5f5f7; }
 html[data-theme="dark"] .node-icon line   { stroke: #f5f5f7; }
 
