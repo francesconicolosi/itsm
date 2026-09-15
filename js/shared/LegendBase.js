@@ -32,9 +32,57 @@ export class LegendBase {
     </div>
     <div class="legend__header-actions">
       <button class="legend__search-toggle" type="button" aria-label="Search in legend" aria-pressed="false" data-legend-tooltip="Search legend">
-        <svg width="12" height="12" viewBox="0 0 14 14" fill="none" aria-hidden="true">
-          <circle cx="6" cy="6" r="4.5" stroke="currentColor" stroke-width="1.5" style="stroke:currentColor"></circle>
-          <line x1="9.5" y1="9.5" x2="13" y2="13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" style="stroke:currentColor"></line>
+        <svg class="legend__search-icon" width="16" height="16" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+          <g class="legend__search-icon-normal">
+            <circle cx="7" cy="7" r="4.75" stroke="currentColor" stroke-width="1.7"></circle>
+            <line x1="10.6" y1="10.6" x2="15" y2="15" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"></line>
+          </g>
+        <g class="legend__search-icon-next" style="display:none">
+
+  <!-- vetro lente -->
+  <circle
+      cx="7"
+      cy="7"
+      r="4.75"
+      stroke="currentColor"
+      stroke-width="1.7">
+  </circle>
+
+  <!-- manico lente -->
+  <line
+      x1="10.6"
+      y1="10.6"
+      x2="15"
+      y2="15"
+      stroke="currentColor"
+      stroke-width="1.7"
+      stroke-linecap="round">
+  </line>
+
+  <!-- freccia circolare interna -->
+  <path
+      d="M5.2 5.8
+         A2.2 2.2 0 1 1
+         8.9 8.1"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="1.5"
+      stroke-linecap="round">
+  </path>
+
+  <path
+      d="M8.8 6.6
+         L9.6 8.4
+         L7.8 8.1"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="1.5"
+      stroke-linecap="round"
+      stroke-linejoin="round">
+  </path>
+
+</g>
+
         </svg>
       </button>
       <button class="legend__filter-toggle" type="button" aria-label="Filter chart by legend search" aria-pressed="false" data-legend-tooltip="Show only matching legend items" hidden>
@@ -163,6 +211,48 @@ export class LegendBase {
         let outsideClickFn = null;
         let matchIndex = 0;
 
+        const updateSearchToggleState = () => {
+            const hasQuery =
+                input.value.trim().length > 0;
+
+            const normalIcon =
+                toggle.querySelector(
+                    '.legend__search-icon-normal'
+                );
+
+            const nextIcon =
+                toggle.querySelector(
+                    '.legend__search-icon-next'
+                );
+
+            toggle.dataset.legendTooltip =
+                hasQuery
+                    ? 'Search Next'
+                    : 'Close search';
+
+            toggle.setAttribute(
+                'aria-label',
+                hasQuery
+                    ? 'Search Next'
+                    : 'Close search'
+            );
+
+            toggle.classList.toggle(
+                'legend__search-toggle--next',
+                hasQuery
+            );
+
+            if (normalIcon) {
+                normalIcon.style.display =
+                    hasQuery ? 'none' : '';
+            }
+
+            if (nextIcon) {
+                nextIcon.style.display =
+                    hasQuery ? '' : 'none';
+            }
+        };
+
         const updateFilter = () => {
             matchIndex = 0;
             const q = input.value.trim().toLowerCase();
@@ -177,6 +267,7 @@ export class LegendBase {
             });
             counter.textContent = q ? String(matches) : '';
             counter.hidden = !q;
+            updateSearchToggleState();
         };
 
         const scrollToNextMatch = () => {
@@ -204,6 +295,17 @@ export class LegendBase {
             if (filterBtn) filterBtn.hidden = true;
             toggle.setAttribute('aria-pressed', 'false');
             toggle.dataset.legendTooltip = 'Search legend';
+            toggle.setAttribute('aria-label', 'Search in legend');
+            toggle.classList.remove('legend__search-toggle--next');
+            const normalIcon = toggle.querySelector('.legend__search-icon-normal');
+            const nextIcon = toggle.querySelector('.legend__search-icon-next');
+            if (normalIcon) {
+                normalIcon.style.display = '';
+            }
+
+            if (nextIcon) {
+                nextIcon.style.display = 'none';
+            }
             list.querySelectorAll('.legend__item').forEach(item => {
                 item.classList.remove('legend__item--filtered-out');
                 item.dataset.matched = '';
@@ -228,7 +330,6 @@ export class LegendBase {
                 ));
             }
             toggle.setAttribute('aria-pressed', 'true');
-            toggle.dataset.legendTooltip = 'Close search';
             input.focus();
             updateFilter();
             // Outside click closes only when filter is NOT pinning the search open
