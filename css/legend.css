@@ -157,6 +157,7 @@
     margin: 0;
     padding: 0;
 }
+
 .legend--generic .legend__search-input::placeholder { color: #aaa; }
 .legend--generic .legend__search-input::-webkit-search-cancel-button { display: none; }
 
