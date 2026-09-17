@@ -204,21 +204,16 @@ may be deployed without CAB. All others require CAB approval.
         const allDay = events.filter(e => !e.timeSlot || e.type === 'BUSINESS_EVENT');
         const timed  = events.filter(e => e.timeSlot  && e.type !== 'BUSINESS_EVENT');
 
-        // ── All-day section ───────────────────────────────────────────────────
-        const allDaySection = document.createElement('div');
-        allDaySection.className = 'day-timeline__allday';
+        // ── All-day section (hidden when empty or all filtered out) ──────────
+        if (allDay.length > 0) {
+            const allDaySection = document.createElement('div');
+            allDaySection.className = 'day-timeline__allday';
 
-        const allDayLabel = document.createElement('div');
-        allDayLabel.className = 'day-timeline__allday-label';
-        allDayLabel.textContent = 'All day';
-        allDaySection.appendChild(allDayLabel);
+            const allDayLabel = document.createElement('div');
+            allDayLabel.className = 'day-timeline__allday-label';
+            allDayLabel.textContent = 'All day';
+            allDaySection.appendChild(allDayLabel);
 
-        if (allDay.length === 0) {
-            const empty = document.createElement('div');
-            empty.className = 'day-timeline__allday-empty';
-            empty.textContent = '—';
-            allDaySection.appendChild(empty);
-        } else {
             allDay.forEach(ev => {
                 const label = this._eventLabel(ev);
                 const chip = document.createElement('div');
@@ -242,8 +237,9 @@ may be deployed without CAB. All others require CAB approval.
                 chip.addEventListener('click', () => this._onEventClick?.(ev));
                 allDaySection.appendChild(chip);
             });
+
+            frag.appendChild(allDaySection);
         }
-        frag.appendChild(allDaySection);
 
         const peakBanner = this._buildPeakEventsBanner(date, events);
         if (peakBanner) frag.appendChild(peakBanner);
