@@ -1,5 +1,5 @@
 import * as d3 from 'd3';
-import { getQueryParam, setSearchQuery, initCommonActions, closeSideDrawer, enableGlobalFindShortcut, applyTheme, loadSavedTheme } from '../shared/utils.js';
+import { getQueryParam, setSearchQuery, initCommonActions, closeSideDrawer, enableGlobalFindShortcut, applyTheme, loadSavedTheme, showThemeSwitchSpinner } from '../shared/utils.js';
 import { BRAND, renderBrandLogo } from '../../brand-specific/brand.js';
 import { ServiceCatalogStore } from './ServiceCatalogStore.js';
 import { SearchEngine } from './SearchEngine.js';
@@ -125,8 +125,12 @@ export class DominoApp {
         });
 
         document.getElementById('toggle-dark-mode')?.addEventListener('change', (e) => {
+            const spinner = showThemeSwitchSpinner();
             applyTheme(e.target.checked ? 'dark' : 'light');
-            this.graph.updateGraphTheme();
+            requestAnimationFrame(() => {
+                this.graph.updateGraphTheme();
+                requestAnimationFrame(() => spinner.remove());
+            });
         });
 
         document.getElementById('act-fit')?.addEventListener('click', () => {

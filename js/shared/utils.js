@@ -624,6 +624,24 @@ export function loadSavedTheme() {
     return saved ?? preferred;
 }
 
+// Shows a full-screen spinner overlay during a theme switch.
+// Returns the overlay element; caller must remove() it when done.
+export function showThemeSwitchSpinner() {
+    if (!document.getElementById('_dsm-spin-kf')) {
+        const s = document.createElement('style');
+        s.id = '_dsm-spin-kf';
+        s.textContent = '@keyframes _dsm-spin{to{transform:rotate(360deg)}}';
+        document.head.appendChild(s);
+    }
+    const el = document.createElement('div');
+    el.style.cssText = 'position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:99999;pointer-events:none;';
+    const ring = document.createElement('div');
+    ring.style.cssText = 'width:36px;height:36px;border:3px solid rgba(128,128,128,.2);border-top-color:#888;border-radius:50%;animation:_dsm-spin .7s linear infinite;';
+    el.appendChild(ring);
+    document.body.appendChild(el);
+    return el;
+}
+
 // ─── Legend drag ──────────────────────────────────────────────────────────────
 
 /**

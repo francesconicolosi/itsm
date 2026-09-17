@@ -4906,12 +4906,14 @@ html[data-theme="light"]     .jtl-month-picker__item:hover { background: rgba(0,
     z-index: 999;
 }
 
-/* Day cells: already position: relative — no background (preserves PSPW colors) */
+/* Day cells: transparent background ensures multiday bars remain visible when the cell
+   is elevated to z-999 above the drawer overlay (z-998). */
 .jenga-cal__cell.jenga--selected {
     outline: 2px solid rgba(245,158,11,.80);
     outline-offset: -2px;
     animation: jenga-sel-ring 1.8s ease-in-out infinite;
     z-index: 999;
+    background: transparent !important;
 }
 
 /* Dark mode */

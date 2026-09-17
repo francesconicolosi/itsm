@@ -1,5 +1,5 @@
 import { BRAND, renderBrandLogo } from '../../brand-specific/brand.js';
-import { applyTheme, loadSavedTheme } from '../shared/utils.js';
+import { applyTheme, loadSavedTheme, showThemeSwitchSpinner } from '../shared/utils.js';
 import { PostItNote } from '../shared/PostItNote.js';
 import { AnnouncementBar } from '../shared/AnnouncementBar.js';
 import { EventStore } from './EventStore.js';
@@ -159,7 +159,9 @@ export class JengaApp {
         const toggle = document.getElementById('toggle-dark-mode');
         if (toggle) toggle.checked = theme === 'dark';
         document.getElementById('toggle-dark-mode')?.addEventListener('change', (e) => {
+            const spinner = showThemeSwitchSpinner();
             applyTheme(e.target.checked ? 'dark' : 'light');
+            requestAnimationFrame(() => requestAnimationFrame(() => spinner.remove()));
         });
     }
 
