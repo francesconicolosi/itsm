@@ -44,6 +44,12 @@ export const HYBRIS_SVG = `<svg width="13" height="13" viewBox="0 0 20 20" fill=
 
 const MAX_CHIPS = 5;
 
+export function formatOperation(op) {
+    if (!op) return '';
+    if (op === 'Performance Testing') return 'Perf Test';
+    return op;
+}
+
 export function getTypeColor(type) {
     return (TYPE_COLORS[type] || TYPE_COLORS.OTHER).border;
 }
@@ -696,7 +702,7 @@ export class CalendarRenderer {
 
         const op = document.createElement('span');
         op.className = 'jenga-chip__operation';
-        const opText = ev.operation || '';
+        const opText = formatOperation(ev.operation || '');
         op.textContent = opText.length > 12 ? opText.slice(0, 10) + '…' : opText;
 
         const nodes = [badge, svc, op];

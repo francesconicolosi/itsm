@@ -1,4 +1,4 @@
-import { getTypeColor, getEnvColor, getEnvLabel, HYBRIS_SVG } from './CalendarRenderer.js';
+import { getTypeColor, getEnvColor, getEnvLabel, HYBRIS_SVG, formatOperation } from './CalendarRenderer.js';
 import { getStatusStyle } from './EventDrawer.js';
 
 // Always show the full 24-hour day
@@ -378,7 +378,8 @@ may be deployed without CAB. All others require CAB approval.
 
             const evLabel = this._eventLabel(ev);
             const timeStr = `${ev.timeSlot.timeStart} – ${ev.timeSlot.timeEnd}`;
-            block.dataset.tooltip = `${evLabel} · ${timeStr}`;
+            const opText  = ev.type === 'SERVICE_OP' ? formatOperation(ev.operation || '') : '';
+            block.dataset.tooltip = `${evLabel} · ${timeStr}${opText ? ' · ' + opText : ''}`;
 
             const inner = document.createElement('div');
             inner.className = 'day-timeline__event-inner';
@@ -391,6 +392,14 @@ may be deployed without CAB. All others require CAB approval.
             labelEl.textContent = evLabel;
 
             inner.appendChild(labelEl);
+
+            if (opText) {
+                const opTag = document.createElement('span');
+                opTag.className = 'day-timeline__op-tag';
+                opTag.textContent = opText;
+                inner.appendChild(opTag);
+            }
+
             block.appendChild(inner);
 
             block.addEventListener('click', () => this._onEventClick?.(ev));
