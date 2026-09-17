@@ -254,10 +254,10 @@ body {
     width: 22px; height: 22px;
     border-radius: 50%;
     background: #1a1a1a; color: #fff;
-    font-size: 11px; font-weight: 700;
+    font-size: 15px; font-weight: 700;
     position: absolute;
     right: 4px;
-    top: 50%;
+    top: 40%;
     transform: translateY(-50%);
 }
 
@@ -3127,12 +3127,6 @@ html[data-theme="dark"] .cards-drawer__empty { color: rgba(245,245,247,.3); }
     .jenga-cal__daynum {
         font-size: 13px;
         padding: 3px 2px 2px;
-    }
-
-    .jenga-cal__today-badge {
-        width: 18px;
-        height: 18px;
-        font-size: 9px;
     }
 
     /* On mobile: replace full chip list with compact summary badges.
