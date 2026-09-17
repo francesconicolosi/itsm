@@ -335,7 +335,7 @@ may be deployed without CAB. All others require CAB approval.
 
                 const title = document.createElement('span');
                 title.className = 'day-timeline__event-label day-timeline__event-label--stack';
-                title.textContent = `${groupEvents.length} releases`;
+                title.textContent = `${groupEvents.length} Service Operations`;
 
                 const count = document.createElement('span');
                 count.className = 'day-timeline__event-stack-count';
@@ -534,7 +534,7 @@ may be deployed without CAB. All others require CAB approval.
 
         const title = document.createElement('div');
         title.className = 'day-slot-popover__title';
-        title.textContent = `${events.length} releases`;
+        title.textContent = `${events.length} Service Operations`;
 
         titleWrap.appendChild(time);
         titleWrap.appendChild(title);
