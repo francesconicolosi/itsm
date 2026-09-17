@@ -338,7 +338,9 @@ html[data-theme="dark"] .legend--generic .legend__search-clear {
     color: rgba(255,255,255,.35);
 }
 html[data-theme="dark"] .legend--generic .legend__search-clear:hover {
-    color: #f5f5f7;
+    color: #fff;
+    background: rgba(255,255,255,.18);
+    border-radius: 8px;
 }
 html[data-theme="dark"] .legend--generic .legend__search-count {
     color: rgba(245,245,247,.50);
