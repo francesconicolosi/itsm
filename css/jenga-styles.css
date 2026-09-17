@@ -4177,6 +4177,7 @@ html[data-theme="dark"] .jenga-slideshow-container {
 
 .jenga-slide--1 .jenga-cal {
     flex-shrink: 0;
+    width: 100%; /* prevent grid columns from collapsing when no events match the filter */
 }
 
 /* Month label — shared base */
