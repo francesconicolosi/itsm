@@ -6,12 +6,64 @@ import { BRAND } from '../../brand-specific/brand.js';
 const SEARCHABLE_ATTRS_ON_PEOPLE_DB = ['Theme', 'Stream', 'Owner', 'Service Manager', 'Responsible Teams', 'Accounts administered by', 'Accounts approved by', 'Accessed by'];
 const PRIORITY_KEYS = ['Key', 'id', 'Description', 'Depends on', 'Used by'];
 
+const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+const JENGA_ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none" class="app-link-icon" aria-hidden="true"><rect x="4" y="6" width="24" height="4" rx="2" fill="#3b82f6"/><rect x="4" y="14" width="18" height="4" rx="2" fill="#22c55e"/><rect x="4" y="22" width="24" height="4" rx="2" fill="#f97316"/><rect x="24" y="12" width="4" height="8" rx="1" fill="#a855f7" opacity=".7"/></svg>`;
+const SOLITAIRE_ICON_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="app-link-icon" aria-hidden="true"><rect width="24" height="24" rx="4" fill="#111"/><path fill="white" d="M12 3C9 5.5 5 8.5 5 13c0 2.5 2 4 4 3.5C7.5 18.5 7 20 7 21H17c0-1-.5-2.5-2-4.5 2 .5 4-1 4-3.5C20 8.5 15 5.5 12 3Z"/></svg>`;
+
 export class DetailDrawer {
     constructor(app) {
         this.app = app;
         this.currentNode = null;
         this._sortOrder = localStorage.getItem('domino_drawer_attr_sort') || 'original';
         this.onClose = null;
+        this.jengaEvents = [];
+    }
+
+    _normalizeServiceName(name) {
+        return (name || '').toLowerCase().trim().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+    }
+
+    _findJengaReleasesMonths(node) {
+        if (!this.jengaEvents || !this.jengaEvents.length) return [];
+        const nodeId = this._normalizeServiceName(node.id || '');
+        const nodeName = this._normalizeServiceName(node['Service Name'] || '');
+
+        const now = new Date();
+        const curYear = now.getFullYear();
+        const curMonth = now.getMonth(); // 0-indexed
+
+        // Build set of (year, month) for past 5 calendar months (inclusive of current)
+        const windowMonths = new Set();
+        for (let i = 0; i < 5; i++) {
+            let m = curMonth - i;
+            let y = curYear;
+            if (m < 0) { m += 12; y--; }
+            windowMonths.add(`${y}-${m}`);
+        }
+
+        // Group matching events by year-month
+        const byMonth = new Map();
+        for (const ev of this.jengaEvents) {
+            const svc = ev['Service'] || '';
+            if (!svc) continue;
+            const svcNorm = this._normalizeServiceName(svc);
+            if (svcNorm !== nodeId && svcNorm !== nodeName) continue;
+
+            const dateStr = ev['DueDate'] || ev['StartDate'] || '';
+            if (!dateStr) continue;
+            const [yearStr, monthStr] = dateStr.split('-');
+            const year = parseInt(yearStr, 10);
+            const month = parseInt(monthStr, 10) - 1; // 0-indexed
+            if (isNaN(year) || isNaN(month)) continue;
+
+            const key = `${year}-${month}`;
+            if (!windowMonths.has(key)) continue;
+            if (!byMonth.has(key)) byMonth.set(key, { year, month, service: svc });
+        }
+
+        return [...byMonth.values()]
+            .sort((a, b) => a.year !== b.year ? a.year - b.year : a.month - b.month);
     }
 
     _updateSortButtons() {
@@ -171,15 +223,22 @@ export class DetailDrawer {
         return td;
     }
 
-    renderKeyCell(key) {
+    renderKeyCell(key, { appIcon } = {}) {
         const { listView } = this.app;
         const td = document.createElement('td');
         const colKey = key === 'Service Name' ? 'id' : key;
         const keyLabel = document.createElement('span');
         keyLabel.textContent = key;
-        td.innerHTML = '';
-        if (isListViewVisible()) {
+        if (appIcon) {
+            const wrap = document.createElement('span');
+            wrap.className = 'key-label-wrap';
+            wrap.insertAdjacentHTML('afterbegin', appIcon);
+            wrap.appendChild(keyLabel);
+            td.appendChild(wrap);
+        } else {
             td.appendChild(keyLabel);
+        }
+        if (isListViewVisible()) {
             const selected = listView.columnKeys.includes(colKey);
             const btn = document.createElement('button');
             btn.className = 'col-op fade-link';
@@ -189,8 +248,6 @@ export class DetailDrawer {
                 selected ? `Remove "${labelForKey(colKey)}" from list view` : `Add "${labelForKey(colKey)}" to list view`);
             btn.textContent = selected ? '−' : '+';
             td.appendChild(btn);
-        } else {
-            td.appendChild(keyLabel);
         }
         return td;
     }
@@ -230,12 +287,13 @@ export class DetailDrawer {
         const table = document.createElement('table');
         const renderedKeys = new Set();
 
-        const renderRow = (key, value) => {
+        const renderRow = (key, value, opts = {}) => {
             if (renderedKeys.has(key)) return;
             if (excluded.has(key)) return;
             if (typeof value !== 'string' || !value) return;
             const tr = document.createElement('tr');
-            tr.appendChild(this.renderKeyCell(key));
+            const appIcon = SEARCHABLE_ATTRS_ON_PEOPLE_DB.includes(key) ? SOLITAIRE_ICON_SVG : (opts.appIcon || null);
+            tr.appendChild(this.renderKeyCell(key, { appIcon }));
             tr.appendChild(this.renderValueCell(key, value, search.searchTerm));
             table.appendChild(tr);
             renderedKeys.add(key);
@@ -243,15 +301,34 @@ export class DetailDrawer {
 
         this._updateSortButtons();
         const jiraUrl = computeJiraIssuesValue(node);
+        const jengaMonths = this._findJengaReleasesMonths(node);
         const nodeKeys = Object.keys(node);
         const orderedKeys = priorityKeys.map(pk => nodeKeys.find(k => k === pk)).filter(Boolean);
         const remainingKeys = nodeKeys.filter(k => !orderedKeys.includes(k));
         if (jiraUrl) remainingKeys.push('Jira Issues');
+        if (jengaMonths.length) remainingKeys.push('Releases');
         if (this._sortOrder === 'az') remainingKeys.sort((a, b) => a.localeCompare(b));
         else if (this._sortOrder === 'za') remainingKeys.sort((a, b) => b.localeCompare(a));
-        [...orderedKeys, ...remainingKeys].forEach(key =>
-            renderRow(key, key === 'Jira Issues' ? jiraUrl : node[key])
-        );
+        [...orderedKeys, ...remainingKeys].forEach(key => {
+            if (key === 'Releases') {
+                const tr = document.createElement('tr');
+                tr.appendChild(this.renderKeyCell('Releases', { appIcon: JENGA_ICON_SVG }));
+                const td = document.createElement('td');
+                const ul = document.createElement('ul');
+                ul.className = 'jenga-releases-list';
+                jengaMonths.forEach(({ year, month, service }) => {
+                    const li = document.createElement('li');
+                    const url = `jenga.html?view=timeline&year=${year}&month=${month + 1}&services=${encodeURIComponent(service)}`;
+                    li.innerHTML = `<a href="${url}" target="_blank">${MONTH_NAMES[month]}</a>`;
+                    ul.appendChild(li);
+                });
+                td.appendChild(ul);
+                tr.appendChild(td);
+                table.appendChild(tr);
+                return;
+            }
+            renderRow(key, key === 'Jira Issues' ? jiraUrl : node[key]);
+        });
 
         table.addEventListener('click', (e) => {
             const btn = e.target.closest('button.col-op');

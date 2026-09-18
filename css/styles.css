@@ -359,6 +359,34 @@ body.side-drawer-open {
   width: 40%;
 }
 
+.app-link-icon {
+  display: block;
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.key-label-wrap {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.jenga-releases-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+}
+
+.jenga-releases-list li a {
+  color: inherit;
+}
+
 button {
   transition:
     background-color 0.4s ease,
