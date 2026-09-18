@@ -3742,11 +3742,13 @@ html:not([data-theme="dark"]) #jenga-timeline .jtl-lane--pinned > .jtl-panel {
 #side-drawer,
 .side-drawer,
 #drawer.drawer,
-.drawer.open {
+.drawer.open,
+#cards-drawer.open {
     z-index: 3000 !important;
 }
 #side-overlay,
-.side-overlay {
+.side-overlay,
+#cards-overlay.open {
     z-index: 2990 !important;
 }
 

@@ -338,8 +338,11 @@ export class DominoApp {
                 fetch(BRAND.csv.jiraCards || './jira-cards.csv')
                     .then(response => response.ok ? response.text() : '')
                     .catch(() => ''),
+                fetch(BRAND.csv.jenga || './jenga-events.csv')
+                    .then(response => response.ok ? response.text() : '')
+                    .catch(() => ''),
             ])
-                .then(([csvData, jiraCardsCsv]) => {
+                .then(([csvData, jiraCardsCsv, jengaCsv]) => {
                     if (searchParam) {
                         this.search.searchTerm = searchParam;
                         if (searchInput) searchInput.value = searchParam;
@@ -349,6 +352,7 @@ export class DominoApp {
                     const stripComments = s => s.replace(/^#[^\n]*\n/gm, '');
                     const data = d3.csvParse(csvData);
                     const jiraCardsData = jiraCardsCsv ? d3.csvParse(stripComments(jiraCardsCsv)) : [];
+                    this.drawer.jengaEvents = jengaCsv ? d3.csvParse(jengaCsv) : [];
                     this._processAndRender(data, jiraCardsData);
 
                     const afterInit = () => {
