@@ -43,6 +43,7 @@ export class SolitaireApp {
         this.autocomplete = null;
         this.visibleOrg = null;
         this.searchParam = null;
+        this.jengaServicesThisMonth = new Set();
         this.isAdvanced = (() => {
             const p = getQueryParam('advanced');
             return p ? p === 'true' : false;
@@ -100,14 +101,18 @@ export class SolitaireApp {
             const filtersFetch = BRAND.csv.customFilters
                 ? fetch(BRAND.csv.customFilters).then(r => r.text()).catch(() => '')
                 : Promise.resolve('');
+            const jengaFetch = BRAND.csv.jenga
+                ? fetch(BRAND.csv.jenga).then(r => r.text()).catch(() => '')
+                : Promise.resolve('');
 
-            Promise.all([peopleFetch, filtersFetch])
-                .then(([csvData, filtersCsv]) => {
+            Promise.all([peopleFetch, filtersFetch, jengaFetch])
+                .then(([csvData, filtersCsv, jengaCsv]) => {
                     if (filtersCsv) {
                         this.quickFilters.load(filtersCsv);
                         this.quickFilters.render();
                         this.quickFilters.initEvents();
                     }
+                    if (jengaCsv) this._buildJengaServicesThisMonth(jengaCsv);
                     this.loadAndRender(csvData);
                     requestAnimationFrame(() => this._hideSpinner());
                     this.searchParam = getQueryParam('search');
@@ -142,6 +147,25 @@ export class SolitaireApp {
         this.renderer.render(data);
         this.interaction.applyDraggableToggleState();
         this._buildAutocompleteIndex();
+    }
+
+    _buildJengaServicesThisMonth(csvText) {
+        const now = new Date();
+        const y = now.getFullYear();
+        const m = now.getMonth();
+        try {
+            const rows = d3.csvParse(csvText);
+            for (const row of rows) {
+                const svc = (row.Service || '').trim();
+                if (!svc) continue;
+                const dateStr = row.DueDate || row.StartDate;
+                if (!dateStr) continue;
+                const d = new Date(dateStr);
+                if (d.getFullYear() === y && d.getMonth() === m) {
+                    this.jengaServicesThisMonth.add(svc.toLowerCase());
+                }
+            }
+        } catch {}
     }
 
     _buildAutocompleteIndex() {

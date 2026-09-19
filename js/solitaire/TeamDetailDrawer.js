@@ -140,6 +140,23 @@ export class TeamDetailDrawer {
                     } else {
                         li.textContent = s;
                     }
+                    if (this.app.jengaServicesThisMonth?.has(s.toLowerCase())) {
+                        const now = new Date();
+                        const jengaHref = `jenga.html?view=calendar&year=${now.getFullYear()}&month=${now.getMonth() + 1}&services=${encodeURIComponent(s)}`;
+                        const iconLink = document.createElement('a');
+                        iconLink.href = jengaHref;
+                        iconLink.target = '_blank';
+                        iconLink.rel = 'noopener noreferrer';
+                        iconLink.className = 'jenga-link-icon';
+                        iconLink.setAttribute('aria-label', `View ${s} in Jenga`);
+                        iconLink.setAttribute('data-tooltip', 'View in Jenga this month');
+                        const img = document.createElement('img');
+                        img.src = './assets/jenga.svg';
+                        img.alt = '';
+                        img.setAttribute('aria-hidden', 'true');
+                        iconLink.appendChild(img);
+                        li.appendChild(iconLink);
+                    }
                     frag.appendChild(li);
                 });
 
