@@ -142,14 +142,14 @@ export class TeamDetailDrawer {
                     }
                     if (this.app.jengaServicesThisMonth?.has(s.toLowerCase())) {
                         const now = new Date();
-                        const jengaHref = `jenga.html?view=calendar&year=${now.getFullYear()}&month=${now.getMonth() + 1}&services=${encodeURIComponent(s)}`;
+                        const jengaHref = `jenga.html?view=timeline&year=${now.getFullYear()}&month=${now.getMonth() + 1}&services=${encodeURIComponent(s)}`;
                         const iconLink = document.createElement('a');
                         iconLink.href = jengaHref;
                         iconLink.target = '_blank';
                         iconLink.rel = 'noopener noreferrer';
                         iconLink.className = 'jenga-link-icon';
-                        iconLink.setAttribute('aria-label', `View ${s} in Jenga`);
-                        iconLink.setAttribute('data-tooltip', 'View in Jenga this month');
+                        iconLink.setAttribute('aria-label', `View ${s} releases timeline`);
+                        iconLink.setAttribute('data-tooltip', 'View releases timeline');
                         const img = document.createElement('img');
                         img.src = './assets/jenga.svg';
                         img.alt = '';
