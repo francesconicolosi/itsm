@@ -9,7 +9,6 @@ import {
     splitValues,
     applyTheme,
     loadSavedTheme,
-    showThemeSwitchSpinner,
 } from '../shared/utils.js';
 import { BRAND, renderBrandLogo } from '../../brand-specific/brand.js';
 import { ROLE_FIELD_WITH_MAPPING, BUSINESS_FUNCTION_FIELD } from './constants.js';
@@ -682,12 +681,8 @@ export class SolitaireApp {
         });
 
         document.getElementById('toggle-dark-mode')?.addEventListener('change', (e) => {
-            const spinner = showThemeSwitchSpinner();
             applyTheme(e.target.checked ? 'dark' : 'light');
-            requestAnimationFrame(() => {
-                this.legend.recolor(this.legend.colorBy);
-                requestAnimationFrame(() => spinner.remove());
-            });
+            this.legend.recolor(this.legend.colorBy);
         });
 
         document.getElementById('act-collapse-all')?.addEventListener('click', () => {

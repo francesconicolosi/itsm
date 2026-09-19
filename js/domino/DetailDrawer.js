@@ -267,7 +267,7 @@ export class DetailDrawer {
         const idNorm = idRaw.toLowerCase();
         const keyEqualsId = keyNorm && keyNorm === idNorm;
 
-        const priorityKeys = [...(keyEqualsId ? ['id'] : ['Key', 'id']), 'Description', 'Depends on', 'Used by'];
+        const priorityKeys = ['Key', ...(!keyEqualsId ? ['id'] : []), 'Description', 'Depends on', 'Used by'];
 
         const drawer = document.getElementById('drawer');
         const overlay = document.getElementById('overlay');
@@ -281,7 +281,7 @@ export class DetailDrawer {
         const excluded = new Set([
             'index', 'x', 'y', 'vy', 'vx', 'fx', 'fy', 'color',
             'Service Name',
-            ...(keyEqualsId ? ['Key'] : [])
+            ...(keyEqualsId ? ['id'] : [])
         ]);
 
         const table = document.createElement('table');

@@ -277,6 +277,11 @@
 .legend--generic:hover .legend__resize-handle     { opacity: 0.30; }
 .legend--generic:hover .legend__resize-handle--se { opacity: 0.55; }
 .legend--generic .legend__resize-handle:hover     { opacity: 1 !important; }
+/* Resize is forbidden while docked to a corner — only dragging to undock is allowed */
+.legend--generic.legend--anchor-tl .legend__resize-handle,
+.legend--generic.legend--anchor-tr .legend__resize-handle,
+.legend--generic.legend--anchor-bl .legend__resize-handle,
+.legend--generic.legend--anchor-br .legend__resize-handle { display: none; }
 
 /* --- Highlight animation (scroll-to-match) --- */
 @keyframes legendItemHighlight {

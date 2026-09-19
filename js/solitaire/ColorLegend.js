@@ -133,8 +133,10 @@ export class ColorLegend extends LegendBase {
         this._wireFilterToggle(root, 'legend-filter-v1');
 
         list.style.setProperty('--legend-row', '24px');
-        list.style.maxHeight = `calc(${maxVisible} * var(--legend-row))`;
         this.enableDrag({ handleSelector: '.legend__header' });
+        if (!list.style.maxHeight) {
+            list.style.maxHeight = `calc(${maxVisible} * var(--legend-row))`;
+        }
     }
 
     recolor(field) {

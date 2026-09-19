@@ -201,7 +201,8 @@ export class AutocompleteEngine {
         if (!this._dropdown || !this._input) return;
 
         const rawStr = (raw ?? '').toString();
-        this._suggestions = this.computeSuggestions(rawStr).slice(0, MAX_OPTIONS);
+        this._suggestions = this.computeSuggestions(rawStr)
+            .slice(0, MAX_OPTIONS);
         this._activeIdx = -1;
         this._dropdown.innerHTML = '';
 
@@ -236,6 +237,8 @@ export class AutocompleteEngine {
         const isConfirm = s === this._input.value;
         this._input.value = s;
         if (isConfirm) {
+            // Value unchanged — user picked the "confirm" entry. Close dropdown and
+            // signal the app to trigger a search via a dedicated custom event.
             this._hideDropdown();
             this._input.dispatchEvent(new CustomEvent('ac-confirm', { bubbles: true }));
         } else {

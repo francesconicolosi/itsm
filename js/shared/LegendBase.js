@@ -21,7 +21,8 @@ export class LegendBase {
     _buildShell(root, title) {
         this._dragAttached = false;
         this._resizeAttached = false;
-        root.className = 'legend legend--generic';
+        const _keepCorner = ['legend--anchor-tl','legend--anchor-tr','legend--anchor-bl','legend--anchor-br'].find(c => root.classList.contains(c)) ?? null;
+        root.className = 'legend legend--generic' + (_keepCorner ? ` ${_keepCorner}` : '');
         root.innerHTML = `
   <div class="legend__header" aria-label="Legend header">
     <div class="legend__title" role="heading" aria-level="2"></div>
@@ -319,6 +320,10 @@ export class LegendBase {
         };
 
         const open = () => {
+            if (!root.style.width) {
+                const w = root.getBoundingClientRect().width;
+                if (w > 0) root.style.width = w + 'px';
+            }
             title.hidden = true;
             wrap.hidden = false;
             const filterBtn = root.querySelector('.legend__filter-toggle');
@@ -482,6 +487,7 @@ export class LegendBase {
 
             handle.addEventListener('pointerdown', (e) => {
                 if (e.button !== 0) return;
+                if (ANCHOR_CLASSES.some(c => root.classList.contains(c))) return;
                 e.preventDefault();
                 e.stopPropagation();
                 try { handle.setPointerCapture(e.pointerId); } catch {}
@@ -494,18 +500,23 @@ export class LegendBase {
                 const startLeft = r.left;
                 const startTop  = r.top;
 
-                // Pin position so left/top edge drags work correctly
-                if (movesLeft || movesTop) {
-                    ANCHOR_CLASSES.forEach(c => root.classList.remove(c));
-                    root.style.left   = startLeft + 'px';
-                    root.style.top    = startTop  + 'px';
-                    root.style.right  = 'auto';
-                    root.style.bottom = 'auto';
-                }
+                let pinned = false;
 
                 const onMove = (me) => {
                     const dx = me.clientX - startX;
                     const dy = me.clientY - startY;
+
+                    // Pin position on first actual movement (not on pointerdown) so that
+                    // merely touching a top/left handle doesn't accidentally detach the legend
+                    // from its corner anchor.
+                    if ((movesLeft || movesTop) && !pinned) {
+                        pinned = true;
+                        ANCHOR_CLASSES.forEach(c => root.classList.remove(c));
+                        root.style.left   = startLeft + 'px';
+                        root.style.top    = startTop  + 'px';
+                        root.style.right  = 'auto';
+                        root.style.bottom = 'auto';
+                    }
 
                     if (movesRight) {
                         root.style.width = Math.max(MIN_W, Math.min(MAX_W, startW + dx)) + 'px';
@@ -526,15 +537,16 @@ export class LegendBase {
                 };
 
                 const onUp = () => {
-                    handle.removeEventListener('pointermove', onMove);
-                    handle.removeEventListener('pointerup',   onUp);
+                    window.removeEventListener('pointermove', onMove);
+                    window.removeEventListener('pointerup',   onUp);
+                    window.removeEventListener('pointercancel', onUp);
                     try {
                         localStorage.setItem(storageKey, JSON.stringify({
                             width:         root.style.width,
                             maxListHeight: list.style.maxHeight,
                         }));
                     } catch {}
-                    if (posKey && (movesLeft || movesTop)) {
+                    if (posKey && (movesLeft || movesTop) && pinned) {
                         try {
                             const fr = root.getBoundingClientRect();
                             localStorage.setItem(posKey, JSON.stringify({ type: 'free', x: fr.left, y: fr.top }));
@@ -542,8 +554,9 @@ export class LegendBase {
                     }
                 };
 
-                handle.addEventListener('pointermove', onMove);
-                handle.addEventListener('pointerup',   onUp);
+                window.addEventListener('pointermove', onMove);
+                window.addEventListener('pointerup',   onUp);
+                window.addEventListener('pointercancel', onUp);
             });
         });
     }

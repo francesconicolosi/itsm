@@ -1,5 +1,5 @@
 import * as d3 from 'd3';
-import { getQueryParam, setSearchQuery, initCommonActions, closeSideDrawer, enableGlobalFindShortcut, applyTheme, loadSavedTheme, showThemeSwitchSpinner } from '../shared/utils.js';
+import { getQueryParam, setSearchQuery, initCommonActions, closeSideDrawer, enableGlobalFindShortcut, applyTheme, loadSavedTheme } from '../shared/utils.js';
 import { BRAND, renderBrandLogo } from '../../brand-specific/brand.js';
 import { ServiceCatalogStore } from './ServiceCatalogStore.js';
 import { SearchEngine } from './SearchEngine.js';
@@ -31,7 +31,6 @@ export class DominoApp {
         this.graph.initDOM();
         this.listView.initDOM();
         this.drawer.initDOM();
-        this.drawer.onClose = () => this.graph.clearSelection();
 
         const toggleDecommissioned = document.getElementById('toggle-decommissioned');
         if (toggleDecommissioned) {
@@ -67,6 +66,7 @@ export class DominoApp {
         const dmToggle = document.getElementById('toggle-dark-mode');
         if (dmToggle) dmToggle.checked = theme === 'dark';
 
+        this.drawer.onClose = () => this.graph.clearSelection();
         this._initSideDrawerEvents();
         this.search.initChipBar();
         this._initFileUpload();
@@ -125,12 +125,8 @@ export class DominoApp {
         });
 
         document.getElementById('toggle-dark-mode')?.addEventListener('change', (e) => {
-            const spinner = showThemeSwitchSpinner();
             applyTheme(e.target.checked ? 'dark' : 'light');
-            requestAnimationFrame(() => {
-                this.graph.updateGraphTheme();
-                requestAnimationFrame(() => spinner.remove());
-            });
+            this.graph.updateGraphTheme();
         });
 
         document.getElementById('act-fit')?.addEventListener('click', () => {
@@ -176,7 +172,7 @@ export class DominoApp {
                 this.search.handleQuery(composed, false);
             } else {
                 const q = e.target.value ? e.target.value.trim() : '';
-                if (q !== undefined) this.search.handleQuery(q, false);
+                this.search.handleQuery(q, false);
             }
         });
 
@@ -252,6 +248,21 @@ export class DominoApp {
         enableGlobalFindShortcut({ inputSelector: '#drawer-search-input' });
     }
 
+    _processAndRender(data, jiraCardsData = null) {
+        const colorScale = this.store.processData(data);
+        if (!colorScale) return;
+
+        // Process Jira cards BEFORE createMap(), because badges are created while SVG nodes are rendered.
+        if (Array.isArray(jiraCardsData)) {
+            this.store.processJiraCards(jiraCardsData);
+        }
+
+        this.graph.createMap();
+        this.legend.render(colorScale);
+        this.autocomplete.buildIndex();
+        this.autocomplete.init();
+    }
+
     showToast(message, duration = 3000) {
         const positionContainer = (container) => {
             const drawer = document.getElementById('drawer');
@@ -299,19 +310,11 @@ export class DominoApp {
         }, duration);
     }
 
-    _processAndRender(data, jiraCardsData = null) {
-        const colorScale = this.store.processData(data);
-        if (!colorScale) return;
-
-        // Process Jira cards BEFORE createMap(), because badges are created while SVG nodes are rendered.
-        if (Array.isArray(jiraCardsData)) {
-            this.store.processJiraCards(jiraCardsData);
-        }
-
-        this.graph.createMap();
-        this.legend.render(colorScale);
-        this.autocomplete.buildIndex();
-        this.autocomplete.init();
+    _hideSpinner() {
+        const el = document.getElementById('app-spinner');
+        if (!el) return;
+        el.classList.add('is-hidden');
+        el.addEventListener('transitionend', () => el.remove(), { once: true });
     }
 
     _initLoadEvent() {
@@ -388,12 +391,5 @@ export class DominoApp {
                 })
                 .catch(error => console.error('Error loading the CSV file:', error));
         });
-    }
-
-    _hideSpinner() {
-        const el = document.getElementById('app-spinner');
-        if (!el) return;
-        el.classList.add('is-hidden');
-        el.addEventListener('transitionend', () => el.remove(), { once: true });
     }
 }

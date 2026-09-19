@@ -1200,14 +1200,14 @@ body.drawer-open {
 }
 
 .stream-title {
-    font-size: 67px;
+    font-size: 87px;
     font-weight: bold;
     fill: #222;
     text-transform: uppercase;
 }
 
 svg text.stream-title {
-    font-size: 67px;
+    font-size: 87px;
 }
 
 g[data-key^="stream::"] .stream-icon {

@@ -130,6 +130,7 @@ export class GraphRenderer {
                 .filter(event => !event.target.closest('.node-icon'))
                 .on('start', (event, d) => {
                     if (this.positionLocked) {
+                        // Pin every node so none drift; stop simulation cleanly
                         this.simulation.nodes().forEach(n => { n.fx = n.x; n.fy = n.y; });
                         this.simulation.alphaTarget(0).stop();
                     } else if (!event.active) {
@@ -273,7 +274,7 @@ export class GraphRenderer {
             const remBtn = e.target.closest('.search-remove');
 
             if (trigger) {
-                this.clearSelection();
+                this.clickedNode = null;
                 e.preventDefault();
                 const key = decodeURIComponent(trigger.getAttribute('data-key'));
                 const isAccurateSearch = key === 'Depends on' || key === 'Used by' || key === 'id';
@@ -513,7 +514,7 @@ export class GraphRenderer {
         const value = String(serviceId || '').trim();
         if (!value) return;
 
-        this.clearSelection();
+        this.clickedNode = null;
         this._closeJiraCardsPopup?.();
         this.app?.search?.updateSearchAndRefresh?.(`id:"${value}"`, false);
         window.scrollTo({ top: 0, behavior: 'smooth' });

@@ -5,12 +5,14 @@ export const ANNOUNCEMENTS = [
     {
         id: '2026-08-31',
         type: 'changelog',
-        title: 'Post-it notes, search & Excel export',
+        title: 'Post-it notes, search & Monopoli',
         items: [
-            'Post-it notes — multiple notes with editable titles and real-time URL links',
+            'Post-it notes on all apps — multiple notes, editable titles, real-time URL links',
             'Custom autocomplete dropdown with compound & multi-field queries (Domino)',
             'Per-clause chip editing and full keyboard navigation in search bars',
             'Domino list view: Excel export with visible-columns / all-columns choice',
+            'Jenga: major incident EVA alert popup, ITSM retention band on timeline',
+            'Monopoli: new Jira ticket viewer with timeline and dependency graph',
         ],
     },
 ];
