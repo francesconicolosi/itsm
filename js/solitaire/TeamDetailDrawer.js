@@ -150,6 +150,7 @@ export class TeamDetailDrawer {
                         iconLink.className = 'jenga-link-icon';
                         iconLink.setAttribute('aria-label', `View ${s} releases timeline`);
                         iconLink.setAttribute('data-tooltip', 'View releases timeline');
+                        iconLink.setAttribute('data-tooltip-placement', 'bottom');
                         const img = document.createElement('img');
                         img.src = './assets/jenga.svg';
                         img.alt = '';

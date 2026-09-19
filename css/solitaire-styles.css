@@ -1097,8 +1097,7 @@ body.drawer-open {
     opacity: 0;
     transform: translate(-50%, -8px);
     transition: opacity 120ms ease;
-    white-space: normal;
-    word-break: break-word;
+    white-space: nowrap;
     max-width: 220px;
     text-align: center;
     box-shadow: 0 4px 12px rgba(0, 0, 0, .25);
