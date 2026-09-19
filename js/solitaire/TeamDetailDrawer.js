@@ -107,7 +107,7 @@ export class TeamDetailDrawer {
         }
 
         if (channels && channels.length > 0) {
-            addDrawerSection('Channels 💬', (body) => {
+            addDrawerSection('Channels <span class="drawer-svc-icon">💬️</span>', (body) => {
                 const ul = document.createElement('ul');
                 channels.forEach(channel => {
                     const li = document.createElement('li');
