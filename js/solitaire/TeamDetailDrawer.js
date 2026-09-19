@@ -6,6 +6,12 @@ import {
     truncateString,
 } from '../shared/utils.js';
 
+function _dominoAccentIconSrc() {
+    const t = document.documentElement?.getAttribute('data-theme');
+    const dark = t === 'dark' || (!t && window.matchMedia?.('(prefers-color-scheme: dark)')?.matches);
+    return dark ? 'assets/domino-accent.svg' : 'assets/domino-accent-light.svg';
+}
+
 export class TeamDetailDrawer {
     constructor(app) {
         this.app = app;
@@ -21,10 +27,11 @@ export class TeamDetailDrawer {
         email,
         highlightService,
         highlightQuery,
-        elementsTitle = 'Managed Services ⚙️',
+        elementsTitle = null,
         elementsBaseUrl,
         _permalinkSearch = '',
-        _showDetails = false
+        _showDetails = false,
+        _openServices = false,
     }) {
         if (this.app.interaction.isDraggable) return;
 
@@ -79,7 +86,7 @@ export class TeamDetailDrawer {
 
             const summary = document.createElement('summary');
             summary.className = 'drawer-section__summary';
-            summary.textContent = label;
+            summary.innerHTML = label;
 
             const body = document.createElement('div');
             body.className = 'drawer-section__body';
@@ -116,7 +123,7 @@ export class TeamDetailDrawer {
         }
 
         if (email && email !== '') {
-            addDrawerSection('Team Mailbox ✉️', (body) => {
+            addDrawerSection('Team Mailbox <span class="drawer-svc-icon">✉️</span>', (body) => {
                 body.appendChild(
                     createHrefElement(createOutlookUrl([email]), `${truncateString(email, 25)}`)
                 );
@@ -124,9 +131,10 @@ export class TeamDetailDrawer {
         }
 
         if (elements && elements.items && elements.items.length > 0) {
-            const shouldOpenServices = !!(highlightService || (highlightQuery && highlightQuery.trim()));
+            const resolvedElementsTitle = elementsTitle ?? `Managed Services <img src="${_dominoAccentIconSrc()}" class="drawer-svc-icon">`;
+            const shouldOpenServices = _openServices || !!(highlightService || (highlightQuery && highlightQuery.trim()));
 
-            addDrawerSection(elementsTitle, (body) => {
+            addDrawerSection(resolvedElementsTitle, (body) => {
                 const frag = document.createDocumentFragment();
 
                 elements.items.forEach(s => {

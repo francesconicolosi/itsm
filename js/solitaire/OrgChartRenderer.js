@@ -109,6 +109,12 @@ function communityTooltip(group) {
     return `People sharing a part-time focus on an interest or short-term mission, rather than a full-time daily ${group}.`;
 }
 
+function _dominoAccentIconSrc() {
+    const t = document.documentElement?.getAttribute('data-theme');
+    const dark = t === 'dark' || (!t && window.matchMedia?.('(prefers-color-scheme: dark)')?.matches);
+    return dark ? 'assets/domino-accent.svg' : 'assets/domino-accent-light.svg';
+}
+
 export class OrgChartRenderer {
     constructor(app) {
         this.app = app;
@@ -971,9 +977,6 @@ export class OrgChartRenderer {
                         this.makeResizable(thirdLevelGroup, thirdLevelRect, { minWidth: 360, minHeight: 220 });
 
                         const serviceCount = services?.items?.length || 0;
-                        const titleLabel = serviceCount > 0
-                            ? `${app.db.truncate(thirdLevel)} - ⚙️ (${serviceCount})`
-                            : app.db.truncate(thirdLevel);
 
                         const teamTitle = thirdLevelGroup.append('text')
                             .attr('x', teamBoxWidth / 2).attr('y', 70)
@@ -984,7 +987,40 @@ export class OrgChartRenderer {
                             .attr('data-team-email', email || '')
                             .attr('data-team-channels', JSON.stringify(channels || []))
                             .attr('class', 'team-title')
-                            .text(titleLabel);
+                            .text(app.db.truncate(thirdLevel));
+
+                        if (serviceCount > 0) {
+                            const bbox = teamTitle.node().getBBox();
+                            const CHIP_H = 36, CHIP_ICON = 22, CHIP_PAD_L = 6, CHIP_GAP = 5, CHIP_PAD_R = 12;
+                            const chipWidth = CHIP_PAD_L + CHIP_ICON + CHIP_GAP + String(serviceCount).length * 16 + CHIP_PAD_R;
+                            const chipX = bbox.x + bbox.width + 10;
+                            const chipY = 70 - CHIP_H + 5;
+
+                            const chipG = thirdLevelGroup.append('g')
+                                .attr('class', 'svc-chip')
+                                .attr('cursor', 'pointer')
+                                .attr('transform', `translate(${chipX},${chipY})`);
+
+                            chipG.append('rect')
+                                .attr('width', chipWidth).attr('height', CHIP_H)
+                                .attr('rx', CHIP_H / 2);
+
+                            chipG.append('image')
+                                .attr('href', _dominoAccentIconSrc())
+                                .attr('x', CHIP_PAD_L).attr('y', (CHIP_H - CHIP_ICON) / 2)
+                                .attr('width', CHIP_ICON).attr('height', CHIP_ICON);
+
+                            chipG.append('text')
+                                .attr('x', CHIP_PAD_L + CHIP_ICON + CHIP_GAP)
+                                .attr('y', CHIP_H * 0.72)
+                                .attr('class', 'svc-chip__count')
+                                .text(serviceCount);
+
+                            chipG.on('click', (e) => {
+                                e.stopPropagation();
+                                app.drawer.open({ name: thirdLevel, description, elements: services, channels, email, elementsBaseUrl: (s) => `domino.html?search=id%3A"${encodeURIComponent(s)}"`, _permalinkSearch: `team:${thirdLevel}`, _showDetails: true, _openServices: true });
+                            });
+                        }
 
                         if (isCommunity) {
                             thirdLevelGroup.append('text')

@@ -805,6 +805,36 @@ html, body {
     fill: #333;
 }
 
+.svc-chip rect {
+    fill: rgba(100, 130, 215, 0.14);
+    stroke: rgba(100, 130, 215, 0.40);
+    stroke-width: 1.5;
+}
+
+.svc-chip__count {
+    font-size: 26px;
+    font-weight: 600;
+    font-family: var(--brand-font);
+    fill: #5060b8;
+}
+
+.drawer-svc-icon {
+    vertical-align: middle;
+    margin-left: auto;
+    margin-right: 8px;
+}
+
+img.drawer-svc-icon {
+    width: 18px;
+    height: 18px;
+}
+
+span.drawer-svc-icon {
+    font-size: 18px;
+    line-height: 1;
+    display: inline-block;
+}
+
 .profile-box {
     stroke: #ccc;
     stroke-width: 1;
@@ -2310,6 +2340,8 @@ html[data-theme="dark"] .team-icon path { stroke: rgba(245,245,247,0.60); }
 html[data-theme="dark"] .stream-icon circle[fill="#333"],
 html[data-theme="dark"] .theme-icon circle[fill="#333"],
 html[data-theme="dark"] .team-icon circle[fill="#333"] { fill: rgba(245,245,247,0.60); }
+html[data-theme="dark"] .svc-chip rect { fill: rgba(151, 171, 245, 0.16); stroke: rgba(151, 171, 245, 0.36); }
+html[data-theme="dark"] .svc-chip__count { fill: #97abf5; }
 
 /* — Jenga event indicator in managed-services drawer list — */
 .jenga-link-icon {
