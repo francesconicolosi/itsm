@@ -245,7 +245,16 @@ export class DominoApp {
     }
 
     _initKeyboardShortcut() {
-        enableGlobalFindShortcut({ inputSelector: '#drawer-search-input' });
+        enableGlobalFindShortcut({
+            getInput: () => {
+                const drawer = document.getElementById('drawer');
+                if (drawer?.classList.contains('open')) {
+                    const filterInput = drawer.querySelector('.drawer-filter input');
+                    if (filterInput) return filterInput;
+                }
+                return document.querySelector('#drawer-search-input');
+            }
+        });
     }
 
     _processAndRender(data, jiraCardsData = null) {

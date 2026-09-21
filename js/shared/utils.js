@@ -552,22 +552,23 @@ export function toggleClearButton(buttonId, value) {
 
 // ─── Keyboard shortcuts ────────────────────────────────────────────────────
 
-export function enableGlobalFindShortcut({ inputSelector, onFocus, selectText = true } = {}) {
-    if (!inputSelector) {
-        console.warn('[enableGlobalFindShortcut] inputSelector is required');
+export function enableGlobalFindShortcut({ inputSelector, getInput, onFocus, selectText = true } = {}) {
+    if (!inputSelector && typeof getInput !== 'function') {
+        console.warn('[enableGlobalFindShortcut] inputSelector or getInput is required');
         return;
     }
+    const resolveInput = typeof getInput === 'function'
+        ? getInput
+        : () => document.querySelector(inputSelector);
     window.addEventListener('keydown', (e) => {
-        const isMac = navigator.platform.toUpperCase().includes('MAC');
         const isFindShortcut =
-            (isMac && e.metaKey && e.key.toLowerCase() === 'f') ||
-            (!isMac && e.ctrlKey && e.key.toLowerCase() === 'f');
+            (e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'f';
         if (!isFindShortcut) return;
         const activeTag = document.activeElement?.tagName;
         const isTyping =
             activeTag === 'INPUT' || activeTag === 'TEXTAREA' || document.activeElement?.isContentEditable;
         if (isTyping) return;
-        const input = document.querySelector(inputSelector);
+        const input = resolveInput();
         if (!input) return;
         e.preventDefault();
         e.stopPropagation();
