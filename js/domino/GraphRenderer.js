@@ -277,6 +277,12 @@ export class GraphRenderer {
                 this.clickedNode = null;
                 e.preventDefault();
                 const key = decodeURIComponent(trigger.getAttribute('data-key'));
+                const serviceId = trigger.getAttribute('data-service-id');
+                if (key === 'Key' && serviceId) {
+                    search.updateSearchAndRefresh(`id:"${decodeURIComponent(serviceId)}"`);
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                    return;
+                }
                 const isAccurateSearch = key === 'Depends on' || key === 'Used by' || key === 'id';
                 const mappedKey = isAccurateSearch ? 'id' : key;
                 const value = isAccurateSearch

@@ -159,7 +159,7 @@ export class DetailDrawer {
         return `<a href="solitaire.html?search=${encoded}" target="_blank">${value}</a>`;
     }
 
-    renderValueCell(key, raw, searchTerm) {
+    renderValueCell(key, raw, searchTerm, { serviceId } = {}) {
         const { search } = this.app;
         const td = document.createElement('td');
         if (typeof raw !== 'string') return td;
@@ -208,17 +208,19 @@ export class DetailDrawer {
             return td;
         }
 
+        const serviceIdAttr = (key === 'Key' && serviceId)
+            ? ` data-service-id="${encodeURIComponent(serviceId)}"` : '';
         if (parts.length > 1) {
             const ul = document.createElement('ul');
             parts.forEach(v => {
                 const li = document.createElement('li');
-                li.innerHTML = `<i>${v} <a class="fade-link search-trigger" data-key="${encodeURIComponent(key)}" data-value="${encodeURIComponent(v)}" href="#">⌞ ⌝</a>${makeToggleBtn(v)}</i>`;
+                li.innerHTML = `<i>${v} <a class="fade-link search-trigger" data-key="${encodeURIComponent(key)}" data-value="${encodeURIComponent(v)}"${serviceIdAttr} href="#">⌞ ⌝</a>${makeToggleBtn(v)}</i>`;
                 ul.appendChild(li);
             });
             td.appendChild(ul);
         } else {
             const v = parts[0] || '';
-            td.innerHTML = `<i>${v} <a class="fade-link search-trigger" data-key="${encodeURIComponent(key)}" data-value="${encodeURIComponent(v)}" href="#">⌞ ⌝</a>${makeToggleBtn(v)}</i>`;
+            td.innerHTML = `<i>${v} <a class="fade-link search-trigger" data-key="${encodeURIComponent(key)}" data-value="${encodeURIComponent(v)}"${serviceIdAttr} href="#">⌞ ⌝</a>${makeToggleBtn(v)}</i>`;
         }
         return td;
     }
@@ -294,7 +296,7 @@ export class DetailDrawer {
             const tr = document.createElement('tr');
             const appIcon = SEARCHABLE_ATTRS_ON_PEOPLE_DB.includes(key) ? SOLITAIRE_ICON_SVG : (opts.appIcon || null);
             tr.appendChild(this.renderKeyCell(key, { appIcon }));
-            tr.appendChild(this.renderValueCell(key, value, search.searchTerm));
+            tr.appendChild(this.renderValueCell(key, value, search.searchTerm, opts));
             table.appendChild(tr);
             renderedKeys.add(key);
         };
@@ -327,7 +329,7 @@ export class DetailDrawer {
                 table.appendChild(tr);
                 return;
             }
-            renderRow(key, key === 'Jira Issues' ? jiraUrl : node[key]);
+            renderRow(key, key === 'Jira Issues' ? jiraUrl : node[key], key === 'Key' ? { serviceId: idRaw } : {});
         });
 
         table.addEventListener('click', (e) => {
@@ -338,6 +340,20 @@ export class DetailDrawer {
             refreshDrawerColumnIcons();
         });
 
+        const filterWrap = document.createElement('div');
+        filterWrap.className = 'drawer-filter';
+        const filterInput = document.createElement('input');
+        filterInput.type = 'text';
+        filterInput.setAttribute('placeholder', 'Filter attributes by name or value…');
+        filterInput.setAttribute('autocomplete', 'off');
+        filterWrap.appendChild(filterInput);
+        filterInput.addEventListener('input', () => {
+            const q = filterInput.value.trim().toLowerCase();
+            table.querySelectorAll('tr').forEach(row => {
+                row.hidden = q !== '' && !row.textContent.toLowerCase().includes(q);
+            });
+        });
+        drawerContent.appendChild(filterWrap);
         drawerContent.appendChild(table);
         refreshDrawerColumnIcons();
         if (openDrawer) {

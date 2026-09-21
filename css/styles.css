@@ -459,6 +459,34 @@ button:hover {
 #closeDrawer2:hover[data-tooltip]::after,
 #drawerShareBtn:hover[data-tooltip]::after { opacity: 1; }
 
+.drawer-filter {
+  padding: 8px 10px;
+  border-bottom: 1px solid #e5e5e5;
+}
+
+.drawer-filter input {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 13px;
+  background: #fff;
+  color: #333;
+  outline: none;
+  font-family: var(--brand-font), inherit;
+  transition: border-color 0.12s ease, box-shadow 0.12s ease;
+}
+
+.drawer-filter input:focus {
+  border-color: #999;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.06);
+}
+
+.drawer-filter input::placeholder {
+  color: #aaa;
+}
+
 .fade-link {
   color: black;
   text-decoration: none;
@@ -960,6 +988,10 @@ html[data-theme="dark"] #closeDrawer:hover,
 html[data-theme="dark"] #closeDrawer2:hover,
 html[data-theme="dark"] #drawerShareBtn:hover { background: rgba(255,255,255,0.08); color: #f5f5f7; opacity: 1; }
 html[data-theme="dark"] .drawer-sort-btn--active { color: #f5f5f7; opacity: 1; }
+html[data-theme="dark"] .drawer-filter            { border-bottom-color: rgba(255,255,255,0.07); }
+html[data-theme="dark"] .drawer-filter input      { background: #252528; border-color: rgba(255,255,255,0.12); color: #f5f5f7; }
+html[data-theme="dark"] .drawer-filter input:focus { border-color: rgba(255,255,255,0.30); box-shadow: 0 0 0 2px rgba(255,255,255,0.06); }
+html[data-theme="dark"] .drawer-filter input::placeholder { color: rgba(245,245,247,0.35); }
 
 /* Shared widgets */
 html[data-theme="dark"] .modal-box   { background: #1c1c1e; color: #f5f5f7; border-color: rgba(255,255,255,0.12); box-shadow: 0 20px 60px rgba(0,0,0,0.65); }
