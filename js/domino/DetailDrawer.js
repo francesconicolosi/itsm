@@ -120,6 +120,18 @@ export class DetailDrawer {
         document.getElementById('overlay')?.addEventListener('click', () => this.closeDrawer());
 
         document.addEventListener('keydown', (e) => {
+            if ((e.metaKey || e.ctrlKey) && e.key === 'f') {
+                const drawer = document.getElementById('drawer');
+                if (drawer?.classList.contains('open')) {
+                    const filterInput = drawer.querySelector('.drawer-filter input');
+                    if (filterInput) {
+                        e.preventDefault();
+                        filterInput.focus();
+                        filterInput.select();
+                        return;
+                    }
+                }
+            }
             if (e.key !== 'Escape') return;
             // If the autocomplete dropdown is open, let AutocompleteEngine consume Escape first.
             if (document.getElementById('ac-dropdown')?.classList.contains('ac-open')) return;
