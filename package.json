@@ -11,7 +11,7 @@
     "test:coverage": "jest --coverage"
   },
   "devDependencies": {
-    "@babel/core": "^8.0.5",
+    "@babel/core": "^8.0.6",
     "@babel/preset-env": "^8.0.5",
     "@jest/globals": "^30.5.1",
     "babel-jest": "^30.5.1",
