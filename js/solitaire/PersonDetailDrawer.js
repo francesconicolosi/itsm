@@ -175,8 +175,15 @@ export class PersonDetailDrawer {
         const company = memberData['Company'] || '';
         const location = memberData['Location'] || '';
         const room = memberData['Room'] || '';
+        const email = memberData[emailField] || '';
+        const inTeamSinceRaw = memberData['In team since'] || '';
+        const inTeamSince = (() => {
+            if (!inTeamSinceRaw) return '';
+            const d = new Date(inTeamSinceRaw);
+            return isNaN(d) ? inTeamSinceRaw : formatMonthYear(d);
+        })();
 
-        if (roleName || functionName || company || location || room) {
+        if (roleName || functionName || company || location || room || email || inTeamSince) {
             addSection('Identity', (body) => {
                 if (roleName) {
                     const p = document.createElement('p');
@@ -230,19 +237,7 @@ export class PersonDetailDrawer {
                     p.appendChild(document.createTextNode(value));
                     body.appendChild(p);
                 });
-            }, { open: true });
-        }
 
-        const email = memberData[emailField] || '';
-        const inTeamSinceRaw = memberData['In team since'] || '';
-        const inTeamSince = (() => {
-            if (!inTeamSinceRaw) return '';
-            const d = new Date(inTeamSinceRaw);
-            return isNaN(d) ? inTeamSinceRaw : formatMonthYear(d);
-        })();
-
-        if (email || inTeamSince) {
-            addSection('Contact', (body) => {
                 if (email) {
                     const p = document.createElement('p');
                     const strong = document.createElement('strong');
