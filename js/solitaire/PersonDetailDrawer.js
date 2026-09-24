@@ -92,8 +92,8 @@ export class PersonDetailDrawer {
         } else if (type === 'role') {
             const { name, description, grants } = payload;
             l2Title.textContent = name;
-            this._currentL2Permalink = null;
-            if (l2SearchBtn) l2SearchBtn.style.display = 'none';
+            this._currentL2Permalink = `role:"${name}"`;
+            if (l2SearchBtn) l2SearchBtn.style.display = '';
             this._buildDescriptionL2Content(l2Content, { description, extra: grants ? `Grants: ${grants}` : null });
         } else if (type === 'function') {
             const { name, description } = payload;
