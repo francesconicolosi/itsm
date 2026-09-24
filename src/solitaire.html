@@ -147,6 +147,29 @@
     <ul id="drawer-list"></ul>
   </div>
 </aside>
+
+<div id="person-drawer-overlay"></div>
+<aside id="person-drawer" aria-hidden="true" aria-labelledby="person-drawer-title" role="dialog">
+  <div class="person-drawer-panels">
+    <div class="person-drawer-panel person-drawer-panel--l1">
+      <header class="person-drawer-header">
+        <h3 id="person-drawer-title"></h3>
+        <button id="person-drawer-link" class="drawer-icon-btn" aria-label="Copy person link" data-tooltip="Copy link"><svg width="15" height="15" viewBox="-8 -8 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M 2.5 -6 L -4 -6 Q -6 -6 -6 -4 L -6 4 Q -6 6 -4 6 L 4 6 Q 6 6 6 4 L 6 -2.5 M -1 1 L 5.5 -5.5 M 5.5 -5.5 L 5.5 -3 M 5.5 -5.5 L 3 -5.5"/></svg></button>
+        <button id="person-drawer-close" class="drawer-icon-btn" aria-label="Close" data-tooltip="Close">×</button>
+      </header>
+      <div id="person-drawer-content" class="person-drawer-content"></div>
+    </div>
+    <div class="person-drawer-panel person-drawer-panel--l2">
+      <header class="person-drawer-header">
+        <button id="person-drawer-back" class="drawer-icon-btn drawer-back-btn" aria-label="Back" data-tooltip="Back">‹</button>
+        <h3 id="person-drawer-l2-title"></h3>
+        <button id="person-drawer-l2-close" class="drawer-icon-btn" aria-label="Close" data-tooltip="Close">×</button>
+      </header>
+      <div id="person-drawer-l2-content" class="person-drawer-content"></div>
+    </div>
+  </div>
+</aside>
+
 <footer>
   <svg id="brand-logo"></svg>
   <p>Digital Service Management</p>

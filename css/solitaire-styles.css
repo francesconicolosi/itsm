@@ -2356,3 +2356,213 @@ html[data-theme="dark"] .svc-chip__count { fill: #97abf5; }
 }
 .jenga-link-icon:hover { opacity: 1; }
 .jenga-link-icon img { width: 13px; height: 13px; display: block; }
+
+/* ── PersonDetailDrawer ──────────────────────────────────────────────── */
+
+#person-drawer-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, .3);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .28s ease;
+    z-index: 9998;
+}
+#person-drawer-overlay.visible {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+#person-drawer {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 380px;
+    max-width: 90vw;
+    height: 100%;
+    background: #fff;
+    box-shadow: -2px 0 12px rgba(0, 0, 0, .15);
+    transform: translateX(100%);
+    transition: transform .28s ease;
+    z-index: 10000;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+#person-drawer.open { transform: translateX(0); }
+
+@media (max-width: 480px) {
+    #person-drawer { width: 100vw !important; max-width: none !important; }
+}
+
+.person-drawer-panels {
+    display: flex;
+    width: 200%;
+    height: 100%;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    will-change: transform;
+}
+.person-drawer-panels.panels-level2 { transform: translateX(-50%); }
+
+.person-drawer-panel {
+    width: 50%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.person-drawer-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 16px;
+    border-bottom: 1px solid rgba(0, 0, 0, .08);
+    flex-shrink: 0;
+}
+.person-drawer-header h3 {
+    flex: 1;
+    margin: 0;
+    font-size: 15px;
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-family: var(--brand-font, inherit);
+}
+
+.drawer-icon-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 20px;
+    line-height: 1;
+    color: #555;
+    padding: 4px;
+    border-radius: 4px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: color .15s ease;
+}
+.drawer-icon-btn:hover { color: #000; }
+
+.drawer-back-btn {
+    font-size: 24px;
+    font-weight: 300;
+    margin-right: 2px;
+}
+
+.person-drawer-content {
+    overflow-y: auto;
+    flex: 1;
+    padding: 0 16px 24px;
+}
+
+/* Photo header */
+.person-drawer-photo-header {
+    display: flex;
+    justify-content: center;
+    padding: 20px 0 12px;
+}
+.person-drawer-photo {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    overflow: hidden;
+    background: #e5e5ea;
+    flex-shrink: 0;
+}
+.person-drawer-photo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+.person-drawer-photo-initials {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    font-weight: 600;
+    color: #666;
+    font-family: var(--brand-font, inherit);
+}
+
+/* Clickable links inside the drawer */
+.person-drawer-link {
+    color: #0066cc;
+    cursor: pointer;
+    text-decoration: underline dotted;
+    text-underline-offset: 2px;
+    transition: color .15s ease;
+}
+.person-drawer-link:hover { color: #0044aa; text-decoration: underline; }
+
+/* Spacing for person detail paragraphs */
+.person-drawer-content .drawer-section__body p {
+    margin: 0 0 6px;
+    font-size: 13px;
+    line-height: 1.5;
+}
+.person-drawer-content .drawer-accordion { margin-top: 4px; }
+
+/* Body scroll lock */
+body.person-drawer-open { overflow: hidden; }
+body.person-drawer-open #legend-root { z-index: 10001 !important; }
+
+/* ── Card expand button ──────────────────────────────────────────────── */
+/* Card photo-hover expand overlay */
+.photo-expand-group {
+    cursor: pointer;
+    pointer-events: all;
+}
+.photo-expand-trigger {
+    fill: transparent;
+    pointer-events: all;
+}
+.photo-overlay-bg {
+    fill: rgba(0, 0, 0, 0);
+    transition: fill .18s ease;
+    pointer-events: none;
+}
+.card-expand-btn__icon {
+    opacity: 0;
+    fill: none;
+    stroke: #fff;
+    stroke-width: 2.2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    transition: opacity .18s ease;
+    pointer-events: none;
+}
+.photo-expand-group:hover .photo-overlay-bg,
+g.card.card--fabs-visible .photo-overlay-bg {
+    fill: rgba(0, 0, 0, 0.38);
+}
+.photo-expand-group:hover .card-expand-btn__icon,
+g.card.card--fabs-visible .card-expand-btn__icon {
+    opacity: 1;
+}
+#canvas.is-zooming .photo-expand-group { pointer-events: none; }
+
+/* ── Dark mode ───────────────────────────────────────────────────────── */
+html[data-theme="dark"] #person-drawer {
+    background: #1c1c1e;
+    color: #f5f5f7;
+    box-shadow: -2px 0 24px rgba(0, 0, 0, .55);
+}
+html[data-theme="dark"] .person-drawer-header {
+    border-bottom-color: rgba(255, 255, 255, .07);
+}
+html[data-theme="dark"] .person-drawer-header h3 { color: #f5f5f7; }
+html[data-theme="dark"] .drawer-icon-btn { color: rgba(255, 255, 255, .6); }
+html[data-theme="dark"] .drawer-icon-btn:hover { color: #fff; }
+html[data-theme="dark"] .person-drawer-photo { background: #2e2e32; }
+html[data-theme="dark"] .person-drawer-photo-initials { color: rgba(245, 245, 247, .55); }
+html[data-theme="dark"] .person-drawer-link { color: #60a8ff; }
+html[data-theme="dark"] .person-drawer-link:hover { color: #90c4ff; }
+html[data-theme="dark"] .card-expand-btn__icon { stroke: #fff; }

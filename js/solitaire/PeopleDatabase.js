@@ -35,7 +35,7 @@ const GUEST_ROLES_MAP = new Map([
     ['Team Solution Architect',   ['Solution Architect']],
     ['Team Development Manager',  ['Development Manager']],
     ['Team Service Manager',      ['Service Manager']],
-    ['Team Contributors',         ['Contributors']],
+    ['Team Contributors',         ['Contributor']],
     ['Team Security Champion',    ['Security Champion']],
 ]);
 
@@ -324,5 +324,11 @@ export class PeopleDatabase {
 
     truncate(s) {
         return truncateString(s);
+    }
+
+    getMembersByEmail(email) {
+        if (!email) return [];
+        const target = email.trim().toLowerCase();
+        return this.people.filter(p => (p[emailField] || '').trim().toLowerCase() === target);
     }
 }

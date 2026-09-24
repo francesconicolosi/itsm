@@ -20,6 +20,7 @@ import { ScenarioManager } from './ScenarioManager.js';
 import { SolitaireSearch } from './SolitaireSearch.js';
 import { ColorLegend } from './ColorLegend.js';
 import { TeamDetailDrawer } from './TeamDetailDrawer.js';
+import { PersonDetailDrawer } from './PersonDetailDrawer.js';
 import { ContextMenu } from './ContextMenu.js';
 import { QuickFilters } from './QuickFilters.js';
 import { PostItNote } from '../shared/PostItNote.js';
@@ -34,6 +35,7 @@ export class SolitaireApp {
         this.search = new SolitaireSearch(this);
         this.legend = new ColorLegend(this);
         this.drawer = new TeamDetailDrawer(this);
+        this.personDrawer = new PersonDetailDrawer(this);
         this.contextMenu = new ContextMenu(this);
         this.postIt = new PostItNote('solitaire');
         this.announcementBar = new AnnouncementBar();
@@ -60,6 +62,7 @@ export class SolitaireApp {
         this._initSideDrawerEvents();
         this.search.initChipBar();
         this.drawer.initEvents();
+        this.personDrawer.initEvents();
         this.interaction.setupLongPress();
         this._handleAdvancedMode();
         const buildInfoEl = document.getElementById('build-info');
@@ -88,8 +91,17 @@ export class SolitaireApp {
             if (e.key !== 'Escape') return;
             // If the autocomplete dropdown is open, let AutocompleteEngine consume Escape first.
             if (document.getElementById('ac-dropdown')?.classList.contains('ac-open')) return;
+            const personDrawerOpen = document.body.classList.contains('person-drawer-open');
             const drawerOpen = document.body.classList.contains('drawer-open');
-            if (drawerOpen) {
+            if (personDrawerOpen) {
+                // First Escape closes L2 only; second Escape closes the full drawer
+                const panels = document.querySelector('#person-drawer .person-drawer-panels');
+                if (panels?.classList.contains('panels-level2')) {
+                    this.personDrawer.closeL2();
+                } else {
+                    this.personDrawer.close();
+                }
+            } else if (drawerOpen) {
                 this.drawer.close();
             } else {
                 this.handleClearAction('Escape').then(() => {});
@@ -125,6 +137,14 @@ export class SolitaireApp {
                             requestAnimationFrame(() => {
                                 this.search.search(this.searchParam);
                                 if (openDetail) this._openDetailFromSearch(this.searchParam);
+                            });
+                        });
+                    }
+                    const personParam = getQueryParam('person');
+                    if (personParam) {
+                        requestAnimationFrame(() => {
+                            requestAnimationFrame(() => {
+                                this._openPersonFromParam(personParam);
                             });
                         });
                     }
@@ -297,8 +317,8 @@ export class SolitaireApp {
 
     showToast(message, duration = 3000) {
         const positionContainer = (container) => {
-            const drawer = document.getElementById('drawer');
-            const isOpen = drawer?.classList.contains('open');
+            const isOpen = document.getElementById('drawer')?.classList.contains('open')
+                || document.getElementById('person-drawer')?.classList.contains('open');
             if (isOpen) {
                 container.style.top = 'unset';
                 container.style.bottom = '20px';
@@ -334,12 +354,12 @@ export class SolitaireApp {
         setTimeout(() => positionContainer(container), 180);
 
         if (!window.__toastDrawerObserverAttached) {
-            const drawer = document.getElementById('drawer');
-            if (drawer) {
-                const mo = new MutationObserver(() => positionContainer(container));
-                mo.observe(drawer, { attributes: true, attributeFilter: ['class'] });
-                window.__toastDrawerObserverAttached = true;
-            }
+            const mo = new MutationObserver(() => positionContainer(container));
+            ['drawer', 'person-drawer'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) mo.observe(el, { attributes: true, attributeFilter: ['class'] });
+            });
+            window.__toastDrawerObserverAttached = true;
         }
 
         setTimeout(() => {
@@ -776,5 +796,16 @@ export class SolitaireApp {
                 _showDetails: true,
             });
         }
+    }
+
+    _openPersonFromParam(email) {
+        if (!email || !this.personDrawer) return;
+        const members = this.db.getMembersByEmail(email);
+        if (!members.length) return;
+        const member = members[0];
+        const cards = Array.from(document.querySelectorAll('g[data-key^="card::"]'));
+        const cardEl = cards.find(el => (el.getAttribute('data-email') || '').toLowerCase() === email.toLowerCase());
+        if (cardEl) this.renderer.fitElementToView(cardEl, 750);
+        this.personDrawer.open(member);
     }
 }

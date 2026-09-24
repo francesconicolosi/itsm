@@ -254,6 +254,7 @@ export class OrgChartRenderer {
             svgNode.addEventListener('click', (e) => {
                 if (!app.interaction.isDraggable && Date.now() < app.interaction.suppressClicksUntil) {
                     if (e.composedPath?.().some(el => el.tagName?.toLowerCase?.() === 'foreignobject')) return;
+                    if (e.composedPath?.().some(el => el.classList?.contains?.('photo-expand-group'))) return;
                     e.preventDefault();
                     e.stopImmediatePropagation();
                 }
@@ -1063,6 +1064,7 @@ export class OrgChartRenderer {
                                 .attr('data-location', (member[LOCATION_FIELD] || '').toString().trim())
                                 .attr('data-function', (member[BUSINESS_FUNCTION_FIELD] || '').toString().trim())
                                 .attr('data-room', (member['Room'] || '').toString().trim())
+                                .attr('data-email', (member[emailField] || '').toString().trim().toLowerCase())
                                 .attr('class', 'draggable')
                                 .attr('transform', `translate(${cardX},${cardY})`)
                                 .attr('data-cx', cardX)
@@ -1169,6 +1171,38 @@ export class OrgChartRenderer {
                                     badgeG.on('click', triggerSearch);
                                     badgeG.on('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') triggerSearch(e); });
                                     badgeG.raise();
+                                }
+
+                                if (app.personDrawer) {
+                                    const photoCX = photoX + photoSize / 2;
+                                    const photoCY = photoY + photoSize / 2;
+                                    const photoR  = photoSize / 2;
+
+                                    const expandG = photoWrapper.append('g')
+                                        .attr('class', 'photo-expand-group')
+                                        .attr('transform', `translate(${photoCX},${photoCY})`)
+                                        .attr('role', 'button').attr('tabindex', '0')
+                                        .attr('aria-label', 'View person details')
+                                        .attr('data-tooltip', 'View person details');
+
+                                    // Invisible hit-area + dim overlay + icon
+                                    expandG.append('circle').attr('r', photoR).attr('class', 'photo-expand-trigger');
+                                    expandG.append('circle').attr('r', photoR).attr('class', 'photo-overlay-bg');
+                                    expandG.append('path')
+                                        .attr('d', 'M 2.5 -6 L -4 -6 Q -6 -6 -6 -4 L -6 4 Q -6 6 -4 6 L 4 6 Q 6 6 6 4 L 6 -2.5 M -1 1 L 5.5 -5.5 M 5.5 -5.5 L 5.5 -3 M 5.5 -5.5 L 3 -5.5')
+                                        .attr('class', 'card-expand-btn__icon');
+
+                                    // Keep multi-team badge visible above the overlay
+                                    photoWrapper.select('.multi-team-badge').raise();
+
+                                    const doOpen = (e) => {
+                                        e?.stopPropagation?.();
+                                        if (!app.interaction.isDraggable) app.personDrawer.open(member);
+                                    };
+                                    expandG.on('click', doOpen);
+                                    expandG.on('keydown', (e) => {
+                                        if (e.key === 'Enter' || e.key === ' ') doOpen(e);
+                                    });
                                 }
                             });
 
