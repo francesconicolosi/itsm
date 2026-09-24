@@ -31,7 +31,7 @@ import {
 const GUEST_ROLES_MAP = new Map([
     ['Team Product Manager',      ['Product Manager']],
     ['Team Delivery Manager',     ['Delivery Manager']],
-    ['Team Scrum Master',         ['Agile Coach/Scrum Master']],
+    ['Team Scrum Master',         ['Coach']],
     ['Team Solution Architect',   ['Solution Architect']],
     ['Team Development Manager',  ['Development Manager']],
     ['Team Service Manager',      ['Service Manager']],
