@@ -2,6 +2,7 @@ import {
     createFormattedLongTextElementsFrom,
     createHrefElement,
     createOutlookUrl,
+    isMobileDevice,
     normalizeWs,
     truncateString,
 } from '../shared/utils.js';
@@ -238,10 +239,10 @@ export class TeamDetailDrawer {
         if (header && closeBtn) {
             const searchBtn = document.createElement('button');
             searchBtn.id = 'drawerSearchBtn';
-            searchBtn.setAttribute('aria-label', 'Search this team');
-            searchBtn.setAttribute('data-tooltip', 'Search this team');
+            searchBtn.setAttribute('aria-label', 'Locate in chart');
+            searchBtn.setAttribute('data-tooltip', 'Locate in chart');
             searchBtn.title = '';
-            searchBtn.innerHTML = '<svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>';
+            searchBtn.innerHTML = '<svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8"/><line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/></svg>';
             searchBtn.style.display = 'none';
             searchBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
@@ -250,7 +251,8 @@ export class TeamDetailDrawer {
                 const inp = document.getElementById('drawer-search-input');
                 if (inp) inp.value = query;
                 this.app.search._refreshChips(query);
-                this.app.search.search(query, { keepDrawer: true });
+                const mobile = isMobileDevice();
+                this.app.search.search(query, { keepDrawer: !mobile });
             });
             header.insertBefore(searchBtn, closeBtn);
 

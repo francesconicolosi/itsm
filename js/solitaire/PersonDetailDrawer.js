@@ -2,6 +2,7 @@ import {
     createFormattedLongTextElementsFrom,
     createHrefElement,
     createOutlookUrl,
+    isMobileDevice,
     truncateString,
     formatMonthYear,
 } from '../shared/utils.js';
@@ -133,7 +134,9 @@ export class PersonDetailDrawer {
                 const inp = document.getElementById('drawer-search-input');
                 if (inp) inp.value = query;
                 this.app.search._refreshChips(query);
-                this.app.search.search(query, { keepDrawer: true });
+                const mobile = isMobileDevice();
+                if (mobile) this.close();
+                this.app.search.search(query, { keepDrawer: !mobile });
             });
     }
 
