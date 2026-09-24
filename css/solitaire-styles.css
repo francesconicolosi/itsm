@@ -2461,9 +2461,9 @@ html[data-theme="dark"] .svc-chip__count { fill: #97abf5; }
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    transition: color .15s ease;
+    transition: background-color .15s ease, color .15s ease;
 }
-.drawer-icon-btn:hover { color: #000; }
+.drawer-icon-btn:hover { background-color: rgba(0,0,0,0.06); color: #111; }
 
 .drawer-back-btn {
     font-size: 24px;
