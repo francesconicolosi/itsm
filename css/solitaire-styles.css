@@ -829,6 +829,17 @@ img.drawer-svc-icon {
     height: 18px;
 }
 
+a.drawer-domino-link {
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    opacity: 0.85;
+    transition: opacity 0.15s ease;
+}
+a.drawer-domino-link:hover {
+    opacity: 1;
+}
+
 span.drawer-svc-icon {
     font-size: 18px;
     line-height: 1;

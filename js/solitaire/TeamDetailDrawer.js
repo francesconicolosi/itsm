@@ -133,7 +133,9 @@ export class TeamDetailDrawer {
         }
 
         if (elements && elements.items && elements.items.length > 0) {
-            const resolvedElementsTitle = elementsTitle ?? `Managed Services <img src="${_dominoAccentIconSrc()}" class="drawer-svc-icon">`;
+            const dominoUrl = `./domino.html?search=${encodeURIComponent(`Responsible Teams:${title}`)}&listView=${encodeURIComponent('ID,Description,Type,Depends on,Status,Decommission Date')}`;
+            const dominoIconHtml = `<a href="${dominoUrl}" target="_blank" rel="noopener noreferrer" class="drawer-domino-link" data-tooltip="View all services in Domino" data-tooltip-placement="left" onclick="event.stopPropagation()"><img src="${_dominoAccentIconSrc()}" class="drawer-svc-icon" aria-hidden="true"></a>`;
+            const resolvedElementsTitle = elementsTitle ?? `Managed Services ${dominoIconHtml}`;
             const shouldOpenServices = _openServices || !!(highlightService || (highlightQuery && highlightQuery.trim()));
 
             addDrawerSection(resolvedElementsTitle, (body) => {
