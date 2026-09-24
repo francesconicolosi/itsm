@@ -70,6 +70,8 @@ export class TeamDetailDrawer {
         this._showDetails = _showDetails;
         const copyBtn = document.getElementById('drawerCopyLink');
         if (copyBtn) copyBtn.style.display = _permalinkSearch ? '' : 'none';
+        const searchBtn = document.getElementById('drawerSearchBtn');
+        if (searchBtn) searchBtn.style.display = _permalinkSearch ? '' : 'none';
 
         descEl.replaceChildren();
         listEl.replaceChildren();
@@ -232,12 +234,30 @@ export class TeamDetailDrawer {
         const closeBtn = document.getElementById('drawer-close');
         const header = document.querySelector('#drawer header');
         if (header && closeBtn) {
+            const searchBtn = document.createElement('button');
+            searchBtn.id = 'drawerSearchBtn';
+            searchBtn.setAttribute('aria-label', 'Search this team');
+            searchBtn.setAttribute('data-tooltip', 'Search this team');
+            searchBtn.title = '';
+            searchBtn.innerHTML = '<svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>';
+            searchBtn.style.display = 'none';
+            searchBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const query = this._currentPermalink;
+                if (!query) return;
+                const inp = document.getElementById('drawer-search-input');
+                if (inp) inp.value = query;
+                this.app.search._refreshChips(query);
+                this.app.search.search(query);
+            });
+            header.insertBefore(searchBtn, closeBtn);
+
             const copyBtn = document.createElement('button');
             copyBtn.id = 'drawerCopyLink';
             copyBtn.setAttribute('aria-label', 'Copy link');
             copyBtn.setAttribute('data-tooltip', 'Copy link');
             copyBtn.title = '';
-            copyBtn.textContent = '🔗';
+            copyBtn.innerHTML = '<svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 7h3a5 5 0 0 1 0 10h-3"/><path d="M9 17H6A5 5 0 0 1 6 7h3"/><line x1="8" y1="12" x2="16" y2="12"/></svg>';
             copyBtn.style.display = 'none';
             copyBtn.addEventListener('click', async (e) => {
                 e.stopPropagation();
@@ -253,8 +273,6 @@ export class TeamDetailDrawer {
                     document.body.appendChild(ta); ta.select();
                     document.execCommand('copy'); ta.remove();
                 }
-                copyBtn.textContent = '✔';
-                setTimeout(() => { copyBtn.textContent = '🔗'; }, 1500);
                 this.app.showToast('Link copied to clipboard');
             });
             header.insertBefore(copyBtn, closeBtn);
