@@ -1189,7 +1189,7 @@ export class OrgChartRenderer {
                                     expandG.append('circle').attr('r', photoR).attr('class', 'photo-expand-trigger');
                                     expandG.append('circle').attr('r', photoR).attr('class', 'photo-overlay-bg');
                                     expandG.append('path')
-                                        .attr('d', 'M 2.5 -6 L -4 -6 Q -6 -6 -6 -4 L -6 4 Q -6 6 -4 6 L 4 6 Q 6 6 6 4 L 6 -2.5 M -1 1 L 5.5 -5.5 M 5.5 -5.5 L 5.5 -3 M 5.5 -5.5 L 3 -5.5')
+                                        .attr('d', 'M -4 0 L 4 0 Q 6 0 6 1.5 L 6 5.5 Q 6 7 4 7 L -4 7 Q -6 7 -6 5.5 L -6 1.5 Q -6 0 -4 0 M 0 4 C 0 -2 5.5 -2.5 6 -5 M 4 -7.5 L 7.5 -5 L 4 -2.5')
                                         .attr('class', 'card-expand-btn__icon');
 
                                     // Keep multi-team badge visible above the overlay
