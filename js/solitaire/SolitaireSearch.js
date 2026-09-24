@@ -365,7 +365,7 @@ export class SolitaireSearch {
         }
 
         clearFieldHighlights();
-        app.drawer.close();
+        if (!opts?.keepDrawer) app.drawer.close();
 
         this._showResult(q, missing, noZoom);
 

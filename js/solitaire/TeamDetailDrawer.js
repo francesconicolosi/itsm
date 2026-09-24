@@ -250,7 +250,7 @@ export class TeamDetailDrawer {
                 const inp = document.getElementById('drawer-search-input');
                 if (inp) inp.value = query;
                 this.app.search._refreshChips(query);
-                this.app.search.search(query);
+                this.app.search.search(query, { keepDrawer: true });
             });
             header.insertBefore(searchBtn, closeBtn);
 

@@ -833,11 +833,17 @@ a.drawer-domino-link {
     text-decoration: none;
     display: inline-flex;
     align-items: center;
+    margin-left: auto;
+    margin-right: 8px;
     opacity: 0.85;
     transition: opacity 0.15s ease;
 }
 a.drawer-domino-link:hover {
     opacity: 1;
+}
+a.drawer-domino-link img {
+    margin-left: 0;
+    margin-right: 0;
 }
 
 span.drawer-svc-icon {

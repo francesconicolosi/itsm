@@ -11,6 +11,7 @@ export class PersonDetailDrawer {
     constructor(app) {
         this.app = app;
         this._currentMember = null;
+        this._currentL2Permalink = null;
     }
 
     open(memberData) {
@@ -65,9 +66,13 @@ export class PersonDetailDrawer {
 
         l2Content.replaceChildren();
 
+        const l2SearchBtn = document.getElementById('person-drawer-l2-search');
+
         if (type === 'team') {
             const { teamName } = payload;
             l2Title.textContent = teamName;
+            this._currentL2Permalink = `team:"${teamName}"`;
+            if (l2SearchBtn) l2SearchBtn.style.display = '';
 
             const teamTitleEl = Array.from(document.querySelectorAll('text.team-title'))
                 .find(el => el.getAttribute('data-full-name') === teamName);
@@ -87,10 +92,14 @@ export class PersonDetailDrawer {
         } else if (type === 'role') {
             const { name, description, grants } = payload;
             l2Title.textContent = name;
+            this._currentL2Permalink = null;
+            if (l2SearchBtn) l2SearchBtn.style.display = 'none';
             this._buildDescriptionL2Content(l2Content, { description, extra: grants ? `Grants: ${grants}` : null });
         } else if (type === 'function') {
             const { name, description } = payload;
             l2Title.textContent = name;
+            this._currentL2Permalink = null;
+            if (l2SearchBtn) l2SearchBtn.style.display = 'none';
             this._buildDescriptionL2Content(l2Content, { description });
         }
 
@@ -100,6 +109,9 @@ export class PersonDetailDrawer {
     closeL2() {
         const drawer = document.getElementById('person-drawer');
         drawer?.querySelector('.person-drawer-panels')?.classList.remove('panels-level2');
+        this._currentL2Permalink = null;
+        const l2SearchBtn = document.getElementById('person-drawer-l2-search');
+        if (l2SearchBtn) l2SearchBtn.style.display = 'none';
     }
 
     initEvents() {
@@ -113,6 +125,16 @@ export class PersonDetailDrawer {
             ?.addEventListener('click', () => this.closeL2());
         document.getElementById('person-drawer-link')
             ?.addEventListener('click', () => this.copyLink());
+        document.getElementById('person-drawer-l2-search')
+            ?.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const query = this._currentL2Permalink;
+                if (!query) return;
+                const inp = document.getElementById('drawer-search-input');
+                if (inp) inp.value = query;
+                this.app.search._refreshChips(query);
+                this.app.search.search(query, { keepDrawer: true });
+            });
     }
 
     copyLink() {
