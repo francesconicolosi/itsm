@@ -426,6 +426,39 @@ html[data-theme="dark"] .jenga-cal__mb-hybris {
     opacity: 0.8;
 }
 
+/* Expired due-date warning indicator */
+.jenga-chip__expired-warn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 14px;
+    height: 14px;
+    margin-left: 3px;
+    flex-shrink: 0;
+    vertical-align: middle;
+}
+.jenga-chip__expired-warn::before {
+    content: '⚠';
+    font-size: 10px;
+    line-height: 1;
+    color: #f0b429;
+}
+
+/* Overflow "+N more" warn badge */
+.jenga-chip__overflow-warn {
+    background: #f0b429 !important;
+    color: #1a1a1a !important;
+    font-size: 9px !important;
+    padding: 0 4px !important;
+    border-radius: 2px !important;
+    font-weight: 800 !important;
+    height: 12px !important;
+    line-height: 12px !important;
+}
+.jenga-chip__overflow-warn::before {
+    content: '⚠';
+}
+
 /* Env badge inside service chip */
 .jenga-chip__env-badge {
     display: inline-flex; align-items: center; justify-content: center;
@@ -4262,6 +4295,51 @@ html[data-theme="dark"] .ss-month-label {
     max-width: 260px;
     overflow: hidden;
     text-overflow: ellipsis;
+}
+
+/* Brand watermark — frosted badge, bottom-right of every slide */
+.ss-brand-watermark {
+    position: absolute;
+    bottom: 24px;
+    right: 28px;
+    background: rgba(255, 255, 255, 0.14);
+    border: 1px solid rgba(0, 0, 0, 0.10);
+    border-radius: 8px;
+    padding: 8px 18px;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    pointer-events: none;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+.ss-brand-watermark svg {
+    display: block;
+    width: 120px;
+    height: auto;
+    color: var(--_g-logo-fill-color, #111113);
+    opacity: 0.80;
+}
+.ss-brand-watermark__subtitle {
+    font-size: 7.5px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--_g-logo-fill-color, #111113);
+    opacity: 0.55;
+    white-space: nowrap;
+}
+html[data-theme="dark"] .ss-brand-watermark {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.12);
+}
+html[data-theme="dark"] .ss-brand-watermark svg {
+    opacity: 0.70;
+}
+html[data-theme="dark"] .ss-brand-watermark__subtitle {
+    opacity: 0.50;
 }
 
 @media (max-width: 768px) {

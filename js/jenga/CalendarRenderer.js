@@ -418,6 +418,13 @@ export class CalendarRenderer {
                 }
             });
 
+            const hasExpiredOverflow = overflowItems.some(i => this._isExpired(i.event));
+            if (hasExpiredOverflow) {
+                const warnBadge = document.createElement('span');
+                warnBadge.className = 'jenga-chip__env-badge--mini jenga-chip__overflow-warn';
+                btn.appendChild(warnBadge);
+            }
+
             btn.addEventListener('click', e => { e.stopPropagation(); this._showPopover(date, items, btn); });
             chipsArea.appendChild(btn);
         }
@@ -654,6 +661,13 @@ export class CalendarRenderer {
 
     // ── Single-day chip ───────────────────────────────────────────────────────
 
+    _isExpired(ev) {
+        if (!ev?.dueDate) return false;
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        return ev.dueDate < today;
+    }
+
     _makeChip(item) {
         const ev = item.event;
         const colors = TYPE_COLORS[ev.type] || TYPE_COLORS.OTHER;
@@ -673,6 +687,13 @@ export class CalendarRenderer {
             chip.append(...this._milestoneChipContent(ev));
         } else {
             chip.append(...this._genericChipContent(ev));
+        }
+
+        if (this._isExpired(ev)) {
+            const warn = document.createElement('span');
+            warn.className = 'jenga-chip__expired-warn';
+            warn.setAttribute('aria-label', 'Due date expired');
+            chip.appendChild(warn);
         }
 
         chip.addEventListener('mouseenter', e => {

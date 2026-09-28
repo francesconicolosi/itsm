@@ -1,3 +1,5 @@
+import { BRAND } from '../../brand-specific/brand.js';
+
 const SLIDE_COUNT = 3;
 const COMMAND_BAR_HIDE_DELAY = 3000;
 const SLIDESHOW_RELOAD_MS = 45 * 60 * 1000;
@@ -144,6 +146,25 @@ export class SlideshowController {
         }
     }
 
+    _appendBrandWatermark(slide) {
+        if (!BRAND?.logo?.svgInline?.d) return;
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.setAttribute('viewBox', '0 0 1312 210');
+        svg.setAttribute('aria-hidden', 'true');
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('d', BRAND.logo.svgInline.d);
+        path.setAttribute('fill', 'currentColor');
+        svg.appendChild(path);
+        const subtitle = document.createElement('div');
+        subtitle.className = 'ss-brand-watermark__subtitle';
+        subtitle.textContent = 'Digital Service Management';
+        const wrap = document.createElement('div');
+        wrap.className = 'ss-brand-watermark';
+        wrap.appendChild(svg);
+        wrap.appendChild(subtitle);
+        slide.appendChild(wrap);
+    }
+
     _renderCurrentSlide() {
         const container = document.getElementById('jenga-slideshow-container');
         if (!container) return;
@@ -199,6 +220,7 @@ export class SlideshowController {
             monthLabel.textContent = new Date(app.currentYear, app.currentMonth, 1)
                 .toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
             slideWrap.appendChild(monthLabel);
+            this._appendBrandWatermark(slideWrap);
 
             requestAnimationFrame(() => {
                 this._scaleCalendar(slideWrap, container);
@@ -256,6 +278,7 @@ export class SlideshowController {
                 }
             }
 
+            this._appendBrandWatermark(slideWrap);
             requestAnimationFrame(() => slideWrap.classList.add('jenga-slide--visible'));
         }
     }
