@@ -57,12 +57,19 @@ export class SlideshowController {
         this._startTimer();
         this._attachCommandBar();
         this._reloadTimer = setTimeout(() => location.reload(), SLIDESHOW_RELOAD_MS);
+
+        this._escHandler = (e) => { if (e.key === 'Escape') this.stop(); };
+        document.addEventListener('keydown', this._escHandler);
     }
 
     stop() {
         this.active = false;
         this.playing = false;
         this._clearTimer();
+        if (this._escHandler) {
+            document.removeEventListener('keydown', this._escHandler);
+            this._escHandler = null;
+        }
         this._detachCommandBar();
         if (this._reloadTimer !== null) {
             clearTimeout(this._reloadTimer);
@@ -239,7 +246,7 @@ export class SlideshowController {
             // Filter by data-lane attribute (set by _makeCollapsible)
             const keepLanes = this.currentSlide === 2
                 ? new Set(['biz', 'milestones'])
-                : new Set(['incidents', 'sr']);
+                : new Set(['incidents', 'sr', 'releases', 'peak-protection']);
 
             const main = slideWrap.querySelector('.jtl-main');
             if (main) {
@@ -266,15 +273,9 @@ export class SlideshowController {
                     const axisHeader = main.querySelector('.jtl-axis-header');
                     if (axisHeader) main.insertBefore(axisHeader, main.firstChild);
                 } else {
-                    // Slide 3 keeps incidents + sr: remove the biz/milestone axis header.
-                    main.querySelector('.jtl-axis-header')?.remove();
-
-                    // Add a plain month label at the top for context.
-                    const monthLabel = document.createElement('div');
-                    monthLabel.className = 'ss-month-label ss-month-label--inline';
-                    monthLabel.textContent = new Date(app.currentYear, app.currentMonth, 1)
-                        .toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-                    main.insertBefore(monthLabel, main.firstChild);
+                    // Slide 3 includes releases (day-aligned chart) — keep axis header, same as slide 2.
+                    const axisHeader = main.querySelector('.jtl-axis-header');
+                    if (axisHeader) main.insertBefore(axisHeader, main.firstChild);
                 }
             }
 

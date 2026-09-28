@@ -829,16 +829,16 @@ export class TimelineRenderer {
         const leg = document.createElement('ul');
         leg.className = 'jtl-panel__legend jtl-panel__legend--inline';
         [
-            { color: PEAK_PROTECTION_COLORS.RED,   text: 'Red Protection Window' },
-            { color: PEAK_PROTECTION_COLORS.AMBER, text: 'Amber Protection Window' },
-            { color: PEAK_PROTECTION_COLORS.BLUE,  text: 'Blue Protection Window' },
+            { color: PEAK_PROTECTION_COLORS.RED,   text: 'Emergency fixes only (P1/P2)' },
+            { color: PEAK_PROTECTION_COLORS.AMBER, text: 'Low-risk CI/CD deployments only' },
+            { color: PEAK_PROTECTION_COLORS.BLUE,  text: 'Standard changes via CAB' },
         ].forEach(({ color, text }) => {
             const li = document.createElement('li');
             li.innerHTML = `<span class="jtl-panel__legend-dot" style="background:${color}"></span>${text}`;
             leg.appendChild(li);
         });
         const cabLi = document.createElement('li');
-        cabLi.innerHTML = '<span class="jtl-panel__legend-dot" style="background:transparent;font-size:11px">📢</span>CAB Meeting';
+        cabLi.innerHTML = '<span class="jtl-panel__legend-dot" style="background:transparent;font-size:11px">📢</span>Change Advisory Board';
         leg.appendChild(cabLi);
 
         const chartArea = document.createElement('div');
