@@ -26,7 +26,7 @@ export class SlideshowController {
             const v = parseInt(p.get('slideDuration'), 10);
             if (!isNaN(v) && v > 0) return v * 1000;
         } catch {}
-        return 40000;
+        return 25000;
     }
 
     start({ slideCount } = {}) {
