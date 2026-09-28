@@ -1956,6 +1956,19 @@ html:not([data-theme="dark"]) .jtl-hover-card__val { color: #1a1a2e; }
     -webkit-text-size-adjust: none; /* prevent iOS Safari from scaling per-label based on max-width */
 }
 
+/* Flip: label renders to the LEFT of the diamond for right-edge markers */
+.jtl-milestone-marker--flip {
+    transform: translateX(calc(-100% + 7px));
+}
+.jtl-milestone-marker--flip .jtl-milestone-point {
+    flex-direction: row-reverse;
+}
+.jtl-milestone-marker--flip .jtl-milestone-stem {
+    align-self: flex-end;
+    margin-left: 0;
+    margin-right: 6px;
+}
+
 /* 🔥 Peak-date flame icons in the timeline biz-events row */
 .jtl-peak-flame {
     position: absolute;

@@ -1012,7 +1012,8 @@ export class TimelineRenderer {
         const DIAMOND_GAP_PX = 21; // diamond (14px) + gap (7px)
         const CHAR_PX_EST    = 6.5;
         const CHART_PX_EST   = daysInMonth * 40;
-        // laneItems[lane] = array of { leftPct, labelEl } sorted by leftPct ascending
+        const FLIP_THRESHOLD = 76; // flip label left when marker is in the last ~24% of chart
+        // laneItems[lane] = array of { leftPct, labelEl, flipped } sorted by leftPct ascending
         const laneItems = [];
         // laneRightPct[lane] = estimated right edge of last placed marker (% of chart)
         const laneRightPct = [];
@@ -1025,7 +1026,10 @@ export class TimelineRenderer {
             const day = ev.dueDate.getDate();
             // Milestones are point-in-time: align to the D3 scale (same formula as _dayToPct)
             const leftPct  = this._dayToPct(day, daysInMonth);
+            const flipped  = leftPct > FLIP_THRESHOLD;
             const labelPx  = (ev.summary.length * CHAR_PX_EST) + DIAMOND_GAP_PX;
+            // Use the same estimated label extent for lane collision detection regardless of
+            // flip direction; this prevents flipped markers from packing too tightly together.
             const rightPct = leftPct + (labelPx / CHART_PX_EST) * 100;
 
             // Find a lane whose last marker's estimated right edge doesn't collide.
@@ -1038,10 +1042,11 @@ export class TimelineRenderer {
             const lbl = document.createElement('span');
             lbl.className = 'jtl-milestone-label';
             lbl.textContent = ev.summary;
-            laneItems[lane].push({ leftPct, labelEl: lbl });
+            laneItems[lane].push({ leftPct, labelEl: lbl, flipped });
 
             const marker = document.createElement('div');
             marker.className = 'jtl-milestone-marker';
+            if (flipped) marker.classList.add('jtl-milestone-marker--flip');
             marker.style.left  = `${leftPct}%`;
             marker.style.top   = `${lane * 42}px`;
             marker.style.color = typeColor;
@@ -1072,15 +1077,35 @@ export class TimelineRenderer {
         const lanes = laneRightPct.length || 1;
         bars.style.minHeight = `${lanes * 42 + 16}px`;
 
-        // Second pass: clamp each label's max-width to the available space before the
-        // next marker in the same lane, measured against the real rendered bar width.
+        // Second pass: clamp each label's max-width to the available space.
+        // Flipped markers extend their label leftward — clamp by distance to the PREVIOUS
+        // marker in the same lane; normal markers clamp by distance to the next marker.
+        // When a non-flipped (rightward) and flipped (leftward) marker are adjacent in the
+        // same lane they both extend into the same gap — split the gap between them so
+        // neither overlaps the other.
         requestAnimationFrame(() => {
             const barsW = bars.offsetWidth;
             if (!barsW) return;
             laneItems.forEach(items => {
                 items.forEach((item, i) => {
-                    const nextLeftPct = i + 1 < items.length ? items[i + 1].leftPct : 100;
-                    const availPx = ((nextLeftPct - item.leftPct) / 100) * barsW - DIAMOND_GAP_PX - 4; // 4px gap before next marker
+                    const prevItem = i > 0 ? items[i - 1] : null;
+                    const nextItem = i + 1 < items.length ? items[i + 1] : null;
+                    let availPx;
+                    if (item.flipped) {
+                        const prevLeftPct = prevItem ? prevItem.leftPct : 0;
+                        const gap = ((item.leftPct - prevLeftPct) / 100) * barsW;
+                        // Previous non-flipped label extends rightward into the same gap
+                        availPx = (prevItem && !prevItem.flipped)
+                            ? gap / 2 - DIAMOND_GAP_PX - 4
+                            : gap     - DIAMOND_GAP_PX - 4;
+                    } else {
+                        const nextLeftPct = nextItem ? nextItem.leftPct : 100;
+                        const gap = ((nextLeftPct - item.leftPct) / 100) * barsW;
+                        // Next flipped label extends leftward into the same gap
+                        availPx = (nextItem && nextItem.flipped)
+                            ? gap / 2 - DIAMOND_GAP_PX - 4
+                            : gap     - DIAMOND_GAP_PX - 4;
+                    }
                     if (availPx > 0) item.labelEl.style.maxWidth = `${Math.floor(availPx)}px`;
                 });
             });
