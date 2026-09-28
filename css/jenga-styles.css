@@ -1797,6 +1797,15 @@ html:not([data-theme="dark"]) .jtl-panel__total { color: rgba(0,0,0,.55); }
     flex-shrink: 0;
 }
 
+.jtl-panel__legend--inline {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 4px 14px;
+    margin: 6px 8px 4px;
+    padding: 6px 0 2px;
+    border-top: 1px solid rgba(255,255,255,.1);
+}
+
 .jtl-panel__chart {
     flex: 1;
     min-width: 0;
@@ -4300,7 +4309,7 @@ html[data-theme="dark"] .ss-month-label {
 /* Brand watermark — frosted badge, bottom-right of every slide */
 .ss-brand-watermark {
     position: absolute;
-    bottom: 24px;
+    top: 24px;
     right: 28px;
     background: rgba(255, 255, 255, 0.14);
     border: 1px solid rgba(0, 0, 0, 0.10);
@@ -4317,13 +4326,13 @@ html[data-theme="dark"] .ss-month-label {
 }
 .ss-brand-watermark svg {
     display: block;
-    width: 120px;
+    width: 160px;
     height: auto;
     color: var(--_g-logo-fill-color, #111113);
     opacity: 0.80;
 }
 .ss-brand-watermark__subtitle {
-    font-size: 7.5px;
+    font-size: 9px;
     font-weight: 600;
     letter-spacing: 0.14em;
     text-transform: uppercase;

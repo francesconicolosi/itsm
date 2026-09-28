@@ -826,6 +826,21 @@ export class TimelineRenderer {
             '<span class="jtl-panel__title" style="color:#f59e0b">PEAK<br>PROTECTION</span>';
         wrap.appendChild(label);
 
+        const leg = document.createElement('ul');
+        leg.className = 'jtl-panel__legend jtl-panel__legend--inline';
+        [
+            { color: PEAK_PROTECTION_COLORS.RED,   text: 'Red Protection Window' },
+            { color: PEAK_PROTECTION_COLORS.AMBER, text: 'Amber Protection Window' },
+            { color: PEAK_PROTECTION_COLORS.BLUE,  text: 'Blue Protection Window' },
+        ].forEach(({ color, text }) => {
+            const li = document.createElement('li');
+            li.innerHTML = `<span class="jtl-panel__legend-dot" style="background:${color}"></span>${text}`;
+            leg.appendChild(li);
+        });
+        const cabLi = document.createElement('li');
+        cabLi.innerHTML = '<span class="jtl-panel__legend-dot" style="background:transparent;font-size:11px">📢</span>CAB Meeting';
+        leg.appendChild(cabLi);
+
         const chartArea = document.createElement('div');
         chartArea.className = 'jtl-panel__chart jtl-panel__chart--biz jtl-panel__chart--peak-protection';
         wrap.appendChild(chartArea);
@@ -886,11 +901,7 @@ export class TimelineRenderer {
             const icon = document.createElement('span');
             icon.textContent = '🛡️ ';
 
-            const txt = document.createElement('span');
-            txt.textContent = `${colorKey} Protection Window`;
-
             bar.appendChild(icon);
-            bar.appendChild(txt);
 
             const _fmtPW = d => d ? d.toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: 'numeric' }) : null;
             bar.addEventListener('mouseenter', (e) => this._showHoverCard(e.clientX, e.clientY, [
@@ -958,6 +969,7 @@ export class TimelineRenderer {
 
         this._appendNoItsmBarOverlay(bars, year, month, daysInMonth);
         chartArea.appendChild(bars);
+        chartArea.appendChild(leg);
         return wrap;
     }
 
