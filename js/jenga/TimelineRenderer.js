@@ -1903,7 +1903,7 @@ export class TimelineRenderer {
                 return { date: dayStart, value: count };
             });
             return { key, label, color, data };
-        });
+        }).filter(s => s.data.some(d => d.value > 0));
     }
 
     /** Build card counts per day (incidents or service requests). */
