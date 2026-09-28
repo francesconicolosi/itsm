@@ -838,7 +838,7 @@ export class TimelineRenderer {
             leg.appendChild(li);
         });
         const cabLi = document.createElement('li');
-        cabLi.innerHTML = '<span class="jtl-panel__legend-dot" style="background:transparent;font-size:11px">📢</span>Change Advisory Board';
+        cabLi.innerHTML = '<span style="font-size:11px;line-height:1;flex-shrink:0">📢</span>Change Advisory Board';
         leg.appendChild(cabLi);
 
         const chartArea = document.createElement('div');
