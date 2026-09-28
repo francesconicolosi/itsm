@@ -4272,10 +4272,10 @@ html[data-theme="dark"] .ss-month-label {
     padding: 10px 0 6px;
 }
 
-/* Slides 2/3: timeline — fill height, center panels vertically */
+/* Slides 2/3: timeline — fill height, anchor panels to top */
 .jenga-slide--2,
 .jenga-slide--3 {
-    justify-content: center;
+    justify-content: flex-start;
 }
 
 .jenga-slide--2 .jtl-main,
@@ -4285,12 +4285,13 @@ html[data-theme="dark"] .ss-month-label {
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    justify-content: center;
+    justify-content: flex-start;
 }
 
 /* Clip milestone labels that overflow the slide edge */
-/* Slide 2: centre the axis-header month label to match slides 1 and 3 */
-.jenga-slide--2 .jtl-month-label {
+/* Slides 2/3: centre and enlarge the axis-header month label */
+.jenga-slide--2 .jtl-month-label,
+.jenga-slide--3 .jtl-month-label {
     font-size: 15px;
     font-weight: 600;
     letter-spacing: 0.12em;
@@ -4348,6 +4349,12 @@ html[data-theme="dark"] .ss-brand-watermark svg {
 }
 html[data-theme="dark"] .ss-brand-watermark__subtitle {
     opacity: 0.50;
+}
+/* Slides 2 & 3 show a day-ruler at the top — push logo to bottom-right */
+.jenga-slide--2 .ss-brand-watermark,
+.jenga-slide--3 .ss-brand-watermark {
+    top: auto;
+    bottom: 24px;
 }
 
 @media (max-width: 768px) {
