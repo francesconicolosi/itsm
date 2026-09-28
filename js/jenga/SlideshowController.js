@@ -220,7 +220,7 @@ export class SlideshowController {
         if (this.currentSlide === 1) {
             // Calendar view — render first, then inject month label so it isn't wiped
             // by CalendarRenderer.render() which does containerEl.innerHTML = ''
-            app.calendar.render(slideWrap, app.currentYear, app.currentMonth, filtered);
+            app.calendar.render(slideWrap, app.currentYear, app.currentMonth, filtered, { maxChips: 3 });
 
             const monthLabel = document.createElement('div');
             monthLabel.className = 'ss-month-label';

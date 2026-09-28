@@ -190,7 +190,7 @@ export class CalendarRenderer {
     onEventClick(fn) { this._onEventClick = fn; }
     onDayClick(fn)   { this._onDayClick = fn; }
 
-    render(containerEl, year, month, events) {
+    render(containerEl, year, month, events, { maxChips = MAX_CHIPS } = {}) {
         if (!containerEl) return;
         containerEl.innerHTML = '';
         this._closePopover();
@@ -253,7 +253,7 @@ export class CalendarRenderer {
             const allCalendarEvents = this._getAllCalendarEvents(events);
 
             week.forEach(date => {
-                row.appendChild(this._makeCell(date, month, singleByDay, allCalendarEvents, peakDaySet));
+                row.appendChild(this._makeCell(date, month, singleByDay, allCalendarEvents, peakDaySet, maxChips));
             });
 
             // Multi-day spanning bars for this week
@@ -291,7 +291,7 @@ export class CalendarRenderer {
         );
     }
 
-    _makeCell(date, month, singleByDay, allEvents, peakDaySet) {
+    _makeCell(date, month, singleByDay, allEvents, peakDaySet, maxChips = MAX_CHIPS) {
         const cell = document.createElement('div');
         cell.className = 'jenga-cal__cell';
         cell.dataset.date = this._dayKey(date);
@@ -373,7 +373,7 @@ export class CalendarRenderer {
         chipsArea.className = 'jenga-cal__chips';
 
         const items = groupSingleDayEvents(dayEvts);
-        const visible = items.slice(0, MAX_CHIPS);
+        const visible = items.slice(0, maxChips);
         const overflow = items.length - visible.length;
 
         visible.forEach(item => chipsArea.appendChild(this._makeChip(item)));
