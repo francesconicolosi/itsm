@@ -663,6 +663,8 @@ export class CalendarRenderer {
 
     _isExpired(ev) {
         if (!ev?.dueDate) return false;
+        const closedStatuses = new Set(['Done', "WON'T DO"]);
+        if (closedStatuses.has(ev.status)) return false;
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         return ev.dueDate < today;
