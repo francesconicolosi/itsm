@@ -1,5 +1,5 @@
 import { BRAND, renderBrandLogo } from '../../brand-specific/brand.js';
-import { applyTheme, loadSavedTheme, showThemeSwitchSpinner } from '../shared/utils.js';
+import { applyTheme, loadSavedTheme, showThemeSwitchSpinner, isTVBrowser } from '../shared/utils.js';
 import { PostItNote } from '../shared/PostItNote.js';
 import { AnnouncementBar } from '../shared/AnnouncementBar.js';
 import { EventStore } from './EventStore.js';
@@ -75,9 +75,10 @@ export class JengaApp {
         });
 
         window.addEventListener('load', () => {
+            const isTV = isTVBrowser() || new URLSearchParams(location.search).get('tvmode') === 'true';
             Promise.all([
                 fetch(BRAND.csv.jenga).then(r => r.text()),
-                fetch(BRAND.csv.jiraCards).then(r => r.text()).catch(() => ''),
+                fetch(isTV ? BRAND.csv.jiraCardsCurrent : BRAND.csv.jiraCards).then(r => r.text()).catch(() => ''),
                 fetch(BRAND.csv.domino).then(r => r.text()).catch(() => ''),
             ]).then(([eventsCsv, cardsCsv, catalogCsv]) => {
                 this.store.load(eventsCsv);
@@ -85,6 +86,7 @@ export class JengaApp {
                 const serviceNames = this._parseServiceNames(catalogCsv);
                 this.search.setServiceOptions(serviceNames);
                 this._updateLastUpdate();
+                this.timeline._tvMode = isTV;
                 // Apply deep-link params before first render
                 this._readUrlParams();
                 this._dataLoaded = true;
@@ -99,9 +101,16 @@ export class JengaApp {
                 requestAnimationFrame(() => {
                     this._suppressUrlPush = false;
                     this._applyUrlDrawerParams();
+                    if (isTV && !this.slideshow.active &&
+                            new URLSearchParams(location.search).get('slideshow') !== 'false') {
+                        this.slideshow.start();
+                    }
                     this._hideSpinner();
                 });
-            }).catch(err => console.error('[Jenga] Failed to load CSV:', err));
+            }).catch(err => {
+                console.error('[Jenga] Failed to load CSV:', err);
+                this._hideSpinner();
+            });
         });
     }
 

@@ -89,6 +89,12 @@ jobs:
             echo "No previous People Database CSV found"
           fi
       # ===============================
+      # SLICE JIRA CARDS (TV optimisation)
+      # ===============================
+      - name: Generate current-month jira-cards slice (TV optimisation)
+        run: python3 scripts/slice_jira_cards.py
+
+      # ===============================
       # FETCH MISSING PEOPLE AVATARS
       # ===============================
       - name: Fetch missing People avatars from Atlassian
@@ -111,6 +117,7 @@ jobs:
 
           git add src/service-catalog.csv
           git add src/people-database.csv
+          git add src/jira-cards-current.csv
           git add assets/photos
 
           if git diff --cached --quiet; then

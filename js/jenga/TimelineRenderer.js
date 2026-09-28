@@ -86,6 +86,8 @@ export class TimelineRenderer {
         this._laneExpandRaf2 = null;
         this._laneExpandRaf3 = null;
 
+        this._tvMode = false;
+
         // ── Comparison feature state (per-lane) ───────────────────────────────
         this._incidentAvgMonths    = 6;
         this._incidentLastYear     = false;
@@ -180,6 +182,7 @@ export class TimelineRenderer {
 
     /** Build comparison series for a lane, mapped to target month's x-axis. */
     _getCompareData(laneKey, year, month, issueType) {
+        if (this._tvMode) return [];
         const store     = this.app.store;
         const activeServices = this.app.search?.activeServices;
         const services  = activeServices && activeServices.size > 0 ? activeServices : undefined;
@@ -200,6 +203,7 @@ export class TimelineRenderer {
 
     /** Build per-day-of-month average curve for a lane. */
     _getAvgCurve(laneKey, year, month, issueType) {
+        if (this._tvMode) return null;
         const store = this.app.store;
         const avgMonths = laneKey === 'incidents' ? this._incidentAvgMonths : this._srAvgMonths;
         const activeServices = this.app.search?.activeServices;
@@ -260,6 +264,11 @@ export class TimelineRenderer {
     // ── Comparison controls DOM ───────────────────────────────────────────────
 
     _buildComparisonControls(laneKey, year, month) {
+        if (this._tvMode) {
+            const row = document.createElement('div');
+            row.className = 'jtl-lane-controls';
+            return row;
+        }
         const isInc      = laneKey === 'incidents';
         const avgMonths  = isInc ? this._incidentAvgMonths  : this._srAvgMonths;
         const lastYear   = isInc ? this._incidentLastYear   : this._srLastYear;

@@ -11,6 +11,7 @@ export class SlideshowController {
         this.playing = false;
         this.currentSlide = 1;
         this.slideDuration = slideDuration ?? this._readSlideDuration();
+        this._slideCount = SLIDE_COUNT;
         this._timer = null;
         this._reloadTimer = null;
         this._commandBarTimer = null;
@@ -28,7 +29,8 @@ export class SlideshowController {
         return 10000;
     }
 
-    start() {
+    start({ slideCount } = {}) {
+        this._slideCount = (slideCount != null && slideCount > 0) ? slideCount : SLIDE_COUNT;
         this.active = true;
         this.playing = true;
         this.currentSlide = 1;
@@ -63,6 +65,7 @@ export class SlideshowController {
     }
 
     stop() {
+        this._slideCount = SLIDE_COUNT;
         this.active = false;
         this.playing = false;
         this._clearTimer();
@@ -121,7 +124,7 @@ export class SlideshowController {
 
     next() {
         if (!this.active) return;
-        this.currentSlide = (this.currentSlide % SLIDE_COUNT) + 1;
+        this.currentSlide = (this.currentSlide % this._slideCount) + 1;
         this._renderCurrentSlide();
         if (this.playing) this._startTimer();
         this._updateCommandBar();
@@ -129,7 +132,7 @@ export class SlideshowController {
 
     prev() {
         if (!this.active) return;
-        this.currentSlide = this.currentSlide === 1 ? SLIDE_COUNT : this.currentSlide - 1;
+        this.currentSlide = this.currentSlide === 1 ? this._slideCount : this.currentSlide - 1;
         this._renderCurrentSlide();
         if (this.playing) this._startTimer();
         this._updateCommandBar();
@@ -139,7 +142,7 @@ export class SlideshowController {
         this._clearTimer();
         if (!this.playing) return;
         this._timer = setTimeout(() => {
-            this.currentSlide = (this.currentSlide % SLIDE_COUNT) + 1;
+            this.currentSlide = (this.currentSlide % this._slideCount) + 1;
             this._renderCurrentSlide();
             this._updateCommandBar();
             this._startTimer();
@@ -295,7 +298,7 @@ export class SlideshowController {
             <button id="ss-btn-play" class="ss-btn" title="Play" aria-label="Play">▶</button>
             <button id="ss-btn-pause" class="ss-btn" title="Pause" aria-label="Pause">⏸</button>
             <button id="ss-btn-next" class="ss-btn" title="Next slide" aria-label="Next">›</button>
-            <span class="ss-indicator" id="ss-indicator">1 / ${SLIDE_COUNT}</span>
+            <span class="ss-indicator" id="ss-indicator">1 / ${this._slideCount}</span>
             <button id="ss-btn-stop" class="ss-btn ss-btn--stop" title="Stop slideshow" aria-label="Stop">✖ Stop</button>
         `;
         document.body.appendChild(bar);
@@ -343,7 +346,7 @@ export class SlideshowController {
     _updateCommandBar() {
         if (!this._commandBar) return;
         const indicator = this._commandBar.querySelector('#ss-indicator');
-        if (indicator) indicator.textContent = `${this.currentSlide} / ${SLIDE_COUNT}`;
+        if (indicator) indicator.textContent = `${this.currentSlide} / ${this._slideCount}`;
 
         const playBtn  = this._commandBar.querySelector('#ss-btn-play');
         const pauseBtn = this._commandBar.querySelector('#ss-btn-pause');

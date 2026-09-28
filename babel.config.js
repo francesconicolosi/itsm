@@ -1,3 +1,10 @@
 module.exports = {
-    presets: [['@babel/preset-env', { targets: { node: 'current' } }]],
+    env: {
+        test: {
+            presets: [['@babel/preset-env', { targets: { node: 'current' } }]],
+        },
+    },
+    presets: [
+        ['@babel/preset-env', { targets: 'Chrome >= 69' }],
+    ],
 };

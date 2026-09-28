@@ -88,6 +88,7 @@ module.exports = {
                 {from: 'src/service-catalog.csv', to: 'service-catalog.csv'},
                 {from: 'src/people-database.csv', to: 'people-database.csv'},
                 {from: 'src/jira-cards.csv', to: 'jira-cards.csv'},
+                {from: 'src/jira-cards-current.csv', to: 'jira-cards-current.csv'},
                 {from: 'src/jenga-events.csv', to: 'jenga-events.csv'},
                 {from: 'src/custom-filters.csv', to: 'custom-filters.csv'},
                 {from: 'src/robots.txt', to: 'robots.txt'},

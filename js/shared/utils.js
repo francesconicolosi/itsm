@@ -159,6 +159,13 @@ export function isMobileDevice() {
     return uaIsMobile || smallViewport;
 }
 
+export function isTVBrowser() {
+    try {
+        const ua = navigator.userAgent || '';
+        return /Tizen|SmartTV|SMART-TV|HbbTV/i.test(ua);
+    } catch (_) { return false; }
+}
+
 // ─── DOM element builders ──────────────────────────────────────────────────
 
 export function createHrefElement(cleanUrl, textContent) {

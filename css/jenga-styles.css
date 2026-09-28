@@ -189,7 +189,7 @@ body {
 
 .jenga-cal__header {
     display: grid;
-    grid-template-columns: repeat(7, 1fr);
+    grid-template-columns: repeat(7, minmax(0, 1fr));
     background: #f4f4f4;
     border-bottom: 2px solid #d0d0d0;
 }
@@ -207,7 +207,7 @@ body {
 
 .jenga-cal__week {
     display: grid;
-    grid-template-columns: repeat(7, 1fr);
+    grid-template-columns: repeat(7, minmax(0, 1fr));
     border-bottom: 1px solid #d8d8d8;
     min-height: 190px;
     position: relative; /* anchor for absolutely-positioned multi-day bars */
@@ -219,6 +219,7 @@ body {
     padding: 0 4px 8px;
     vertical-align: top;
     min-height: 190px;
+    min-width: 0;
     cursor: default;
     position: relative;
 }
@@ -4225,6 +4226,7 @@ html:not([data-theme="dark"]) .jtl-lane--collapsed .jtl-lane__toggle:hover {
 
 .jenga-slideshow-container {
     position: fixed;
+    top: 0; right: 0; bottom: 0; left: 0;
     inset: 0;
     background: #fff;
     overflow: hidden;
@@ -4237,6 +4239,7 @@ html[data-theme="dark"] .jenga-slideshow-container {
 
 .jenga-slide {
     position: absolute;
+    top: 0; right: 0; bottom: 0; left: 0;
     inset: 0;
     overflow: hidden;
     display: flex;
@@ -4453,6 +4456,7 @@ html[data-theme="dark"] .ss-day-axis {
     color: #fff;
     border-radius: 40px;
     padding: 8px 20px;
+    -webkit-backdrop-filter: blur(6px);
     backdrop-filter: blur(6px);
     box-shadow: 0 4px 20px rgba(0,0,0,0.4);
     transition: opacity 0.4s ease;
