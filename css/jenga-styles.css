@@ -1802,8 +1802,7 @@ html:not([data-theme="dark"]) .jtl-panel__total { color: rgba(0,0,0,.55); }
     flex-wrap: wrap;
     gap: 4px 14px;
     margin: 6px 8px 4px;
-    padding: 6px 0 2px;
-    border-top: 1px solid rgba(255,255,255,.1);
+    padding: 2px 0;
 }
 
 .jtl-panel__chart {
