@@ -3416,6 +3416,23 @@ html[data-theme="dark"] .jenga-cal__cab-badge {
 }
 html[data-theme="dark"] .jtl-cab-marker { background: rgba(245, 158, 11, .16); }
 
+/* Peak protection bars: 400-weight hues + higher opacity for dark backgrounds */
+html[data-theme="dark"] .jtl-peak-protection-bar--red {
+    background:        rgba(248, 113, 113, 0.22) !important;
+    border-left-color: #f87171 !important;
+    color:             #f87171 !important;
+}
+html[data-theme="dark"] .jtl-peak-protection-bar--amber {
+    background:        rgba(251, 191,  36, 0.22) !important;
+    border-left-color: #fbbf24 !important;
+    color:             #fbbf24 !important;
+}
+html[data-theme="dark"] .jtl-peak-protection-bar--blue {
+    background:        rgba( 96, 165, 250, 0.22) !important;
+    border-left-color: #60a5fa !important;
+    color:             #60a5fa !important;
+}
+
 /* ── CAB must be the first visible calendar item ─────────────────────────── */
 .jenga-cal__cab-badge {
     position: absolute;

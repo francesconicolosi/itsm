@@ -2030,7 +2030,9 @@ export class TimelineRenderer {
 
         const domainEnd = xDomain?.[1];
         const daysInMonth = domainEnd instanceof Date ? domainEnd.getDate() : 31;
-        const bandOpacity = document.documentElement?.dataset?.theme === 'dark' ? 0.055 : 0.08;
+        const dark = document.documentElement?.dataset?.theme === 'dark';
+        const bandOpacity = dark ? 0.15 : 0.08;
+        const DARK_COLORS = { RED: '#f87171', AMBER: '#fbbf24', BLUE: '#60a5fa' };
 
         const bandLayer = g.append('g')
             .attr('class', 'jtl-peak-protection-band-layer');
@@ -2041,6 +2043,7 @@ export class TimelineRenderer {
 
             const colorKey = ev.protectionColor || 'AMBER';
             const color = PEAK_PROTECTION_COLORS[colorKey] || PEAK_PROTECTION_COLORS.AMBER;
+            const fillColor = dark ? (DARK_COLORS[colorKey] || color) : color;
 
             bandLayer.append('rect')
                 .attr('class', `jtl-peak-protection-band jtl-peak-protection-band--${colorKey.toLowerCase()}`)
@@ -2048,7 +2051,7 @@ export class TimelineRenderer {
                 .attr('y', -CHART_MARGIN.top)
                 .attr('width', metrics.width)
                 .attr('height', innerH + CHART_MARGIN.top + CHART_MARGIN.bottom)
-                .attr('fill', color)
+                .attr('fill', fillColor)
                 .attr('fill-opacity', bandOpacity)
                 .attr('rx', 2);
         });
