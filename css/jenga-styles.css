@@ -4009,7 +4009,7 @@ html:not([data-theme="dark"]) .jtl-issue-search__clear:hover {
 
 .jtl-lane:not(.jtl-lane--collapsed) .jtl-panel__chart,
 .jtl-lane:not(.jtl-lane--collapsed) .jtl-panel__chart--biz,
-.jtl-lane:not(.jtl-lane--collapsed) .jtl-panel__legend,
+.jtl-lane:not(.jtl-lane--collapsed) .jtl-panel__legend:not(.jtl-panel__legend--inline),
 .jtl-lane:not(.jtl-lane--collapsed) .jtl-panel__subtitle,
 .jtl-lane:not(.jtl-lane--collapsed) .jtl-panel__title,
 .jtl-lane:not(.jtl-lane--collapsed) .jtl-panel__icon {
