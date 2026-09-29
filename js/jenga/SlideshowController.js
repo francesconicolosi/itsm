@@ -158,21 +158,59 @@ export class SlideshowController {
 
     _appendBrandWatermark(slide) {
         if (!BRAND?.logo?.svgInline?.d) return;
-        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-        svg.setAttribute('viewBox', '0 0 1312 210');
-        svg.setAttribute('aria-hidden', 'true');
-        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-        path.setAttribute('d', BRAND.logo.svgInline.d);
-        path.setAttribute('fill', 'currentColor');
-        svg.appendChild(path);
+
+        const ns = 'http://www.w3.org/2000/svg';
+
+        const logoSvg = document.createElementNS(ns, 'svg');
+        logoSvg.setAttribute('class', 'ss-brand-watermark__logo');
+        logoSvg.setAttribute('viewBox', '0 0 1312 210');
+        logoSvg.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+        logoSvg.setAttribute('aria-hidden', 'true');
+
+        const logoPath = document.createElementNS(ns, 'path');
+        logoPath.setAttribute('d', BRAND.logo.svgInline.d);
+        logoPath.setAttribute('fill', 'currentColor');
+
+        logoSvg.appendChild(logoPath);
+
         const subtitle = document.createElement('div');
         subtitle.className = 'ss-brand-watermark__subtitle';
         subtitle.textContent = 'Digital Service Management';
+
+        const progressFill = document.createElement('div');
+        progressFill.className = 'ss-brand-watermark__progress-fill';
+        progressFill.setAttribute('aria-hidden', 'true');
+
         const wrap = document.createElement('div');
         wrap.className = 'ss-brand-watermark';
-        wrap.appendChild(svg);
+
+        wrap.appendChild(progressFill);
+        wrap.appendChild(logoSvg);
         wrap.appendChild(subtitle);
+
         slide.appendChild(wrap);
+
+        requestAnimationFrame(() => {
+            if (!progressFill.isConnected) return;
+
+            progressFill.style.setProperty(
+                'transition-duration',
+                `${this.slideDuration}ms`
+            );
+
+            progressFill.style.setProperty(
+                '-webkit-transition-duration',
+                `${this.slideDuration}ms`
+            );
+
+            requestAnimationFrame(() => {
+                if (!progressFill.isConnected) return;
+
+                progressFill.classList.add(
+                    'ss-brand-watermark__progress-fill--active'
+                );
+            });
+        });
     }
 
     _renderCurrentSlide() {
