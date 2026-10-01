@@ -10,7 +10,7 @@ const TYPE_COLORS = {
     DELIVERY:       { bg: '#dcfce7', border: '#22c55e', text: '#15803d' },
     BUSINESS_EVENT: { bg: '#fce7f3', border: '#db2777', text: '#9d174d' },
     HYBRIS:         { bg: '#e0fdf4', border: '#14b8a6', text: '#0f766e' },
-    MILESTONE:      { bg: '#ede9fe', border: '#7c3aed', text: '#5b21b6' },
+    MILESTONE:      { bg: '#ede9fe', border: '#a78bfa', text: '#5b21b6' },
     OTHER:          { bg: '#f1f5f9', border: '#94a3b8', text: '#475569' },
 };
 
