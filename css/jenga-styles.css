@@ -527,7 +527,7 @@ html[data-theme="dark"] .jenga-cal__mb-hybris {
 .jenga-chip--milestone {
     --chip-bg: #ede9fe;
     --chip-border: #7c3aed;
-    --chip-text: #92400e;
+    --chip-text: #5b21b6;
 }
 
 /* ── Business event — all-day banner ─────────────────────────────────────── */
@@ -1632,7 +1632,7 @@ html[data-theme="dark"] .jenga-chip--business_event {
     border: none;
     border-left: 3px solid #db2777;
 }
-html[data-theme="dark"] .jenga-chip--milestone   { background: #1e1433; color: #fbbf24; border-left-color: #7c3aed; }
+html[data-theme="dark"] .jenga-chip--milestone   { background: #1e1433; color: #c4b5fd; border-left-color: #7c3aed; }
 html[data-theme="dark"] .jenga-chip--other       { background: #16181f; }
 html[data-theme="dark"] .jenga-chip--more        { background: none; color: rgba(245,245,247,.55); filter: none; }
 html[data-theme="dark"] .jenga-chip__count       { background: rgba(255,255,255,.18); }
