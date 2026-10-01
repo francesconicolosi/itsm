@@ -4,13 +4,25 @@ const SEARCH_FILTER_STORAGE_KEY = 'jenga.searchFilters.v2';
 
 const ENV_OPTIONS = ['Production', 'QA', 'Staging', 'Dev'];
 
-// Coloured badge meta for env chips in the trigger
-const ENV_CHIP_META = {
-    'Production': { label: 'PRD', color: '#ef4444' },
+// Coloured badge meta for env chips in the trigger — dual light/dark mode
+const ENV_CHIP_META_LIGHT = {
+    'Production': { label: 'PRD', color: '#ef4444', textColor: '#ffffff' },
     'QA':         { label: 'QA',  color: '#eab308', textColor: '#1a1a1a' },
-    'Staging':    { label: 'STG', color: '#6b7280' },
-    'Dev':        { label: 'DEV', color: '#3b82f6' },
+    'Staging':    { label: 'STG', color: '#6b7280', textColor: '#ffffff' },
+    'Dev':        { label: 'DEV', color: '#3b82f6', textColor: '#ffffff' },
 };
+
+const ENV_CHIP_META_DARK = {
+    'Production': { label: 'PRD', color: '#713c45', textColor: '#ffdde2' },
+    'QA':         { label: 'QA',  color: '#665526', textColor: '#fbe6a3' },
+    'Staging':    { label: 'STG', color: '#39485b', textColor: '#d6e2ef' },
+    'Dev':        { label: 'DEV', color: '#354d45', textColor: '#c8e6da' },
+};
+
+const _envChipMeta = () =>
+    document.documentElement?.dataset?.theme === 'dark'
+        ? ENV_CHIP_META_DARK
+        : ENV_CHIP_META_LIGHT;
 
 // Maps display name → env key prefixes used in event data
 const ENV_DISPLAY_TO_KEYS = {
@@ -232,7 +244,7 @@ export class JengaSearch {
                 this.app.refresh();
             },
             renderChip: (val) => {
-                const meta = ENV_CHIP_META[val] || { label: val, color: '#999' };
+                const meta = _envChipMeta()[val] || { label: val, color: '#999' };
                 const chip = document.createElement('span');
                 chip.className = 'jms__env-chip';
                 chip.textContent = meta.label;
@@ -350,5 +362,9 @@ export class JengaSearch {
 
             return true;
         });
+    }
+
+    refreshChips() {
+        this._envMs?.setValue(this._selectedEnvs);
     }
 }

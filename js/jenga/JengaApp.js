@@ -170,7 +170,11 @@ export class JengaApp {
         document.getElementById('toggle-dark-mode')?.addEventListener('change', (e) => {
             const spinner = showThemeSwitchSpinner();
             applyTheme(e.target.checked ? 'dark' : 'light');
-            requestAnimationFrame(() => requestAnimationFrame(() => spinner.remove()));
+            requestAnimationFrame(() => requestAnimationFrame(() => {
+                this.refresh();
+                this.search.refreshChips();
+                spinner.remove();
+            }));
         });
     }
 
