@@ -5,31 +5,61 @@
  * as a single continuous bar using an absolute-positioned overlay layer.
  */
 
-const TYPE_COLORS = {
+const TYPE_COLORS_LIGHT = {
     SERVICE_OP:     { bg: '#dbeafe', border: '#3b82f6', text: '#1d4ed8' },
     DELIVERY:       { bg: '#dcfce7', border: '#22c55e', text: '#15803d' },
     BUSINESS_EVENT: { bg: '#fce7f3', border: '#db2777', text: '#9d174d' },
     HYBRIS:         { bg: '#e0fdf4', border: '#14b8a6', text: '#0f766e' },
-    MILESTONE:      { bg: '#ede9fe', border: '#a78bfa', text: '#5b21b6' },
+    MILESTONE:      { bg: '#ede9fe', border: '#7c3aed', text: '#5b21b6' },
     OTHER:          { bg: '#f1f5f9', border: '#94a3b8', text: '#475569' },
 };
 
-const ENV_META = {
-    prd:      { color: '#ef4444', label: 'PRD' },
-    qa1:      { color: '#eab308', label: 'QA1' },
-    qa2:      { color: '#eab308', label: 'QA2' },
-    qa3:      { color: '#eab308', label: 'QA3' },
-    qa4:      { color: '#eab308', label: 'QA4' },
-    qa5:      { color: '#eab308', label: 'QA5' },
-    qa:       { color: '#eab308', label: 'QA'  },
-    staging:  { color: '#6b7280', label: 'STG' },
-    preprod:  { color: '#6b7280', label: 'PRE' },
-    devops:   { color: '#3b82f6', label: 'DEV' },
-    qasales:  { color: '#f59e0b', label: 'QAS' },
-    qaesales: { color: '#f59e0b', label: 'QAE' },
-    shadow:   { color: '#6b7280', label: 'SHW' },
-    prod:     { color: '#ef4444', label: 'PRD' },
+const TYPE_COLORS_DARK = {
+    SERVICE_OP:     { bg: '#172233', border: '#5e8fc7', text: '#dce7f5' },
+    DELIVERY:       { bg: '#1c2b27', border: '#69ad9f', text: '#c8e6da' },
+    BUSINESS_EVENT: { bg: '#3a2633', border: '#b66a8b', text: '#f0dce5' },
+    HYBRIS:         { bg: '#17312f', border: '#5bb8a9', text: '#8fd3c7' },
+    MILESTONE:      { bg: '#1e1433', border: '#a78bfa', text: '#ddd6fe' },
+    OTHER:          { bg: '#20242c', border: '#68707d', text: '#c7ccd4' },
 };
+
+const ENV_META_LIGHT = {
+    prd:      { color: '#ef4444', text: '#ffffff', label: 'PRD' },
+    prod:     { color: '#ef4444', text: '#ffffff', label: 'PRD' },
+    qa:       { color: '#eab308', text: '#1a1a1a', label: 'QA'  },
+    qa1:      { color: '#eab308', text: '#1a1a1a', label: 'QA1' },
+    qa2:      { color: '#eab308', text: '#1a1a1a', label: 'QA2' },
+    qa3:      { color: '#eab308', text: '#1a1a1a', label: 'QA3' },
+    qa4:      { color: '#eab308', text: '#1a1a1a', label: 'QA4' },
+    qa5:      { color: '#eab308', text: '#1a1a1a', label: 'QA5' },
+    qasales:  { color: '#f59e0b', text: '#1a1a1a', label: 'QAS' },
+    qaesales: { color: '#f59e0b', text: '#1a1a1a', label: 'QAE' },
+    staging:  { color: '#6b7280', text: '#ffffff', label: 'STG' },
+    preprod:  { color: '#6b7280', text: '#ffffff', label: 'PRE' },
+    shadow:   { color: '#6b7280', text: '#ffffff', label: 'SHW' },
+    devops:   { color: '#3b82f6', text: '#ffffff', label: 'DEV' },
+};
+
+const ENV_META_DARK = {
+    prd:      { color: '#713c45', text: '#ffdde2', label: 'PRD' },
+    prod:     { color: '#713c45', text: '#ffdde2', label: 'PRD' },
+    qa:       { color: '#665526', text: '#fbe6a3', label: 'QA'  },
+    qa1:      { color: '#665526', text: '#fbe6a3', label: 'QA1' },
+    qa2:      { color: '#665526', text: '#fbe6a3', label: 'QA2' },
+    qa3:      { color: '#665526', text: '#fbe6a3', label: 'QA3' },
+    qa4:      { color: '#665526', text: '#fbe6a3', label: 'QA4' },
+    qa5:      { color: '#665526', text: '#fbe6a3', label: 'QA5' },
+    qasales:  { color: '#644c27', text: '#ffe0a1', label: 'QAS' },
+    qaesales: { color: '#644c27', text: '#ffe0a1', label: 'QAE' },
+    staging:  { color: '#39485b', text: '#d6e2ef', label: 'STG' },
+    preprod:  { color: '#39485b', text: '#d6e2ef', label: 'PRE' },
+    shadow:   { color: '#39485b', text: '#d6e2ef', label: 'SHW' },
+    devops:   { color: '#354d45', text: '#c8e6da', label: 'DEV' },
+};
+
+const _isDark     = () => document.documentElement?.dataset?.theme === 'dark';
+const _typeColors = () => _isDark() ? TYPE_COLORS_DARK : TYPE_COLORS_LIGHT;
+const _envMeta    = () => _isDark() ? ENV_META_DARK    : ENV_META_LIGHT;
 
 // Hybris [Y] icon — inline SVG matching the SAP Hybris bracket logo
 export const HYBRIS_SVG = `<svg width="13" height="13" viewBox="0 0 20 20" fill="currentColor" style="flex-shrink:0;display:inline-block;vertical-align:middle" aria-hidden="true">
@@ -51,15 +81,19 @@ export function formatOperation(op) {
 }
 
 export function getTypeColor(type) {
-    return (TYPE_COLORS[type] || TYPE_COLORS.OTHER).border;
+    return (_typeColors()[type] || _typeColors().OTHER).border;
 }
 
 export function getEnvColor(env) {
-    return (ENV_META[(env || '').toLowerCase()] || { color: '#6b7280' }).color;
+    return (_envMeta()[(env || '').toLowerCase()] || { color: '#6b7280' }).color;
+}
+
+export function getEnvTextColor(env) {
+    return (_envMeta()[(env || '').toLowerCase()] || { text: '#ffffff' }).text;
 }
 
 export function getEnvLabel(env) {
-    return (ENV_META[(env || '').toLowerCase()] || { label: (env || '').toUpperCase().slice(0, 3) }).label;
+    return (_envMeta()[(env || '').toLowerCase()] || { label: (env || '').toUpperCase().slice(0, 3) }).label;
 }
 
 function getDayProtectionColor(date, events) {
@@ -554,7 +588,7 @@ export class CalendarRenderer {
             if (laneIdx === -1) { laneIdx = lanes.length; }
             lanes[laneIdx] = visEnd;
 
-            const colors = TYPE_COLORS[ev.type] || TYPE_COLORS.OTHER;
+            const colors = _typeColors()[ev.type] || _typeColors().OTHER;
 
             const bar = document.createElement('div');
             bar.className = `jenga-multiday-bar jenga-multiday-bar--${ev.type.toLowerCase()}`;
@@ -672,7 +706,7 @@ export class CalendarRenderer {
 
     _makeChip(item) {
         const ev = item.event;
-        const colors = TYPE_COLORS[ev.type] || TYPE_COLORS.OTHER;
+        const colors = _typeColors()[ev.type] || _typeColors().OTHER;
 
         const chip = document.createElement('div');
         chip.className = `jenga-chip jenga-chip--${ev.type.toLowerCase()}`;
