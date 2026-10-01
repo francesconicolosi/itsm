@@ -990,8 +990,9 @@ export class TimelineRenderer {
 
         const label = document.createElement('div');
         label.className = 'jtl-panel__label';
-        label.innerHTML = '<span class="jtl-panel__icon" style="color:#7c3aed">🏁</span>' +
-            '<span class="jtl-panel__title" style="color:#7c3aed">MILESTONES</span>';
+        label.innerHTML =
+            `<span class="jtl-panel__icon" style="color:${document.documentElement?.dataset?.theme === 'dark' ? '#a78bfa' : '#6d28d9'}">🏁</span>` +
+            `<span class="jtl-panel__title" style="color:${document.documentElement?.dataset?.theme === 'dark' ? '#a78bfa' : '#6d28d9'}">MILESTONES</span>`;
         wrap.appendChild(label);
 
         const chartArea = document.createElement('div');
@@ -1011,7 +1012,8 @@ export class TimelineRenderer {
 
         const monthStart = new Date(year, month, 1);
         const monthEnd   = new Date(year, month, daysInMonth);
-        const typeColor  = getTypeColor('MILESTONE');
+        const _milDark   = document.documentElement?.dataset?.theme === 'dark';
+        const typeColor  = _milDark ? getTypeColor('MILESTONE') : '#6d28d9';
 
         // Sort by due date
         const sorted = [...events].sort((a, b) => (a.dueDate || 0) - (b.dueDate || 0));
