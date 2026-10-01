@@ -745,7 +745,7 @@ export class CalendarRenderer {
     }
 
     _serviceChipContent(ev, item) {
-        const envMeta = ENV_META[(ev.environment||'').toLowerCase()] || { color: '#6b7280', label: (ev.environment||'').slice(0,3).toUpperCase() };
+        const envMeta = _envMeta()[(ev.environment||'').toLowerCase()] || { color: '#6b7280', label: (ev.environment||'').slice(0,3).toUpperCase() };
         const badge = document.createElement('span');
         badge.className = 'jenga-chip__env-badge';
         badge.textContent = envMeta.label;
