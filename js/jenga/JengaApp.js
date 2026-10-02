@@ -164,6 +164,12 @@ export class JengaApp {
     }
 
     _applyStoredTheme() {
+        const isTV = isTVBrowser() || new URLSearchParams(location.search).get('tvmode') === 'true';
+        if (isTV) {
+            // TV browsers: always dark, never touch localStorage
+            document.documentElement.setAttribute('data-theme', 'dark');
+            return;
+        }
         const theme = loadSavedTheme?.() || 'light';
         const toggle = document.getElementById('toggle-dark-mode');
         if (toggle) toggle.checked = theme === 'dark';
