@@ -832,7 +832,7 @@ export class TimelineRenderer {
         const label = document.createElement('div');
         label.className = 'jtl-panel__label';
         label.innerHTML = '<span class="jtl-panel__icon" style="color:#f59e0b">🛡️</span>' +
-            '<span class="jtl-panel__title" style="color:#f59e0b">PEAK<br>PROTECTION</span>';
+            '<span class="jtl-panel__title" style="color:#f59e0b">PEAK SEASON<br>PROTECTION</span>';
         wrap.appendChild(label);
 
         const leg = document.createElement('ul');
