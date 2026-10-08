@@ -899,6 +899,8 @@ export class OrgChartRenderer {
                         .attr('text-anchor', 'middle')
                         .attr('data-full-name', secondLevel)
                         .attr('class', 'theme-title')
+                        .attr('data-tooltip', secondLevel.length > 25 ? secondLevel : null)
+                        .attr('data-tooltip-placement', secondLevel.length > 25 ? 'top' : null)
                         .text(app.db.truncate(secondLevel));
 
                     if (isThemeCommunity) {
@@ -988,6 +990,8 @@ export class OrgChartRenderer {
                             .attr('data-team-email', email || '')
                             .attr('data-team-channels', JSON.stringify(channels || []))
                             .attr('class', 'team-title')
+                            .attr('data-tooltip', thirdLevel.length > 25 ? thirdLevel : null)
+                            .attr('data-tooltip-placement', thirdLevel.length > 25 ? 'top' : null)
                             .text(app.db.truncate(thirdLevel));
 
                         if (serviceCount > 0) {
