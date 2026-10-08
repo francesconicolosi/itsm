@@ -88,6 +88,17 @@ describe('PeopleDatabase.load', () => {
         expect(db.app.scenario.lsKey).toContain('dsm-layout-v1::people:2|lu:');
     });
 
+    test('team name containing a comma is treated as a single team', () => {
+        const csv = [
+            'Name,Email,Status,Team Stream,Team Theme,Team member of',
+            'Alice,alice@ex.com,Active,StreamA,ThemeX,"4. Operating Roles - Squads, Tribes, Chapters"',
+        ].join('\n');
+        const result = db.load(csv);
+        const teams = Object.keys(result.organization['StreamA']['ThemeX']);
+        expect(teams).toHaveLength(1);
+        expect(teams[0]).toBe('4. Operating Roles - Squads, Tribes, Chapters');
+    });
+
     test('handles person with no team assignment → falls into NA buckets', () => {
         const csv = 'Name,Email,Status\nDave,d@d.com,Active';
         const result = db.load(csv);

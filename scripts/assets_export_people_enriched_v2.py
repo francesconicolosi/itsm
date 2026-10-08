@@ -602,7 +602,7 @@ def main():
     team_direct_count: Dict[str, int] = {}
     if people_team_member_id:
         for p in people:
-            direct_teams = values_from_attr_id(p, people_team_member_id)
+            direct_teams = values_from_attr_id(p, people_team_member_id, split_commas=False)
             for tl in direct_teams:
                 k = tl.strip().lower()
                 if not k:
@@ -673,7 +673,7 @@ def main():
             # Teams (DIRECT only)
             team_labels: List[str] = []
             if people_team_member_id:
-                team_labels = values_from_attr_id(p, people_team_member_id)
+                team_labels = values_from_attr_id(p, people_team_member_id, split_commas=False)
             row.update(enrich_from_teams(team_labels))
 
             # Roles

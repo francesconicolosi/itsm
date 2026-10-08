@@ -151,13 +151,13 @@ export class PeopleDatabase {
         const teamBoosts   = {};
         const parseBoost = v => { const n = parseInt((v || '').split('||')[0], 10); return isNaN(n) ? null : n; };
         for (const person of people) {
-            let firstLevelItems = (person[firstOrgLevel] || '').split(/\n|,/).map(s => s.trim()).filter(Boolean);
+            let firstLevelItems = (person[firstOrgLevel] || '').split(/\|\||\n/).map(s => s.trim()).filter(Boolean);
             if (firstLevelItems.length === 0) firstLevelItems = [firstLevelNA];
 
-            let secondLevelItems = (person[secondOrgLevel] || '').split(/\n|,/).map(t => t.trim()).filter(Boolean);
+            let secondLevelItems = (person[secondOrgLevel] || '').split(/\|\||\n/).map(t => t.trim()).filter(Boolean);
             if (secondLevelItems.length === 0) secondLevelItems = [secondLevelNA];
 
-            let thirdLevelItems = (person[thirdOrgLevel] || '').split(/\n|,/).map(t => t.trim()).filter(Boolean);
+            let thirdLevelItems = (person[thirdOrgLevel] || '').split(/\|\||\n/).map(t => t.trim()).filter(Boolean);
             if (thirdLevelItems.length === 0) thirdLevelItems = [thirdLevelNA];
 
             const sb = parseBoost(person['Team Stream Visual Boost']);
