@@ -480,8 +480,8 @@ export class SolitaireApp {
             }
             // Clamp so the tooltip never bleeds outside the viewport.
             // getBoundingClientRect on a fixed element needs the tip to be shown first,
-            // so we use max-width (220px) as a conservative estimate for clamping.
-            const TIP_W = 220;
+            // so we use max-width (360px) as a conservative estimate for clamping.
+            const TIP_W = 360;
             const TIP_H = 80; // generous estimate for multi-line
             const MARGIN = 8;
             if (placement === 'bottom' || placement === 'top') {

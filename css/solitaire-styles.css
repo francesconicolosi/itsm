@@ -1136,8 +1136,8 @@ body.drawer-open {
     z-index: 2147483647;
     background: #000;
     color: #fff;
-    padding: 6px 10px;
-    font-size: 12px;
+    padding: 8px 14px;
+    font-size: 14px;
     line-height: 1.4;
     border-radius: 6px;
     pointer-events: none;
@@ -1145,7 +1145,7 @@ body.drawer-open {
     transform: translate(-50%, -8px);
     transition: opacity 120ms ease;
     white-space: nowrap;
-    max-width: 220px;
+    max-width: 360px;
     text-align: center;
     box-shadow: 0 4px 12px rgba(0, 0, 0, .25);
 }
