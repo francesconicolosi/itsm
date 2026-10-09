@@ -240,6 +240,18 @@ export class EventDrawer {
             frag.appendChild(ctaRow);
         }
 
+        // CAB: description box + plain link, consistent with RED/AMBER/BLUE pspw-box style
+        const isCab = ev.type === 'PEAK_SEASON_PROTECTION_WINDOW' &&
+                      (ev.isCab || /^CAB\s*[|]/i.test(ev.summary || ''));
+        if (isCab) {
+            const box = document.createElement('div');
+            box.className = 'pspw-box pspw-amber';
+            box.innerHTML = `<strong>Change Advisory Board (CAB)</strong><br/>
+The CAB reviews and approves production change requests during the peak season protection window. All changes not covered by a pre-approval must go through the official process.<br/><br/>
+<a href="https://itsm.example.com/servicedesk/create/change-request" target="_blank" rel="noopener">Raise a change request</a>`;
+            frag.appendChild(box);
+        }
+
         // Jira link
         if (isGrouped) {
             const keys = groupedEvents.map(e => e.key).join(',');
