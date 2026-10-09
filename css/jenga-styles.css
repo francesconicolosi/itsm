@@ -1999,12 +1999,11 @@ html:not([data-theme="dark"]) .jtl-hover-card__val { color: #1a1a2e; }
     position: absolute;
     top: -8px;
     bottom: -8px;
-    width: 2px;
-    background: #3b82f6;
-    border-radius: 1px;
+    width: 0;
+    border-left: 2px dashed #3b82f6;
     pointer-events: none;
     z-index: 5;
-    transform: translateX(-1px); /* centre the 2px bar on the tick */
+    transform: translateX(-1px);
 }
 
 /* ── D3 SVG chart styles ─────────────────────────────────────────────────── */
