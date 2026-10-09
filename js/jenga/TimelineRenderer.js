@@ -1398,20 +1398,6 @@ export class TimelineRenderer {
                 .attr('stroke', '#3b82f6')
                 .attr('stroke-width', 1.5)
                 .attr('stroke-dasharray', '4,3');
-
-            g.append('rect')
-                .attr('x', tx - 20).attr('y', -m.top)
-                .attr('width', 40).attr('height', 16)
-                .attr('rx', 3)
-                .attr('fill', '#3b82f6');
-
-            g.append('text')
-                .attr('x', tx).attr('y', -m.top + 11)
-                .attr('text-anchor', 'middle')
-                .attr('font-size', '10px')
-                .attr('font-weight', '600')
-                .attr('fill', '#fff')
-                .text('Today');
         }
 
         // Lines + dots per series
