@@ -1485,6 +1485,10 @@ g.card.card--fabs-visible .contact-fabs-svg.contact-fabs--left {
     pointer-events: none;
 }
 
+.dev-manager-badge {
+    pointer-events: none;
+}
+
 .legend__item {
     cursor: pointer;
     user-select: none;

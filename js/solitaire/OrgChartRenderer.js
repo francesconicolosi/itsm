@@ -1107,6 +1107,32 @@ export class OrgChartRenderer {
                                 memberRect.attr('stroke', '#333').attr('stroke-width', 1.5).attr('stroke-dasharray', '4 2');
                             }
 
+                            // Dev-manager badge — bottom-right corner of card
+                            const isDm = member.guestRole === 'Team Development Manager' ||
+                                !!(member.Name && (member['Team Development Manager'] || '').includes(member.Name.trim()));
+                            if (isDm) {
+                                const dmR  = 9;
+                                const dmBx = memberWidth - dmR - 6;
+                                const dmBy = cardBaseHeight - dmR - 6;
+                                const SEAL_PTS = '0,-9 2.49,-6.01 6.36,-6.36 6.01,-2.49 9,0 6.01,2.49 6.36,6.36 2.49,6.01 0,9 -2.49,6.01 -6.36,6.36 -6.01,2.49 -9,0 -6.01,-2.49 -6.36,-6.36 -2.49,-6.01';
+                                const dmG = group.append('g')
+                                    .attr('class', 'dev-manager-badge')
+                                    .attr('transform', `translate(${dmBx},${dmBy})`)
+                                    .attr('data-tooltip', 'Development Manager');
+                                dmG.append('polygon')
+                                    .attr('points', SEAL_PTS)
+                                    .attr('fill', '#f59e0b')
+                                    .attr('stroke', '#fff')
+                                    .attr('stroke-width', 1.5);
+                                dmG.append('path')
+                                    .attr('d', 'M -3,0 L -0.5,2.8 L 3.5,-2.8')
+                                    .attr('fill', 'none')
+                                    .attr('stroke', '#fff')
+                                    .attr('stroke-width', 2)
+                                    .attr('stroke-linecap', 'round')
+                                    .attr('stroke-linejoin', 'round');
+                            }
+
                             // Capture card key synchronously so the async callback has a stable ID
                             const clipId = 'pc-' + String(group.attr('data-key') ?? mIdx)
                                 .replace(/[^a-zA-Z0-9]/g, '-');
