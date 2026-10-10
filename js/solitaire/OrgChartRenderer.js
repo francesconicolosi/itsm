@@ -1118,7 +1118,7 @@ export class OrgChartRenderer {
                                 const dmG = group.append('g')
                                     .attr('class', 'dev-manager-badge')
                                     .attr('transform', `translate(${dmBx},${dmBy})`)
-                                    .attr('data-tooltip', 'Development Manager');
+                                    .attr('data-tooltip', 'Leads the team as owner');
                                 dmG.append('polygon')
                                     .attr('points', SEAL_PTS)
                                     .attr('fill', '#f59e0b')
