@@ -248,7 +248,8 @@ export class EventDrawer {
             box.className = 'pspw-box pspw-amber';
             box.innerHTML = `<strong>Change Advisory Board (CAB)</strong><br/>
 The CAB reviews and approves production change requests during the peak season protection window. All changes not covered by a pre-approval must go through the official process.<br/><br/>
-<a href="https://itsm.example.com/servicedesk/create/change-request" target="_blank" rel="noopener">Raise a change request</a>`;
+<a href="https://itsm.example.com/servicedesk/create/change-request" target="_blank" rel="noopener">Raise a change request</a><br/>
+<a href="https://itsm.example.com/servicedesk/user/requests?status=review" target="_blank" rel="noopener">View submitted requests</a>`;
             frag.appendChild(box);
         }
 

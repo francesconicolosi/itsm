@@ -174,7 +174,8 @@ Production changes are allowed only through the official process.<br/>
 If this window falls within an AMBER window, applications listed here:<br/>
 <a href="domino.html?search=Type%3ACOTS+Application%2CCustom+Backend%2CCustom+Frontend%26Technology+Risk+Level%3ALow%2CMedium&listView=ID%2CDescription%2CType%2CDepends+on%2CStatus%2CDecommission+Date" target="_blank">Approved applications</a><br/>
 may be deployed without CAB. All others require CAB approval.<br/><br/>
-<a href="https://itsm.example.com/servicedesk/create/change-request" target="_blank">📋 Raise a change request</a>
+<a href="https://itsm.example.com/servicedesk/create/change-request" target="_blank">📋 Raise a change request</a><br/>
+<a href="https://itsm.example.com/servicedesk/user/requests?status=review" target="_blank">View submitted requests</a>
         `;
         }
 
