@@ -1396,6 +1396,7 @@ export class OrgChartRenderer {
                                 this.parentNode.appendChild(this);
                             });
                             app.wireFabsInteractions(group);
+                            group.select('.dev-manager-badge').raise();
 
                             Object.entries(member).forEach(([key, value]) => {
                                 if (fieldsToShow.includes(key) && value) {
