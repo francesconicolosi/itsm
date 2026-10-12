@@ -168,6 +168,7 @@ export class SearchEngine {
             this.app.drawer.showNodeDetails(nodeToRefresh, true);
         }
         this._refreshChips();
+        this.app.statusView?._onSearchUpdate?.();
     }
 
     handleQuery(q, showDrawer = true) {
@@ -179,6 +180,7 @@ export class SearchEngine {
         this.app.graph.updateVisualization(showDrawer);
         window.scrollTo({ top: 0, behavior: 'smooth' });
         this._refreshChips();
+        this.app.statusView?._onSearchUpdate?.();
     }
 
     initRelaxedSearchPersistence() {

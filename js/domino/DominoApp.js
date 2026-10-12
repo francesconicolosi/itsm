@@ -10,6 +10,7 @@ import { DetailDrawer } from './DetailDrawer.js';
 import { DominoLegend } from './DominoLegend.js';
 import { PostItNote } from '../shared/PostItNote.js';
 import { AnnouncementBar } from '../shared/AnnouncementBar.js';
+import { StatusView } from './StatusView.js';
 
 export class DominoApp {
     constructor() {
@@ -21,6 +22,7 @@ export class DominoApp {
         this.legend = new DominoLegend(this);
         this.listView = new ListView(this);
         this.drawer = new DetailDrawer(this);
+        this.statusView = new StatusView(this);
         this.postIt = new PostItNote('domino');
         this.announcementBar = new AnnouncementBar();
     }
@@ -31,6 +33,7 @@ export class DominoApp {
         this.graph.initDOM();
         this.listView.initDOM();
         this.drawer.initDOM();
+        this.statusView.initDOM();
 
         const toggleDecommissioned = document.getElementById('toggle-decommissioned');
         if (toggleDecommissioned) {
@@ -328,7 +331,8 @@ export class DominoApp {
 
     _initLoadEvent() {
         window.addEventListener('load', () => {
-            const listViewParam = getQueryParam('listView');
+            const listViewParam  = getQueryParam('listView');
+            const wantStatusView = getQueryParam('view') === 'status';
             const sortParam = getQueryParam('sort');
             const parsedSort = this.listView.parseSortParam(sortParam);
             if (parsedSort && (!this.listView.columnKeys.length || this.listView.columnKeys.includes(parsedSort.key))) {
@@ -369,7 +373,9 @@ export class DominoApp {
 
                     const afterInit = () => {
                         const wantListView = Boolean(listViewParam);
-                        if (wantListView) {
+                        if (wantStatusView) {
+                            this.statusView.toStatusView();
+                        } else if (wantListView) {
                             this.listView.toListView();
                             this.listView.syncListViewParamInUrl();
                             this.listView.syncSortParamInUrl();

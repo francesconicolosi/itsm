@@ -109,8 +109,9 @@
             <button class="top-search__clear" id="act-clear" title="Clear search" aria-label="Clear search">✕</button>
         </div>
         <button class="top-bar__action" id="view-list" title="List view">📋</button>
-        <button class="top-bar__action" id="view-graph" title="Graph view" style="display:none;">🕸️</button>
-        <button class="top-bar__action" id="act-export-excel" title="Export to Excel" style="display:none;">📥</button>
+        <button class="top-bar__action is-active" id="view-graph" title="Graph view">🕸️</button>
+        <button class="top-bar__action" id="view-status" title="Status view"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="1.1em" height="1.1em" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-0.15em"><rect x="2" y="2" width="20" height="20" rx="5"/><polyline points="4 12 8 12 9.5 15.5 11.5 6.5 13 12 16 12 20 12"/></svg></button>
+        <button class="top-bar__action" id="act-export-excel" title="Export to Excel">📥</button>
     </div>
 </div>
 
@@ -121,6 +122,7 @@
 
 <div id="map"></div>
 <div id="list-view" class="list-view" style="display:none;"></div>
+<div id="status-view" class="status-view" style="display:none;"></div>
 <div class="tooltip" id="tooltip" style="opacity: 0;"></div>
 <div id="legend" class="legend"></div>
 

@@ -16,6 +16,7 @@ export class ListView {
         this.btnList = null;
         this.btnGraph = null;
         this.btnExport = null;
+        this.btnStatus = null;
     }
 
     initDOM() {
@@ -25,12 +26,16 @@ export class ListView {
         this.btnList = document.getElementById('view-list');
         this.btnGraph = document.getElementById('view-graph');
         this.btnExport = document.getElementById('act-export-excel');
+        this.btnStatus = document.getElementById('view-status');
 
         window.currentColumnKeys = this.columnKeys;
 
         this.btnList?.addEventListener('click', () => this.toListView());
         this.btnGraph?.addEventListener('click', () => this.toGraphView());
-        this.btnExport?.addEventListener('click', () => this._openExportModal());
+        this.btnExport?.addEventListener('click', () => {
+            if (this.listViewEl?.style.display !== 'block') this.toListView();
+            this._openExportModal();
+        });
 
         document.getElementById('export-visible-cols')?.addEventListener('click', () => {
             this._closeExportModal(); this.exportToExcel(false);
@@ -80,7 +85,14 @@ export class ListView {
         } else {
             url.searchParams.set('listView', this.serializeColumnsToParam(this.columnKeys));
         }
+        url.searchParams.delete('view');
         window.history.replaceState({}, '', url.toString());
+    }
+
+    _setActiveButton(active) {
+        [this.btnList, this.btnGraph, this.btnStatus].forEach(b => {
+            b?.classList.toggle('is-active', b === active);
+        });
     }
 
     syncSortParamInUrl() {
@@ -113,9 +125,8 @@ export class ListView {
         this.mapEl.style.display = 'none';
         if (this.legendEl) this.legendEl.style.display = 'none';
         this.listViewEl.style.display = 'block';
-        this.btnList.style.display = 'none';
-        this.btnGraph.style.display = 'inline-block';
-        if (this.btnExport) this.btnExport.style.display = '';
+        this.app.statusView?.toOtherView();
+        this._setActiveButton(this.btnList);
         this.syncListViewParamInUrl();
         this.syncSortParamInUrl();
         this.renderListFromSearch();
@@ -125,12 +136,12 @@ export class ListView {
         this.mapEl.style.display = 'block';
         if (this.legendEl) this.legendEl.style.display = '';
         this.listViewEl.style.display = 'none';
-        this.btnGraph.style.display = 'none';
-        this.btnList.style.display = 'inline-block';
-        if (this.btnExport) this.btnExport.style.display = 'none';
+        this.app.statusView?.toOtherView();
+        this._setActiveButton(this.btnGraph);
         const url = new URL(window.location.href);
         url.searchParams.delete('listView');
         url.searchParams.delete('sort');
+        url.searchParams.delete('view');
         window.history.replaceState({}, '', url.toString());
     }
 
