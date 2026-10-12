@@ -1,6 +1,7 @@
 /* global BRAND */
 import * as d3 from 'd3';
 import { toFriendlyName, CLUSTERS, CLUSTER_BY_ID, resolveCluster } from '../shared/statusUtils.js';
+import { openJiraPopup, closeJiraPopup } from '../shared/jiraPopup.js';
 
 // ── Exclude 3rd-party and vendor services from the status page ────────────────
 const HIDE_TYPES = new Set(['SaaS', 'Service Provider']);
@@ -22,7 +23,7 @@ const HEALTH_ORDER  = { outage: 0, critical: 1, degraded: 2, minor: 3, operation
 
 const HEALTH_LABEL  = {
     outage: 'Major Outage', critical: 'Critical',
-    degraded: 'Degraded',  minor: 'Minor Issue',  operational: 'Operational',
+    degraded: 'Degraded',  minor: 'Minor Issues', operational: 'Operational',
 };
 const GLOBAL_MSG    = {
     outage:      'Major outage in progress',
@@ -153,29 +154,40 @@ export class StatusView {
 
     _buildHealthMap() {
         // Map<serviceName, { health, rank, incidents[], minorIncidents[] }>
-        // P1/P2 set `health`; P3/P4 go into `minorIncidents` (amber badge, no health impact).
+        // P1/P2 sourced from _allCards so health dots reflect active major incidents
+        // even when they are absent from jira-cards-current.csv.
+        // P3/P4 sourced from _cards (current export) → amber minor badge only.
         const healthMap = new Map();
-        for (const card of this._cards) {
-            if (!ACTIVE_STATUSES.has(card.Status)) continue;
-            const isP1P2 = card.Priority === 'P1/Blocker' || card.Priority === 'P2/Critical';
-            const isP3P4 = card.Priority === 'P3/Major'   || card.Priority === 'P4/Minor';
-            if (!isP1P2 && !isP3P4) continue;
+        const init = svc => {
+            if (!healthMap.has(svc)) {
+                healthMap.set(svc, { health: 'operational', rank: 99, incidents: [], minorIncidents: [] });
+            }
+            return healthMap.get(svc);
+        };
 
-            const services = (card.AffectedServices || '').split('||').map(s => s.trim()).filter(Boolean);
-            for (const svc of services) {
-                if (!healthMap.has(svc)) {
-                    healthMap.set(svc, { health: 'operational', rank: 99, incidents: [], minorIncidents: [] });
-                }
-                const entry = healthMap.get(svc);
-                if (isP1P2) {
-                    const rank = P1P2_RANK[card.Priority];
-                    if (rank < entry.rank) { entry.rank = rank; entry.health = HEALTH_FROM_RANK[rank]; }
-                    entry.incidents.push(card);
-                } else {
-                    entry.minorIncidents.push(card);
-                }
+        for (const card of (this._allCards || [])) {
+            if (!ACTIVE_STATUSES.has(card.Status)) continue;
+            if (card.Priority !== 'P1/Blocker' && card.Priority !== 'P2/Critical') continue;
+            const svcs = (card.AffectedServices || '').split('||').map(s => s.trim()).filter(Boolean);
+            for (const svc of svcs) {
+                const entry = init(svc);
+                const rank = P1P2_RANK[card.Priority];
+                if (rank < entry.rank) { entry.rank = rank; entry.health = HEALTH_FROM_RANK[rank]; }
+                entry.incidents.push(card);
             }
         }
+
+        for (const card of (this._cards || [])) {
+            if (!ACTIVE_STATUSES.has(card.Status)) continue;
+            if (card.Priority !== 'P3/Major' && card.Priority !== 'P4/Minor') continue;
+            const svcs = (card.AffectedServices || '').split('||').map(s => s.trim()).filter(Boolean);
+            for (const svc of svcs) {
+                const entry = init(svc);
+                entry.minorIncidents.push(card);
+                if (entry.health === 'operational') entry.health = 'minor';
+            }
+        }
+
         return healthMap;
     }
 
@@ -444,18 +456,19 @@ export class StatusView {
             </div>`;
     }
 
-    _renderStream(streamData, healthMap, maxMinorCount = 0) {
+    _renderStream(streamData, healthMap, maxMinorCount = 0, tv = false) {
         const { name, health, themes, minorCount = 0, svcCount = 0, healthBreakdown = {} } = streamData;
         const total    = svcCount || 1;
         const affCount = (healthBreakdown.outage || 0) + (healthBreakdown.critical || 0) + (healthBreakdown.degraded || 0);
         const affPct   = Math.round(affCount / total * 100);
         const minorPct = maxMinorCount > 0 ? Math.round(minorCount / maxMinorCount * 45) : 0;
+        const displayHealth = health === 'minor' ? 'operational' : health;
         return `
             <div class="status-stream" data-health="${health}">
                 <div class="status-stream-header">
-                    <span class="status-dot status-dot--${health}"></span>
+                    <span class="status-dot status-dot--${displayHealth}"></span>
                     <span class="status-stream-name">${name}</span>
-                    ${this._pill(health)}
+                    ${this._pill(displayHealth)}
                     ${minorCount > 0 ? `<span class="status-minor-badge">▲ ${minorCount}</span>` : ''}
                 </div>
                 <div class="status-health-bar">
@@ -464,23 +477,21 @@ export class StatusView {
                     <div class="status-hb-seg--clean" style="flex:1"></div>
                 </div>
                 <div class="status-stream-body">
-                    ${themes.map(t => this._renderTheme(t, healthMap)).join('')}
+                    ${themes.map(t => this._renderTheme(t, healthMap, tv)).join('')}
                 </div>
             </div>`;
     }
 
-    _renderTheme(themeData, healthMap) {
+    _renderTheme(themeData, healthMap, tv = false) {
         const { name, health, clusters, individuals, minorCount = 0 } = themeData;
+        const displayHealth = health === 'minor' ? 'operational' : health;
 
-        const affectedClusters = clusters.filter(c => c.health !== 'operational');
-        const minorClusters    = clusters.filter(c => c.health === 'operational' && c.totalMinor > 0);
+        const affectedClusters = clusters.filter(c => c.health !== 'operational' && c.health !== 'minor');
+        const minorClusters    = clusters.filter(c => c.health === 'minor' || (c.health === 'operational' && c.totalMinor > 0));
         const cleanClusters    = clusters.filter(c => c.health === 'operational' && !c.totalMinor);
 
-        const affectedIndivs = individuals.filter(n => (healthMap.get(n.id)?.health ?? 'operational') !== 'operational');
-        const minorIndivs    = individuals.filter(n => {
-            const e = healthMap.get(n.id);
-            return (e?.health ?? 'operational') === 'operational' && (e?.minorIncidents?.length ?? 0) > 0;
-        });
+        const affectedIndivs = individuals.filter(n => { const h = healthMap.get(n.id)?.health ?? 'operational'; return h !== 'operational' && h !== 'minor'; });
+        const minorIndivs    = individuals.filter(n => { const e = healthMap.get(n.id); const h = e?.health ?? 'operational'; return h === 'minor' || (h === 'operational' && (e?.minorIncidents?.length ?? 0) > 0); });
         const cleanIndivs    = individuals.filter(n => {
             const e = healthMap.get(n.id);
             return (e?.health ?? 'operational') === 'operational' && !(e?.minorIncidents?.length);
@@ -488,6 +499,7 @@ export class StatusView {
 
         const opCount  = cleanClusters.length + cleanIndivs.length;
         const hasMinor = minorClusters.length + minorIndivs.length > 0;
+        const minorItemCount = minorClusters.length + minorIndivs.length;
 
         const MAX_PREVIEW = 5;
         const previewNames = [
@@ -497,35 +509,51 @@ export class StatusView {
         const previewStr = previewNames.slice(0, MAX_PREVIEW).join(', ') +
             (previewNames.length > MAX_PREVIEW ? '…' : '');
 
+        const minorPreviewNames = [
+            ...minorClusters.map(c => c.label),
+            ...minorIndivs.map(n => toFriendlyName(n.id)),
+        ];
+        const minorPreviewStr = minorPreviewNames.slice(0, MAX_PREVIEW).join(', ') +
+            (minorPreviewNames.length > MAX_PREVIEW ? '…' : '');
+
         return `
             <div class="status-theme" data-health="${health}">
                 <div class="status-theme-header">
                     <span class="status-theme-name">${name}</span>
-                    ${this._pill(health)}
+                    ${this._pill(displayHealth)}
                     ${minorCount > 0 ? `<span class="status-minor-badge">▲ ${minorCount}</span>` : ''}
                 </div>
                 <div class="status-theme-body">
-                    ${affectedClusters.map(c => this._renderCluster(c, healthMap, true)).join('')}
+                    ${affectedClusters.map(c => this._renderCluster(c, healthMap, true, tv)).join('')}
                     ${affectedIndivs.map(n => this._renderServiceRow(n, healthMap.get(n.id))).join('')}
-                    ${hasMinor ? `
-                        <div class="status-minor-section">
-                            ${minorClusters.map(c => this._renderCluster(c, healthMap, false)).join('')}
-                            ${minorIndivs.map(n => this._renderServiceRow(n, healthMap.get(n.id))).join('')}
-                        </div>` : ''}
+                    ${hasMinor ? (tv
+                        ? `<div class="status-op-toggle status-minor-toggle" tabindex="0" role="button" aria-expanded="false" data-count="${minorItemCount}" data-preview="${this._esc(minorPreviewStr)}">
+                                <span class="status-dot status-dot--minor"></span>
+                                <span class="status-op-label">Show ${minorItemCount} with minor issues: ${this._esc(minorPreviewStr)} ▼</span>
+                            </div>
+                            <div class="status-op-list" hidden>
+                                ${minorClusters.map(c => this._renderCluster(c, healthMap, false, tv)).join('')}
+                                ${minorIndivs.map(n => this._renderServiceRow(n, healthMap.get(n.id))).join('')}
+                            </div>`
+                        : `<div class="status-minor-section">
+                                ${minorClusters.map(c => this._renderCluster(c, healthMap, false, tv)).join('')}
+                                ${minorIndivs.map(n => this._renderServiceRow(n, healthMap.get(n.id))).join('')}
+                            </div>`)
+                    : ''}
                     ${opCount > 0 ? `
                         <div class="status-op-toggle" tabindex="0" role="button" aria-expanded="false" data-count="${opCount}" data-preview="${this._esc(previewStr)}">
                             <span class="status-dot status-dot--operational"></span>
                             <span class="status-op-label">Show ${opCount} fully operational: ${this._esc(previewStr)} ▼</span>
                         </div>
                         <div class="status-op-list" hidden>
-                            ${cleanClusters.map(c => this._renderCluster(c, healthMap, false)).join('')}
+                            ${cleanClusters.map(c => this._renderCluster(c, healthMap, false, tv)).join('')}
                             ${cleanIndivs.map(n => this._renderServiceRow(n, healthMap.get(n.id))).join('')}
                         </div>` : ''}
                 </div>
             </div>`;
     }
 
-    _renderCluster(clusterData, healthMap, defaultExpanded) {
+    _renderCluster(clusterData, healthMap, defaultExpanded, tv = false) {
         const { clusterId, label, health, services, totalIncidents, totalMinor } = clusterData;
         const incBadge   = totalIncidents > 0 ? `<span class="status-badge">${totalIncidents} open</span>` : '';
         const mainSvc    = totalMinor > 0
@@ -540,6 +568,57 @@ export class StatusView {
             : '';
         const countTxt   = `${services.length} service${services.length !== 1 ? 's' : ''}`;
 
+        // Split services: clean (operational, no minor incidents) vs non-clean
+        const nonCleanSvcs = services.filter(n => {
+            const e = healthMap.get(n.id);
+            return (e?.health ?? 'operational') !== 'operational' || (e?.minorIncidents?.length ?? 0) > 0;
+        });
+        const cleanSvcs = services.filter(n => {
+            const e = healthMap.get(n.id);
+            return (e?.health ?? 'operational') === 'operational' && !(e?.minorIncidents?.length);
+        });
+
+        const trulyAffSvcs  = nonCleanSvcs.filter(n => { const h = healthMap.get(n.id)?.health ?? 'operational'; return h !== 'operational' && h !== 'minor'; });
+        const minorOnlySvcs = nonCleanSvcs.filter(n => { const e = healthMap.get(n.id); const h = e?.health ?? 'operational'; return h === 'minor' || (h === 'operational' && (e?.minorIncidents?.length ?? 0) > 0); });
+        const collapsibleSvcs = [...minorOnlySvcs, ...cleanSvcs];
+
+        let serviceHtml;
+        if (collapsibleSvcs.length > 0 && (trulyAffSvcs.length > 0 || collapsibleSvcs.length < services.length)) {
+            const MAX_PREVIEW = 5;
+            const collNames = collapsibleSvcs.map(n => toFriendlyName(n.id));
+            const collPreview = collNames.slice(0, MAX_PREVIEW).join(', ') + (collNames.length > MAX_PREVIEW ? '…' : '');
+            const hasMinorInColl = minorOnlySvcs.length > 0;
+            const dotCls = (hasMinorInColl && cleanSvcs.length === 0) ? 'status-dot--minor' : 'status-dot--operational';
+            const label = hasMinorInColl
+                ? `Show ${collapsibleSvcs.length} others: ${this._esc(collPreview)} ▼`
+                : `Show ${collapsibleSvcs.length} fully operational: ${this._esc(collPreview)} ▼`;
+            serviceHtml = `
+                ${trulyAffSvcs.map(n => this._renderServiceRow(n, healthMap.get(n.id))).join('')}
+                <div class="status-op-toggle" tabindex="0" role="button" aria-expanded="false" data-count="${collapsibleSvcs.length}" data-preview="${this._esc(collPreview)}">
+                    <span class="status-dot ${dotCls}"></span>
+                    <span class="status-op-label">${label}</span>
+                </div>
+                <div class="status-op-list" hidden>
+                    ${collapsibleSvcs.map(n => this._renderServiceRow(n, healthMap.get(n.id))).join('')}
+                </div>`;
+        } else if (cleanSvcs.length > 0 && nonCleanSvcs.length > 0) {
+            const MAX_PREVIEW = 5;
+            const previewNames = cleanSvcs.map(n => toFriendlyName(n.id));
+            const previewStr = previewNames.slice(0, MAX_PREVIEW).join(', ') +
+                (previewNames.length > MAX_PREVIEW ? '…' : '');
+            serviceHtml = `
+                ${nonCleanSvcs.map(n => this._renderServiceRow(n, healthMap.get(n.id))).join('')}
+                <div class="status-op-toggle" tabindex="0" role="button" aria-expanded="false" data-count="${cleanSvcs.length}" data-preview="${this._esc(previewStr)}">
+                    <span class="status-dot status-dot--operational"></span>
+                    <span class="status-op-label">Show ${cleanSvcs.length} fully operational: ${this._esc(previewStr)} ▼</span>
+                </div>
+                <div class="status-op-list" hidden>
+                    ${cleanSvcs.map(n => this._renderServiceRow(n, healthMap.get(n.id))).join('')}
+                </div>`;
+        } else {
+            serviceHtml = services.map(n => this._renderServiceRow(n, healthMap.get(n.id))).join('');
+        }
+
         return `
             <div class="status-cluster" data-cluster-id="${this._esc(clusterId)}" data-health="${health}"${defaultExpanded ? ' data-expanded="true"' : ''}>
                 <div class="status-cluster-header" tabindex="0" role="button" aria-expanded="${defaultExpanded}">
@@ -551,7 +630,7 @@ export class StatusView {
                     <span class="status-expand-icon" aria-hidden="true">›</span>
                 </div>
                 <div class="status-cluster-services" ${defaultExpanded ? '' : 'hidden'}>
-                    ${services.map(n => this._renderServiceRow(n, healthMap.get(n.id))).join('')}
+                    ${serviceHtml}
                 </div>
             </div>`;
     }
@@ -646,7 +725,12 @@ export class StatusView {
                     jiraUrl:          inc.JiraUrl,
                     impactedServices: (inc.AffectedServices || '').split('||').map(s => s.trim()).filter(Boolean),
                 }));
-                this.app.graph._openJiraCardsPopup({ id }, 'incident', cards, e);
+                openJiraPopup({ id }, 'incident', cards, e, {
+                    onServiceClick: svcId => {
+                        closeJiraPopup();
+                        this._navigateToService(svcId);
+                    },
+                });
             });
         });
 

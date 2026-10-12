@@ -112,7 +112,7 @@ export class JengaStatusView {
 
     // ── Main render ───────────────────────────────────────────────────────────
 
-    async render(containerEl, { tv = false, section = 'full' } = {}) {
+    async render(containerEl, { tv = false, section = 'full', incidentOffset = 0, incidentLimit = Infinity } = {}) {
         await this._ensureData();
 
         const healthMap = this._buildHealthMap();
@@ -249,9 +249,12 @@ export class JengaStatusView {
         const inner = document.createElement('div');
         inner.className = `jenga-status-inner${tv ? ' jenga-status-tv' : ''}`;
         inner.style.setProperty('--status-cols', String(cols));
+        const displayCards = isFinite(incidentLimit) || incidentOffset > 0
+            ? majorCards.slice(incidentOffset, incidentOffset + incidentLimit)
+            : majorCards;
         inner.innerHTML =
             this._renderBanner(globalHealth, operational, affected, minorTotal, tv) +
-            (section !== 'streams' && majorCards.length ? this._renderMajorIncidents(majorCards) : '') +
+            (section !== 'streams' && displayCards.length ? this._renderMajorIncidents(displayCards, majorCards) : '') +
             (section !== 'incidents' ? streamData.map(s => this._renderStream(s, healthMap, maxMinorCount, tv)).join('') : '');
 
         containerEl.innerHTML = '';
@@ -262,7 +265,8 @@ export class JengaStatusView {
 
     // ── HTML helpers (copied verbatim from StatusView.js) ─────────────────────
 
-    _renderMajorIncidents(cards) {
+    _renderMajorIncidents(cards, allCards = null) {
+        const effectiveAll = allCards ?? cards;
         const sorted = [...cards].sort((a, b) => {
             const ra = ALL_RANK[a.Priority] ?? 9;
             const rb = ALL_RANK[b.Priority] ?? 9;
@@ -307,13 +311,13 @@ export class JengaStatusView {
             </div>`;
         }).join('');
 
-        const worstHealth = cards.some(c => c.Priority === 'P1/Blocker') ? 'outage' : 'critical';
+        const worstHealth = effectiveAll.some(c => c.Priority === 'P1/Blocker') ? 'outage' : 'critical';
         return `
         <div class="status-major-panel">
             <div class="status-major-panel-title">
                 <span class="status-dot status-dot--${worstHealth}"></span>
                 Active Major Incidents
-                <span class="status-major-count">${cards.length}</span>
+                <span class="status-major-count">${effectiveAll.length}</span>
             </div>
             ${cardHtml}
         </div>`;

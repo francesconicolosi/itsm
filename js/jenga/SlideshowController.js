@@ -14,6 +14,7 @@ export class SlideshowController {
         this._slideCount = SLIDE_COUNT;
         this._statusPageCount = 1;
         this._statusHasIncidentPage = false;
+        this._statusIncidentFitCount = Infinity;
         this._timer = null;
         this._reloadTimer = null;
         this._commandBarTimer = null;
@@ -34,6 +35,7 @@ export class SlideshowController {
     start({ slideCount } = {}) {
         this._statusPageCount = 1;
         this._statusHasIncidentPage = false;
+        this._statusIncidentFitCount = Infinity;
         this._slideCount = (slideCount != null && slideCount > 0) ? slideCount : SLIDE_COUNT;
         this.active = true;
         this.playing = true;
@@ -361,12 +363,14 @@ export class SlideshowController {
         inner.className = 'jenga-status-inner jenga-status-tv';
         probe.appendChild(inner);
 
+        // Use last stream's LEFT edge (not right) to avoid padding/margin causing a
+        // spurious extra page when the last stream's right edge slightly exceeds N*containerW.
         const measureStreamPages = (el, containerW) => {
             const streams = el.querySelectorAll('.status-stream');
             if (!streams.length) return 1;
             const innerRect = el.getBoundingClientRect();
             const lastRect  = streams[streams.length - 1].getBoundingClientRect();
-            return Math.max(1, Math.ceil((lastRect.right - innerRect.left) / containerW));
+            return Math.max(1, Math.floor((lastRect.left - innerRect.left) / containerW) + 1);
         };
 
         this.app.statusView.render(inner, { tv: true }).then(() => {
@@ -390,14 +394,30 @@ export class SlideshowController {
                 this._statusHasIncidentPage = hasIncidentPage;
 
                 if (hasIncidentPage) {
-                    // Re-render streams-only to measure horizontal pages with the full
-                    // slide height available (no incidents panel taking up space).
+                    // Detect how many incident cards fit within the slide's CONTENT area
+                    // (excluding bottom padding, which is 80px). The slide has
+                    // padding: 16px 20px 80px, so contentBottom = probe.bottom - paddingBottom.
+                    const probeStyle = getComputedStyle(probe);
+                    const paddingBottom = parseFloat(probeStyle.paddingBottom) || 0;
+                    const contentBottom = probe.getBoundingClientRect().bottom - paddingBottom;
+                    const majorCardEls  = inner.querySelectorAll('.status-major-card');
+                    let fitCount = majorCardEls.length; // default: all fit
+                    for (let i = 0; i < majorCardEls.length; i++) {
+                        if (majorCardEls[i].getBoundingClientRect().bottom > contentBottom + 1) {
+                            fitCount = i;
+                            break;
+                        }
+                    }
+                    this._statusIncidentFitCount = fitCount > 0 ? fitCount : majorCardEls.length;
+
+                    // Re-render with overflow incidents above the streams so the stream
+                    // page count accounts for the vertical space they occupy.
                     inner.innerHTML = '';
-                    this.app.statusView.render(inner, { tv: true, section: 'streams' }).then(() => {
+                    this.app.statusView.render(inner, { tv: true, section: 'full', incidentOffset: this._statusIncidentFitCount }).then(() => {
                         requestAnimationFrame(() => requestAnimationFrame(() => {
                             if (!inner.isConnected) return;
                             const streamPages = measureStreamPages(inner, containerW);
-                            const newCount = 1 + streamPages; // 1 incidents page + N stream pages
+                            const newCount = 1 + streamPages; // 1 incident page + N stream pages
                             if (newCount !== this._statusPageCount) {
                                 this._statusPageCount = newCount;
                                 this._slideCount = (SLIDE_COUNT - 1) + newCount;
@@ -407,6 +427,7 @@ export class SlideshowController {
                         }));
                     }).catch(() => probe.remove());
                 } else {
+                    this._statusIncidentFitCount = Infinity;
                     const pages = measureStreamPages(inner, containerW);
                     if (pages !== this._statusPageCount) {
                         this._statusPageCount = pages;
@@ -428,15 +449,16 @@ export class SlideshowController {
         statusInner.className = 'jenga-status-inner jenga-status-tv';
         statusClip.appendChild(statusInner);
 
-        // When incidents overflow (detected by probe), page 0 = incidents-only,
-        // page 1+ = streams. Otherwise every page is a full render (horizontal scroll).
+        // When incidents overflow (detected by probe), page 0 shows the fitting incidents
+        // only; pages 1+ are stream pages that also show any overflow incidents at the top.
         const isIncidentPage  = this._statusHasIncidentPage && pageIndex === 0;
         const streamPageIndex = this._statusHasIncidentPage ? pageIndex - 1 : pageIndex;
-        const section = isIncidentPage ? 'incidents'
-                      : this._statusHasIncidentPage ? 'streams'
-                      : 'full';
+        const fitCount        = this._statusIncidentFitCount;
+        const section         = isIncidentPage ? 'incidents' : 'full';
+        const incidentOffset  = isIncidentPage ? 0 : (this._statusHasIncidentPage ? fitCount : 0);
+        const incidentLimit   = isIncidentPage ? fitCount : Infinity;
 
-        this.app.statusView.render(statusInner, { tv: true, section }).then(() => {
+        this.app.statusView.render(statusInner, { tv: true, section, incidentOffset, incidentLimit }).then(() => {
             this._appendBrandWatermark(slideWrap);
             requestAnimationFrame(() => requestAnimationFrame(() => {
                 if (!statusInner.isConnected) return;
@@ -449,8 +471,9 @@ export class SlideshowController {
                         if (streams.length > 0) {
                             const innerRect = statusInner.getBoundingClientRect();
                             const lastRect  = streams[streams.length - 1].getBoundingClientRect();
-                            const rightEdge = lastRect.right - innerRect.left;
-                            const streamPages = Math.max(1, Math.ceil(rightEdge / containerW));
+                            const lastLeft  = lastRect.left  - innerRect.left;  // page count (avoids margin overhang)
+                            const rightEdge = lastRect.right - innerRect.left;  // centering (actual content right edge)
+                            const streamPages = Math.max(1, Math.floor(lastLeft / containerW) + 1);
                             const newTotal = (this._statusHasIncidentPage ? 1 : 0) + streamPages;
                             if (newTotal !== this._statusPageCount) {
                                 this._statusPageCount = newTotal;
@@ -472,7 +495,11 @@ export class SlideshowController {
                                             const newW = usedCols * colW + (usedCols - 1) * gap;
                                             inner.style.setProperty('--status-cols', String(usedCols));
                                             inner.style.width  = `${Math.round(newW)}px`;
-                                            inner.style.margin = '0 auto';
+                                            // Override the parent's multi-column CSS with flex
+                                            // so the narrower inner block is truly centered.
+                                            statusInner.style.display        = 'flex';
+                                            statusInner.style.justifyContent = 'center';
+                                            statusInner.style.alignItems     = 'flex-start';
                                         }
                                     }
                                 }
