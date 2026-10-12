@@ -1,0 +1,791 @@
+/* global BRAND */
+import * as d3 from 'd3';
+
+// ── Exclude 3rd-party and vendor services from the status page ────────────────
+const HIDE_TYPES = new Set(['SaaS', 'Service Provider']);
+
+// ── Friendly names for technical service identifiers ─────────────────────────
+const FRIENDLY_NAMES = {
+    'pdp': 'Product Detail Page',
+    'plp': 'Product Listing Page',
+    'sign-in': 'Sign-In',
+    'sign-in-spa': 'Sign-In SPA',
+    'sign-in-fragments': 'Sign-In Fragments',
+    'checkout-service': 'Checkout Service',
+    'checkout-app': 'Checkout App',
+    'checkout-spa': 'Checkout SPA',
+    'commerce-payment-gateway': 'Payment Gateway',
+    'order-fulfillment-service': 'Order Fulfillment',
+    'order-confirmation-service': 'Order Confirmation',
+    'order-api': 'Order API',
+    'order-validation-service': 'Order Validation',
+    'order-number-generator-service': 'Order Number Generator',
+    'orders-cronjob-service': 'Orders Cron Job',
+    'price-service-api': 'Price Service',
+    'price-ingester': 'Price Ingester',
+    'price-adapter': 'Price Adapter',
+    'price-data-integrity-checker-workflow': 'Price Integrity Checker',
+    'catalog-api': 'Catalog API',
+    'catalog-api-product-worker': 'Catalog Product Worker',
+    'catalog': 'Catalog Service',
+    'analytics-sdk': 'Analytics SDK',
+    'web-tracking-compliance-sdk': 'Tracking Compliance SDK',
+    'baa-spa': 'Book-an-Appointment SPA',
+    'pimgester': 'PIM Ingester',
+    'pim-publisher-app': 'PIM Publisher',
+    'editorial-hub': 'Editorial Hub',
+    'image-server': 'Image Server',
+    'image-server-postgres': 'Image Server DB',
+    'img-viewer-dashboard': 'Image Viewer Dashboard',
+    'idp-user-service': 'Identity Service',
+    'gucci-visualmerchandizetool': 'Visual Merch Tool',
+    'product-management-service': 'Product Management',
+    'product-service-api': 'Product Service API',
+    'product-personalization-cfg': 'Personalisation Config',
+    'product-personalization-view': 'Personalisation View',
+    'orchestrator': 'Content Orchestrator',
+    'esm-proxy': 'ESM Proxy',
+    'feature-flags': 'Feature Flags',
+    'feature-toggle': 'Feature Toggle',
+    'beacon': 'Beacon Tracker',
+    'buy-area': 'Buy Area Widget',
+    'solr': 'Solr Search',
+    'solr-esales': 'Solr eSales',
+    'hybris-api-proxy': 'Hybris API Proxy',
+    'fs-microsites': 'Flagship Microsites',
+    'gucci-store': 'Gucci Store (web)',
+    'gucci-app-android': 'Gucci App (Android)',
+    'gucci-app-ios': 'Gucci App (iOS)',
+    'gucci-app-support': 'App Support Service',
+    'hello-world-demo': 'Demo Service',
+    'iframe-add-to-cart': 'Add-to-Cart iFrame',
+    'reco': 'Recommendations',
+    'yasa': 'YASA Search',
+    'in-store-purchase-api': 'In-Store Purchase API',
+    'my-account (order history)': 'My Account – Orders',
+    'my-account-spa (settings)': 'My Account – Settings',
+    'My-Gucci': 'My Gucci',
+    'email-service': 'Email Service',
+    'client-services': 'Client Services',
+    'cust-anonymization-service': 'Customer Anonymisation',
+    'store-queues-svc': 'Store Queues',
+    'store-queues-svc-db': 'Store Queues DB',
+    'distance-sales-db': 'Distance Sales DB',
+    'distance-sales-service': 'Distance Sales',
+    'payments-mao-adapter': 'Payments MAO Adapter',
+    'payments-service': 'Payments Service',
+    'payments-widget': 'Payments Widget',
+    'shipping-widget': 'Shipping Widget',
+    'stock-management-service': 'Stock Management',
+    'stock-service-api': 'Stock Service API',
+    'stock-integrity-checker': 'Stock Integrity Checker',
+    'tax-calculator-service': 'Tax Calculator',
+    'thank-you-spa': 'Thank-You Page SPA',
+    'apple-pay-widget': 'Apple Pay Widget',
+    'service-pages': 'Service Pages',
+    'services-and-gifting': 'Services & Gifting',
+    'address-validation-service': 'Address Validation',
+    'Geo-Markup': 'Geo Markup',
+};
+
+// ── Service clustering rules ──────────────────────────────────────────────────
+const CLUSTERS = [
+    {
+        id: 'hybris',
+        label: 'SAP Hybris Platform',
+        names: new Set(['SAP Hybris GCOM', 'SAP Hybris Villetta', 'mySQL GCOM', 'mySQL Villetta', 'hybris-api-proxy', 'solr', 'solr-esales']),
+        namePatterns: [/hybris/i, /\bsap\b/i],
+        descPatterns:  [/hybris/i, /\bsap commerce\b/i],
+    },
+    {
+        id: 'sign-in',
+        label: 'Sign-In & Authentication',
+        names: new Set(['sign-in', 'sign-in-spa', 'sign-in-fragments', 'idp-user-service', 'SPiD', 'Security Email']),
+        namePatterns: [/sign.?in/i, /\bidp[\b._-]/i, /\bspid\b/i],
+        descPatterns:  [/authentication/i, /identity.?provider/i, /single.?sign.?on/i, /sso/i],
+    },
+    {
+        id: 'customer-access',
+        label: 'Customer Access (Okta)',
+        names: new Set(['Okta (Customer Access)', 'Okta user proxy', 'Kering Okta', 'Okta']),
+        namePatterns: [/okta/i],
+        descPatterns:  [/okta/i, /customer.?identity/i, /workforce.?identity/i],
+    },
+    {
+        id: 'checkout',
+        label: 'Checkout',
+        names: new Set(['Checkout', 'checkout-service', 'checkout-app', 'checkout-spa']),
+        namePatterns: [/checkout/i],
+        descPatterns:  [/checkout/i, /order.?completion/i, /purchase.?flow/i],
+    },
+    {
+        id: 'cart',
+        label: 'Cart & Buy Area',
+        names: new Set(['Cart/Minicart', 'buy-area']),
+        namePatterns: [/\bcart\b/i, /minicart/i, /buy.?area/i],
+        descPatterns:  [/shopping.?cart/i, /add to cart/i],
+    },
+    {
+        id: 'payments',
+        label: 'Payments',
+        names: new Set([
+            'commerce-payment-gateway', 'payments-service', 'payments-widget',
+            'payments-mao-adapter', 'Paypal', 'Apple Pay', 'Apple Pay Express',
+            'apple-pay-widget', 'Adyen', 'Klarna', 'Toss', 'Kakao Pay',
+            'Cybersource', 'Affirm', 'Amazon Pay', 'Pay By Link', 'Riskified',
+            'CommerceLayer', 'MAO Proxy', 'Vertex', 'tax-calculator-service',
+            'distance-sales-service', 'distance-sales-db', 'address-validation-service',
+        ]),
+        namePatterns: [/payment/i, /\bpay(?!pal)\b/i, /adyen/i, /paypal/i, /klarna/i, /cybersource/i, /affirm/i, /commerce.?layer/i, /riskified/i, /vertex/i],
+        descPatterns:  [/payment gateway/i, /\bpsp\b/i, /payment.?processing/i, /billing/i],
+    },
+    {
+        id: 'orders',
+        label: 'Orders',
+        names: new Set([
+            'order-api', 'order-confirmation-service', 'order-fulfillment-service',
+            'order-number-generator-service', 'order-validation-service',
+            'orders-cronjob-service', 'Order Confirmation Email',
+            'Order Confirmation Email (New Checkout)', 'Thank you page (New Checkout)',
+            'thank-you-spa', 'Collect In-Store', 'shipping-widget',
+            'iPad In-Store', 'in-store-purchase-api', 'services-and-gifting',
+        ]),
+        namePatterns: [/^order/i, /order.?(api|confirm|fulfil|valid|number|cronjob)/i, /fulfil/i, /thank.?you/i, /collect.?in.?store/i, /in.?store.?purchase/i],
+        descPatterns:  [/order.?management/i, /post-purchase/i, /order.?lifecycle/i],
+    },
+    {
+        id: 'pricing',
+        label: 'Pricing',
+        names: new Set(['price-service-api', 'price-ingester', 'price-adapter', 'price-data-integrity-checker-workflow']),
+        namePatterns: [/^price/i],
+        descPatterns:  [/pricing/i, /price.?management/i, /price.?engine/i],
+    },
+    {
+        id: 'stock',
+        label: 'Stock & Inventory',
+        names: new Set(['stock-management-service', 'stock-service-api', 'stock-integrity-checker', 'Relaxed Stock Service', 'SAP (Stock Management)']),
+        namePatterns: [/stock/i, /inventory/i],
+        descPatterns:  [/stock.?management/i, /inventory/i, /warehouse/i],
+    },
+    {
+        id: 'pim',
+        label: 'Product Catalog & PIM',
+        names: new Set(['Akeneo (PIM)', 'pimgester', 'pim-publisher-app', 'catalog-api', 'catalog-api-product-worker', 'product-service-api', 'Pdp Material Composition Flow', 'Concession']),
+        namePatterns: [/\bpim\b/i, /\bakeneo\b/i, /^catalog/i, /catalog.?(api|worker)/i],
+        descPatterns:  [/product.?information.?management/i, /\bpim\b/i, /catalog.?management/i],
+    },
+    {
+        id: 'product-pages',
+        label: 'Product Pages (PDP / PLP)',
+        names: new Set(['pdp', 'plp', 'iframe-add-to-cart', 'product-management-service']),
+        namePatterns: [/^pdp$/i, /^plp$/i],
+        descPatterns:  [/product.?detail/i, /product.?listing/i, /pdp/i, /plp/i],
+    },
+    {
+        id: 'search',
+        label: 'Search & Discovery',
+        names: new Set(['Algolia', 'New Search', 'Search', 'yasa', 'Cataloger', 'gucci-visualmerchandizetool', 'Find In Store', 'Recommendation Engine', 'reco', 'product-personalization-cfg', 'product-personalization-view', 'feature-toggle', 'catalog']),
+        namePatterns: [/\bsearch\b/i, /\balgolia\b/i, /\byasa\b/i, /cataloger/i, /visual.?merch/i, /recommend/i, /personaliz/i],
+        descPatterns:  [/\bsearch\b/i, /product.?discovery/i, /merchandis/i, /personaliz/i, /recommendation/i],
+    },
+    {
+        id: 'my-account',
+        label: 'My Account & Customer Profile',
+        names: new Set(['My Account', 'my-account (order history)', 'my-account-spa (settings)', 'My-Gucci', 'Customer Profiles', 'CRM Customer DB', 'Kering Customer Interaction DB', 'Wishlist', 'cust-anonymization-service', 'Dynamo DB', 'Kering Kafka', 'Kanonymous', 'client-services']),
+        namePatterns: [/my.?account/i, /my.?gucci/i, /customer.?profile/i, /crm.?customer/i, /cust.?anon/i, /wishlist/i],
+        descPatterns:  [/customer.?account/i, /user.?profile/i, /loyalty/i, /crm/i],
+    },
+    {
+        id: 'store-locator',
+        label: 'Store Locator & Appointments',
+        names: new Set(['Store Locator', 'Book an appointment', 'Book An Appointment Confirmation Email', 'baa-spa', 'store-queues-svc', 'store-queues-svc-db', 'Store DB (Kering)', 'Google Maps', 'Powerfront']),
+        namePatterns: [/store.?locator/i, /book.?appoint/i, /\bbaa\b/i, /store.?queue/i],
+        descPatterns:  [/store.?location/i, /appointment/i, /clienteling/i],
+    },
+    {
+        id: 'email',
+        label: 'Email & Notifications',
+        names: new Set(['email-service', 'Account Cancellation Email', 'Account Creation Email', 'OTP Email', 'Order Confirmation Email', 'Newsletter']),
+        namePatterns: [/email/i, /\bnewsletter\b/i, /\botp\b/i],
+        descPatterns:  [/transactional.?email/i, /email.?notification/i, /notification.?service/i],
+    },
+    {
+        id: 'content',
+        label: 'Content & CMS',
+        names: new Set(['Contentful', 'editorial-hub', 'Bubbles', 'Collection/Capsule Pages', 'BrightCove', 'Media Service', 'Optimizely', 'fs-microsites', 'gucci-store', 'GDE_Activator']),
+        namePatterns: [/contentful/i, /editorial/i, /brightcove/i, /optimizely/i, /microsite/i],
+        descPatterns:  [/content.?management/i, /\bcms\b/i, /editorial/i, /digital.?content/i],
+    },
+    {
+        id: 'images',
+        label: 'Image & Media Serving',
+        names: new Set(['image-server', 'image-server-postgres', 'img-viewer-dashboard']),
+        namePatterns: [/image.?server/i, /img.?viewer/i],
+        descPatterns:  [/image.?serve/i, /media.?cdn/i, /image.?optim/i],
+    },
+    {
+        id: 'analytics',
+        label: 'Analytics & Tracking',
+        names: new Set(['Google Analytics', 'Google Tag Manager', 'analytics-sdk', 'web-tracking-compliance-sdk', 'One Trust', 'Wunderkind', 'MyFeelBack', 'beacon']),
+        namePatterns: [/analytics/i, /tag.?manager/i, /wunderkind/i, /myfeelback/i, /one.?trust/i, /\bbeacon\b/i, /tracking/i],
+        descPatterns:  [/analytics/i, /tracking/i, /tag.?management/i, /consent/i],
+    },
+    {
+        id: 'platform-infra',
+        label: 'Platform Infrastructure',
+        names: new Set(['Akamai', 'Bifrost', 'esm-proxy', 'orchestrator', 'feature-flags', 'service-pages', 'Geo-Markup', 'Gucci Backoffice', 'Static Choose Your Country Page On Akamai', 'backoffice']),
+        namePatterns: [/akamai/i, /bifrost/i, /esm.?proxy/i, /orchestrat/i, /feature.?flag/i, /backoffice/i, /geo.?markup/i],
+        descPatterns:  [/\bcdn\b/i, /infrastructure/i, /proxy/i, /feature.?toggle/i, /server.?side/i],
+    },
+    {
+        id: 'contact-support',
+        label: 'Contact & Support',
+        names: new Set(['Contact Us']),
+        namePatterns: [/contact.?us/i, /live.?chat/i, /support.?widget/i],
+        descPatterns:  [/customer.?support/i, /contact.?form/i, /live.?chat/i],
+    },
+];
+
+function buildClusterIndex(clusters) {
+    const index = new Map();
+    for (const cluster of clusters) {
+        for (const name of cluster.names) {
+            if (!index.has(name)) index.set(name, cluster.id);
+        }
+    }
+    return index;
+}
+
+function resolveCluster(node, index, clusters) {
+    if (index.has(node.id)) return index.get(node.id);
+    const nameLower = node.id.toLowerCase();
+    const descLower = (node.Description || '').toLowerCase();
+    for (const cluster of clusters) {
+        for (const p of cluster.namePatterns) { if (p.test(nameLower)) return cluster.id; }
+    }
+    for (const cluster of clusters) {
+        for (const p of cluster.descPatterns) { if (p.test(descLower)) return cluster.id; }
+    }
+    return null;
+}
+
+const CLUSTER_BY_ID = Object.fromEntries(CLUSTERS.map(c => [c.id, c]));
+
+// ── Health helpers ────────────────────────────────────────────────────────────
+const ACTIVE_STATUSES = new Set([
+    'Sent to Internal Team', 'Pending', 'UAT',
+    'Work in progress', 'Work In Progress', 'Scheduled',
+    'Investigating', 'In Progress', 'Open',
+]);
+
+const P1P2_RANK     = { 'P1/Blocker': 0, 'P2/Critical': 1 };
+const ALL_RANK      = { 'P1/Blocker': 0, 'P2/Critical': 1, 'P3/Major': 2, 'P4/Minor': 3 };
+const HEALTH_FROM_RANK = ['outage', 'critical'];
+const HEALTH_ORDER  = { outage: 0, critical: 1, degraded: 2, minor: 3, operational: 4 };
+
+const HEALTH_LABEL  = {
+    outage: 'Major Outage', critical: 'Critical',
+    degraded: 'Degraded',  minor: 'Minor Issue',  operational: 'Operational',
+};
+const GLOBAL_MSG    = {
+    outage:      'Major outage in progress',
+    critical:    'Critical incidents active',
+    degraded:    'Some services degraded',
+    minor:       'Minor issues detected',
+    operational: 'All systems operational',
+};
+
+// ── JengaStatusView ───────────────────────────────────────────────────────────
+export class JengaStatusView {
+    constructor(app) {
+        this.app = app;
+        this._nodes    = null;
+        this._cards    = null;
+        this._allCards = null;
+        this._clusterIndex = buildClusterIndex(CLUSTERS);
+    }
+
+    // ── Data ──────────────────────────────────────────────────────────────────
+
+    async _ensureData() {
+        if (this._cards !== null) return;
+        const stripComments = s => s.replace(/^#[^\n]*\n/gm, '');
+        const fetchCsv = async (url) => {
+            try {
+                const text = await fetch(url).then(r => r.ok ? r.text() : '').catch(() => '');
+                return text ? d3.csvParse(stripComments(text)) : [];
+            } catch { return []; }
+        };
+
+        const catalogUrl = (typeof BRAND !== 'undefined' && BRAND.csv?.domino)
+            ? BRAND.csv.domino : './service-catalog.csv';
+        const currentUrl = (typeof BRAND !== 'undefined' && BRAND.csv?.jiraCardsCurrent)
+            ? BRAND.csv.jiraCardsCurrent : './jira-cards-current.csv';
+        const allUrl = (typeof BRAND !== 'undefined' && BRAND.csv?.jiraCards)
+            ? BRAND.csv.jiraCards : './jira-cards.csv';
+
+        const [catalog, current, all] = await Promise.all([
+            fetchCsv(catalogUrl),
+            fetchCsv(currentUrl),
+            fetchCsv(allUrl),
+        ]);
+
+        // Build nodes keeping all raw CSV columns (same shape ServiceCatalogStore produces)
+        const DEAD = new Set(['Stopped', 'Decommissioned']);
+        this._nodes = catalog
+            .filter(d => !DEAD.has(d['Status']) && !d['Decommission Date'])
+            .map(d => ({ id: d['Service Name'], ...d }));
+
+        this._cards    = current;
+        this._allCards = all;
+    }
+
+    _buildHealthMap() {
+        const healthMap = new Map();
+        for (const card of this._cards) {
+            if (!ACTIVE_STATUSES.has(card.Status)) continue;
+            const isP1P2 = card.Priority === 'P1/Blocker' || card.Priority === 'P2/Critical';
+            const isP3P4 = card.Priority === 'P3/Major'   || card.Priority === 'P4/Minor';
+            if (!isP1P2 && !isP3P4) continue;
+
+            const services = (card.AffectedServices || '').split('||').map(s => s.trim()).filter(Boolean);
+            for (const svc of services) {
+                if (!healthMap.has(svc)) {
+                    healthMap.set(svc, { health: 'operational', rank: 99, incidents: [], minorIncidents: [] });
+                }
+                const entry = healthMap.get(svc);
+                if (isP1P2) {
+                    const rank = P1P2_RANK[card.Priority];
+                    if (rank < entry.rank) { entry.rank = rank; entry.health = HEALTH_FROM_RANK[rank]; }
+                    entry.incidents.push(card);
+                } else {
+                    entry.minorIncidents.push(card);
+                }
+            }
+        }
+        return healthMap;
+    }
+
+    // ── Main render ───────────────────────────────────────────────────────────
+
+    async render(containerEl, { tv = false } = {}) {
+        await this._ensureData();
+
+        const healthMap = this._buildHealthMap();
+
+        const activeServices = this.app?.search?.activeServices;
+        const nodes = (this._nodes || []).filter(n => {
+            if (HIDE_TYPES.has(n['Type'])) return false;
+            if (!Boolean((n['Stream'] || '').trim()) || !Boolean((n['Theme'] || '').trim())) return false;
+            if (activeServices?.size > 0 && !activeServices.has(n.id)) return false;
+            return true;
+        });
+
+        // Group by stream → theme
+        const streamMap = new Map();
+        for (const node of nodes) {
+            const stream = node['Stream'].trim();
+            const theme  = node['Theme'].trim();
+            if (!streamMap.has(stream)) streamMap.set(stream, new Map());
+            const themeMap = streamMap.get(stream);
+            if (!themeMap.has(theme)) themeMap.set(theme, []);
+            themeMap.get(theme).push(node);
+        }
+
+        const worstHealth = healths => {
+            let best = 4;
+            for (const h of healths) { const r = HEALTH_ORDER[h] ?? 4; if (r < best) best = r; }
+            return Object.keys(HEALTH_ORDER)[best] ?? 'operational';
+        };
+        const sumMinor = ns => ns.reduce((s, n) => s + (healthMap.get(n.id)?.minorIncidents?.length ?? 0), 0);
+
+        const streamData = [];
+        for (const [streamName, themeMap] of streamMap) {
+            const themes = [];
+            for (const [themeName, svcs] of themeMap) {
+                const clusterGroups = new Map();
+                const individuals = [];
+                for (const node of svcs) {
+                    const cid = resolveCluster(node, this._clusterIndex, CLUSTERS);
+                    if (cid) {
+                        if (!clusterGroups.has(cid)) clusterGroups.set(cid, []);
+                        clusterGroups.get(cid).push(node);
+                    } else {
+                        individuals.push(node);
+                    }
+                }
+
+                const clusters = [];
+                for (const [cid, clusterSvcs] of clusterGroups) {
+                    const cHealth = worstHealth(clusterSvcs.map(n => healthMap.get(n.id)?.health ?? 'operational'));
+                    clusters.push({
+                        clusterId: cid,
+                        label:     CLUSTER_BY_ID[cid]?.label ?? cid,
+                        health:    cHealth,
+                        services:  clusterSvcs,
+                        totalIncidents: clusterSvcs.reduce((s, n) => s + (healthMap.get(n.id)?.incidents?.length ?? 0), 0),
+                        totalMinor:     sumMinor(clusterSvcs),
+                    });
+                }
+                clusters.sort((a, b) => HEALTH_ORDER[a.health] - HEALTH_ORDER[b.health] || a.label.localeCompare(b.label));
+                individuals.sort((a, b) => {
+                    const ha = HEALTH_ORDER[healthMap.get(a.id)?.health ?? 'operational'];
+                    const hb = HEALTH_ORDER[healthMap.get(b.id)?.health ?? 'operational'];
+                    return ha - hb || a.id.localeCompare(b.id);
+                });
+
+                const themeMinor = clusters.reduce((s, c) => s + c.totalMinor, 0) +
+                    individuals.reduce((s, n) => s + (healthMap.get(n.id)?.minorIncidents?.length ?? 0), 0);
+                themes.push({
+                    name:       themeName,
+                    health:     worstHealth([...clusters.map(c => c.health), ...individuals.map(n => healthMap.get(n.id)?.health ?? 'operational')]),
+                    clusters,
+                    individuals,
+                    minorCount: themeMinor,
+                });
+            }
+            themes.sort((a, b) => HEALTH_ORDER[a.health] - HEALTH_ORDER[b.health] || a.name.localeCompare(b.name));
+
+            const streamMinor    = themes.reduce((s, t) => s + t.minorCount, 0);
+            const streamSvcCount = themes.reduce((s, t) =>
+                s + t.clusters.reduce((cs, c) => cs + c.services.length, 0) + t.individuals.length, 0);
+            const healthBreakdown = { outage: 0, critical: 0, degraded: 0, minor: 0, clean: 0 };
+            for (const theme of themes) {
+                for (const cluster of theme.clusters) {
+                    if (cluster.health !== 'operational') {
+                        healthBreakdown[cluster.health] = (healthBreakdown[cluster.health] || 0) + cluster.services.length;
+                    } else if (cluster.totalMinor > 0) {
+                        healthBreakdown.minor += cluster.services.length;
+                    } else {
+                        healthBreakdown.clean += cluster.services.length;
+                    }
+                }
+                for (const node of theme.individuals) {
+                    const e = healthMap.get(node.id);
+                    const h = e?.health ?? 'operational';
+                    if (h !== 'operational') {
+                        healthBreakdown[h] = (healthBreakdown[h] || 0) + 1;
+                    } else if (e?.minorIncidents?.length) {
+                        healthBreakdown.minor++;
+                    } else {
+                        healthBreakdown.clean++;
+                    }
+                }
+            }
+            streamData.push({
+                name:           streamName,
+                health:         worstHealth(themes.map(t => t.health)),
+                themes,
+                minorCount:     streamMinor,
+                svcCount:       streamSvcCount,
+                healthBreakdown,
+            });
+        }
+        streamData.sort((a, b) => b.svcCount - a.svcCount || a.name.localeCompare(b.name));
+        const maxMinorCount = streamData.reduce((max, s) => Math.max(max, s.minorCount), 0);
+
+        // Global stats
+        const globalHealth = worstHealth(streamData.map(s => s.health));
+        const operational  = nodes.filter(n => !healthMap.get(n.id)?.incidents?.length).length;
+        const affected     = nodes.length - operational;
+        const minorTotal   = nodes.reduce((s, n) => s + (healthMap.get(n.id)?.minorIncidents?.length ?? 0), 0);
+
+        const CLOSED_STATUSES = new Set(['Closed', 'Done', 'Resolved', 'Cancelled', 'Canceled']);
+        const majorCards = (this._allCards || []).filter(c =>
+            !CLOSED_STATUSES.has(c.Status) &&
+            (c.IssueType || '').toLowerCase().includes('incident') &&
+            (c.Priority === 'P1/Blocker' || c.Priority === 'P2/Critical')
+        );
+
+        // Compute dynamic column count for TV/multi-column layout
+        const cols = tv
+            ? Math.min(4, Math.max(2, Math.ceil(streamData.length / 3)))
+            : 1;
+
+        const inner = document.createElement('div');
+        inner.className = `jenga-status-inner${tv ? ' jenga-status-tv' : ''}`;
+        inner.style.setProperty('--status-cols', String(cols));
+        inner.innerHTML =
+            this._renderBanner(globalHealth, operational, affected, minorTotal) +
+            (majorCards.length ? this._renderMajorIncidents(majorCards) : '') +
+            streamData.map(s => this._renderStream(s, healthMap, maxMinorCount)).join('');
+
+        containerEl.innerHTML = '';
+        containerEl.appendChild(inner);
+
+        this._bindInteractions(healthMap, inner);
+    }
+
+    // ── HTML helpers (copied verbatim from StatusView.js) ─────────────────────
+
+    _renderMajorIncidents(cards) {
+        const sorted = [...cards].sort((a, b) => {
+            const ra = ALL_RANK[a.Priority] ?? 9;
+            const rb = ALL_RANK[b.Priority] ?? 9;
+            return ra !== rb ? ra - rb : (a.Created ?? '').localeCompare(b.Created ?? '');
+        });
+
+        const cardHtml = sorted.map(c => {
+            const health    = HEALTH_FROM_RANK[P1P2_RANK[c.Priority]] ?? 'critical';
+            const priority  = (c.Priority || '').split('/')[0].trim();
+            const services  = (c.AffectedServices || '').split('||').map(s => s.trim()).filter(Boolean);
+            const created   = c.Created ? this._formatIncidentDate(c.Created) : '';
+            const summary   = this._cleanSummary(c.Summary || '');
+            const desc      = (c.Description || '').trim();
+            const latest    = (c.LatestComment || '').trim();
+            const jiraKey   = c.Key || '';
+            const jiraUrl   = c.JiraUrl || '';
+            const reporter  = (c.Reporter || '').trim();
+
+            return `
+            <div class="status-major-card status-major-card--${health}">
+                <div class="status-major-card-header">
+                    <span class="status-pill status-pill--${health}">${this._esc(priority)}</span>
+                    <span class="status-major-status">${this._esc(c.Status || '')}</span>
+                    ${created ? `<span class="status-major-created">${created}</span>` : ''}
+                    ${jiraUrl ? `<a class="status-major-jira-link" href="${this._esc(jiraUrl)}" target="_blank" rel="noopener">${this._esc(jiraKey)} ↗</a>` : ''}
+                </div>
+                <div class="status-major-summary">${this._esc(summary)}</div>
+                ${desc ? `<div class="status-major-description">${this._esc(desc)}</div>` : ''}
+                ${latest ? `
+                <div class="status-major-latest">
+                    <span class="status-major-label">Latest update</span>
+                    <span class="status-major-latest-text">${this._esc(latest)}</span>
+                </div>` : ''}
+                <div class="status-major-footer">
+                    ${services.length ? `
+                    <div class="status-major-services">
+                        <span class="status-major-label">Affected</span>
+                        ${services.map(s => `<span class="status-major-svc-tag">${this._esc(s)}</span>`).join('')}
+                    </div>` : ''}
+                    ${reporter ? `<span class="status-major-reporter">Reported by ${this._esc(reporter)}</span>` : ''}
+                </div>
+            </div>`;
+        }).join('');
+
+        const worstHealth = cards.some(c => c.Priority === 'P1/Blocker') ? 'outage' : 'critical';
+        return `
+        <div class="status-major-panel">
+            <div class="status-major-panel-title">
+                <span class="status-dot status-dot--${worstHealth}"></span>
+                Active Major Incidents
+                <span class="status-major-count">${cards.length}</span>
+            </div>
+            ${cardHtml}
+        </div>`;
+    }
+
+    _formatIncidentDate(iso) {
+        try {
+            const d = new Date(iso);
+            if (isNaN(d)) return iso;
+            return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+                + ' · ' + d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+        } catch { return iso; }
+    }
+
+    _renderBanner(health, operational, affected, minorTotal) {
+        const minorTag = minorTotal > 0
+            ? `<span class="status-global-minor">▲ ${minorTotal} minor (P3/P4)</span>` : '';
+        return `
+            <div class="status-global-banner status-global-banner--${health}">
+                <span class="status-dot status-dot--${health}"></span>
+                <span class="status-global-msg">${GLOBAL_MSG[health]}</span>
+                <span class="status-global-stats">
+                    <span class="status-stat status-stat--op">${operational}</span> operational &nbsp;·&nbsp;
+                    <span class="status-stat status-stat--aff">${affected}</span> affected
+                    ${minorTag}
+                </span>
+            </div>`;
+    }
+
+    _renderStream(streamData, healthMap, maxMinorCount = 0) {
+        const { name, health, themes, minorCount = 0, svcCount = 0, healthBreakdown = {} } = streamData;
+        const total    = svcCount || 1;
+        const affCount = (healthBreakdown.outage || 0) + (healthBreakdown.critical || 0) + (healthBreakdown.degraded || 0);
+        const affPct   = Math.round(affCount / total * 100);
+        const minorPct = maxMinorCount > 0 ? Math.round(minorCount / maxMinorCount * 45) : 0;
+        return `
+            <div class="status-stream" data-health="${health}">
+                <div class="status-stream-header">
+                    <span class="status-dot status-dot--${health}"></span>
+                    <span class="status-stream-name">${name}</span>
+                    ${this._pill(health)}
+                    ${minorCount > 0 ? `<span class="status-minor-badge">▲ ${minorCount}</span>` : ''}
+                </div>
+                <div class="status-health-bar">
+                    ${affPct > 0 ? `<div class="status-hb-seg--affected" style="width:${affPct}%"></div>` : ''}
+                    ${minorPct > 0 ? `<div class="status-hb-seg--minor" style="width:${minorPct}%"></div>` : ''}
+                    <div class="status-hb-seg--clean" style="flex:1"></div>
+                </div>
+                <div class="status-stream-body">
+                    ${themes.map(t => this._renderTheme(t, healthMap)).join('')}
+                </div>
+            </div>`;
+    }
+
+    _renderTheme(themeData, healthMap) {
+        const { name, health, clusters, individuals, minorCount = 0 } = themeData;
+
+        const affectedClusters = clusters.filter(c => c.health !== 'operational');
+        const minorClusters    = clusters.filter(c => c.health === 'operational' && c.totalMinor > 0);
+        const cleanClusters    = clusters.filter(c => c.health === 'operational' && !c.totalMinor);
+
+        const affectedIndivs = individuals.filter(n => (healthMap.get(n.id)?.health ?? 'operational') !== 'operational');
+        const minorIndivs    = individuals.filter(n => {
+            const e = healthMap.get(n.id);
+            return (e?.health ?? 'operational') === 'operational' && (e?.minorIncidents?.length ?? 0) > 0;
+        });
+        const cleanIndivs    = individuals.filter(n => {
+            const e = healthMap.get(n.id);
+            return (e?.health ?? 'operational') === 'operational' && !(e?.minorIncidents?.length);
+        });
+
+        const opCount  = cleanClusters.length + cleanIndivs.length;
+        const hasMinor = minorClusters.length + minorIndivs.length > 0;
+
+        return `
+            <div class="status-theme" data-health="${health}">
+                <div class="status-theme-header">
+                    <span class="status-theme-name">${name}</span>
+                    ${this._pill(health)}
+                    ${minorCount > 0 ? `<span class="status-minor-badge">▲ ${minorCount}</span>` : ''}
+                </div>
+                <div class="status-theme-body">
+                    ${affectedClusters.map(c => this._renderCluster(c, healthMap, true)).join('')}
+                    ${affectedIndivs.map(n => this._renderServiceRow(n, healthMap.get(n.id))).join('')}
+                    ${hasMinor ? `
+                        <div class="status-minor-section">
+                            ${minorClusters.map(c => this._renderCluster(c, healthMap, false)).join('')}
+                            ${minorIndivs.map(n => this._renderServiceRow(n, healthMap.get(n.id))).join('')}
+                        </div>` : ''}
+                    ${opCount > 0 ? `
+                        <div class="status-op-toggle" tabindex="0" role="button" aria-expanded="false" data-count="${opCount}">
+                            <span class="status-dot status-dot--operational"></span>
+                            <span class="status-op-label">Show ${opCount} fully operational ▼</span>
+                        </div>
+                        <div class="status-op-list" hidden>
+                            ${cleanClusters.map(c => this._renderCluster(c, healthMap, false)).join('')}
+                            ${cleanIndivs.map(n => this._renderServiceRow(n, healthMap.get(n.id))).join('')}
+                        </div>` : ''}
+                </div>
+            </div>`;
+    }
+
+    _renderCluster(clusterData, healthMap, defaultExpanded) {
+        const { clusterId, label, health, services, totalIncidents, totalMinor } = clusterData;
+        const incBadge   = totalIncidents > 0 ? `<span class="status-badge">${totalIncidents} open</span>` : '';
+        const mainSvc    = totalMinor > 0
+            ? services.reduce((best, n) => {
+                const a = healthMap.get(n.id)?.minorIncidents?.length ?? 0;
+                const b = healthMap.get(best?.id)?.minorIncidents?.length ?? 0;
+                return a >= b ? n : best;
+            }, services[0])
+            : null;
+        const minorBadge = totalMinor > 0
+            ? `<span class="status-minor-badge">▲ ${totalMinor}</span>`
+            : '';
+        const countTxt   = `${services.length} service${services.length !== 1 ? 's' : ''}`;
+
+        return `
+            <div class="status-cluster" data-cluster-id="${this._esc(clusterId)}" data-health="${health}"${defaultExpanded ? ' data-expanded="true"' : ''}>
+                <div class="status-cluster-header" tabindex="0" role="button" aria-expanded="${defaultExpanded}">
+                    <span class="status-dot status-dot--${health}"></span>
+                    <span class="status-cluster-label">${this._esc(label)}</span>
+                    ${this._pill(health)}
+                    ${incBadge}${minorBadge}
+                    <span class="status-cluster-meta">${countTxt}</span>
+                    <span class="status-expand-icon" aria-hidden="true">›</span>
+                </div>
+                <div class="status-cluster-services" ${defaultExpanded ? '' : 'hidden'}>
+                    ${services.map(n => this._renderServiceRow(n, healthMap.get(n.id))).join('')}
+                </div>
+            </div>`;
+    }
+
+    _renderServiceRow(node, entry) {
+        const health     = entry?.health ?? 'operational';
+        const hasMinor   = Boolean(entry?.minorIncidents?.length);
+        const friendly   = FRIENDLY_NAMES[node.id];
+        const primary    = friendly ?? node.id;
+        const code       = friendly ? node.id : null;
+        const minorBadge = hasMinor ? `<span class="status-minor-badge">▲ ${entry.minorIncidents.length}</span>` : '';
+
+        return `
+            <div class="status-svc-row" data-svc-id="${this._esc(node.id)}" data-health="${health}">
+                <span class="status-dot status-dot--${health}"></span>
+                <span class="status-svc-names">
+                    <span class="status-svc-primary">${this._esc(primary)}</span>
+                    ${code ? `<span class="status-svc-code">${this._esc(code)}</span>` : ''}
+                </span>
+                ${minorBadge}
+            </div>`;
+    }
+
+    _pill(health) {
+        return `<span class="status-pill status-pill--${health}">${HEALTH_LABEL[health] ?? health}</span>`;
+    }
+
+    _esc(s) {
+        return String(s)
+            .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+            .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    _cleanSummary(s) {
+        return String(s)
+            .replace(/§\[Roi\w+(?:,Roi\w+)*\]/g, '')
+            .replace(/^\[GUCCI PRODUCTION\]\s*-\s*/i, '')
+            .trim();
+    }
+
+    // ── Interactions ──────────────────────────────────────────────────────────
+
+    _bindInteractions(healthMap, contentEl) {
+        contentEl.querySelectorAll('.status-cluster-header').forEach(header => {
+            const cluster = header.closest('.status-cluster');
+            const body    = cluster?.querySelector('.status-cluster-services');
+            if (!body) return;
+            header.addEventListener('click', () => {
+                const expanded = !body.hidden;
+                body.hidden = expanded;
+                header.setAttribute('aria-expanded', String(!expanded));
+                const icon = header.querySelector('.status-expand-icon');
+                if (icon) icon.style.transform = expanded ? '' : 'rotate(90deg)';
+            });
+            header.addEventListener('keydown', e => {
+                if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); header.click(); }
+            });
+            if (cluster.dataset.expanded === 'true') {
+                const icon = header.querySelector('.status-expand-icon');
+                if (icon) icon.style.transform = 'rotate(90deg)';
+            }
+        });
+
+        contentEl.querySelectorAll('.status-op-toggle').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const list = btn.nextElementSibling;
+                if (!list) return;
+                const expanded = !list.hidden;
+                list.hidden = expanded;
+                btn.setAttribute('aria-expanded', String(!expanded));
+                const label = btn.querySelector('.status-op-label');
+                const count = btn.dataset.count || '';
+                if (label) {
+                    label.textContent = expanded
+                        ? `Show ${count} fully operational ▼`
+                        : `Hide ${count} fully operational ▲`;
+                }
+            });
+            btn.addEventListener('keydown', e => {
+                if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); btn.click(); }
+            });
+        });
+    }
+
+    invalidate() {
+        this._nodes    = null;
+        this._cards    = null;
+        this._allCards = null;
+    }
+}

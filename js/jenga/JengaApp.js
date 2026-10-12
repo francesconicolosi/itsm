@@ -11,6 +11,7 @@ import { TimelineRenderer } from './TimelineRenderer.js';
 import { CardsDrawer } from './CardsDrawer.js';
 import { SlideshowController } from './SlideshowController.js';
 import { MajorIncidentAlert } from './MajorIncidentAlert.js';
+import { JengaStatusView } from './JengaStatusView.js';
 
 const TOPBAR_PIN_STORAGE_KEY = 'jenga.topBarPinned';
 
@@ -28,6 +29,7 @@ export class JengaApp {
         this.cardsDrawer = new CardsDrawer();
         this.search     = new JengaSearch(this);
         this.slideshow  = new SlideshowController(this);
+        this.statusView = new JengaStatusView(this);
         this.majorIncidentAlert = new MajorIncidentAlert();
         this.postIt = new PostItNote('jenga');
         this.announcementBar = new AnnouncementBar();
@@ -35,7 +37,7 @@ export class JengaApp {
 
         this.currentYear  = new Date().getFullYear();
         this.currentMonth = new Date().getMonth();
-        this.view = 'calendar'; // 'calendar' | 'timeline'
+        this.view = 'calendar'; // 'calendar' | 'timeline' | 'status'
         this.topBarPinned = this._loadTopBarPinned();
     }
 
@@ -92,9 +94,12 @@ export class JengaApp {
                 this._dataLoaded = true;
                 this._suppressUrlPush = true;  // keep URL intact until drawer params are applied
                 this.refresh();
-                // Show major incident alert if there are open P1/P2 incidents
+                // Show major incident alert if there are open P1/P2 incidents,
+                // but skip it when the slideshow will auto-start (status slide covers it)
+                const willAutoSlideshow = isTV ||
+                    new URLSearchParams(location.search).get('slideshow') === 'true';
                 const majorIncidents = this.store.getMajorIncidents();
-                if (majorIncidents.length > 0) {
+                if (majorIncidents.length > 0 && !willAutoSlideshow) {
                     this.majorIncidentAlert.show(majorIncidents);
                 }
                 // Open drawer/day from URL after render (needs DOM to be ready)
@@ -137,6 +142,12 @@ export class JengaApp {
         });
 
         const filtered = this.search.getFilteredEvents(allEvents);
+
+        if (this.view === 'status') {
+            const el = document.getElementById('jenga-status');
+            if (el) this.statusView.render(el);
+            return;
+        }
 
         if (this.view === 'calendar') {
             const el = document.getElementById('jenga-calendar');
@@ -412,15 +423,19 @@ export class JengaApp {
     _initViewToggle() {
         const calBtn  = document.getElementById('jenga-view-calendar');
         const timeBtn = document.getElementById('jenga-view-timeline');
+        const statBtn = document.getElementById('jenga-view-status');
         const calWrap = document.getElementById('jenga-calendar');
         const timWrap = document.getElementById('jenga-timeline');
+        const statWrap = document.getElementById('jenga-status');
 
         calBtn?.addEventListener('click', () => {
             this.view = 'calendar';
             calBtn.classList.add('jenga-view-btn--active');
             timeBtn?.classList.remove('jenga-view-btn--active');
+            statBtn?.classList.remove('jenga-view-btn--active');
             if (calWrap)  calWrap.style.display  = '';
             if (timWrap)  timWrap.style.display   = 'none';
+            if (statWrap) statWrap.style.display  = 'none';
             document.body.classList.remove('jenga-view--timeline');
             this._refreshTopBarPinnedGeometry?.();
             this.refresh();
@@ -431,10 +446,27 @@ export class JengaApp {
             this.view = 'timeline';
             timeBtn.classList.add('jenga-view-btn--active');
             calBtn?.classList.remove('jenga-view-btn--active');
-            if (calWrap) calWrap.style.display = 'none';
-            if (timWrap) timWrap.style.display = '';
+            statBtn?.classList.remove('jenga-view-btn--active');
+            if (calWrap)  calWrap.style.display  = 'none';
+            if (timWrap)  timWrap.style.display   = '';
+            if (statWrap) statWrap.style.display  = 'none';
             document.body.classList.add('jenga-view--timeline');
             this._refreshTopBarPinnedGeometry?.();
+            this.refresh();
+            this._pushUrl();
+        });
+
+        statBtn?.addEventListener('click', () => {
+            this.view = 'status';
+            statBtn.classList.add('jenga-view-btn--active');
+            calBtn?.classList.remove('jenga-view-btn--active');
+            timeBtn?.classList.remove('jenga-view-btn--active');
+            if (calWrap)  calWrap.style.display  = 'none';
+            if (timWrap)  timWrap.style.display   = 'none';
+            if (statWrap) statWrap.style.display  = '';
+            document.body.classList.remove('jenga-view--timeline');
+            this._refreshTopBarPinnedGeometry?.();
+            this.statusView.invalidate();
             this.refresh();
             this._pushUrl();
         });
@@ -605,7 +637,7 @@ export class JengaApp {
         try {
             const p = new URLSearchParams(location.search);
             const view = p.get('view');
-            if (view === 'calendar' || view === 'timeline') this._applyView(view);
+            if (view === 'calendar' || view === 'timeline' || view === 'status') this._applyView(view);
             const year  = parseInt(p.get('year')  || '', 10);
             const month = parseInt(p.get('month') || '', 10);
             if (!isNaN(year)  && year  > 2000) this.currentYear  = year;
@@ -699,22 +731,36 @@ export class JengaApp {
 
     /** Switch the view without triggering URL push (used by _readUrlParams/_applyView). */
     _applyView(view) {
-        const calBtn  = document.getElementById('jenga-view-calendar');
-        const timeBtn = document.getElementById('jenga-view-timeline');
-        const calWrap = document.getElementById('jenga-calendar');
-        const timWrap = document.getElementById('jenga-timeline');
+        const calBtn   = document.getElementById('jenga-view-calendar');
+        const timeBtn  = document.getElementById('jenga-view-timeline');
+        const statBtn  = document.getElementById('jenga-view-status');
+        const calWrap  = document.getElementById('jenga-calendar');
+        const timWrap  = document.getElementById('jenga-timeline');
+        const statWrap = document.getElementById('jenga-status');
         this.view = view;
         if (view === 'calendar') {
             calBtn?.classList.add('jenga-view-btn--active');
             timeBtn?.classList.remove('jenga-view-btn--active');
-            if (calWrap) calWrap.style.display = '';
-            if (timWrap) timWrap.style.display = 'none';
+            statBtn?.classList.remove('jenga-view-btn--active');
+            if (calWrap)  calWrap.style.display  = '';
+            if (timWrap)  timWrap.style.display   = 'none';
+            if (statWrap) statWrap.style.display  = 'none';
+            document.body.classList.remove('jenga-view--timeline');
+        } else if (view === 'status') {
+            statBtn?.classList.add('jenga-view-btn--active');
+            calBtn?.classList.remove('jenga-view-btn--active');
+            timeBtn?.classList.remove('jenga-view-btn--active');
+            if (calWrap)  calWrap.style.display  = 'none';
+            if (timWrap)  timWrap.style.display   = 'none';
+            if (statWrap) statWrap.style.display  = '';
             document.body.classList.remove('jenga-view--timeline');
         } else {
             timeBtn?.classList.add('jenga-view-btn--active');
             calBtn?.classList.remove('jenga-view-btn--active');
-            if (calWrap) calWrap.style.display = 'none';
-            if (timWrap) timWrap.style.display = '';
+            statBtn?.classList.remove('jenga-view-btn--active');
+            if (calWrap)  calWrap.style.display  = 'none';
+            if (timWrap)  timWrap.style.display   = '';
+            if (statWrap) statWrap.style.display  = 'none';
             document.body.classList.add('jenga-view--timeline');
         }
     }

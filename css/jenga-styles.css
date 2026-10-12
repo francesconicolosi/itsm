@@ -162,6 +162,7 @@ body {
 .jenga-view-btn:hover { background: #000; color: #fff; border-color: #000; }
 .jenga-view-btn--active { background: #1a1a1a; color: #fff; border-color: #1a1a1a; }
 .jenga-view-btn--active:hover { background: #333; }
+.jenga-view-btn svg { fill: none; stroke: currentColor; }
 
 .top-bar__action {
     display: inline-flex; align-items: center; justify-content: center;

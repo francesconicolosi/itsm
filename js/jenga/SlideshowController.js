@@ -1,6 +1,6 @@
 import { BRAND } from '../../brand-specific/brand.js';
 
-const SLIDE_COUNT = 3;
+const SLIDE_COUNT = 4;
 const COMMAND_BAR_HIDE_DELAY = 3000;
 const SLIDESHOW_RELOAD_MS = 45 * 60 * 1000;
 
@@ -38,10 +38,12 @@ export class SlideshowController {
         // Hide normal UI
         document.body.classList.remove('jenga-view--timeline');
         document.querySelectorAll('.jenga-top-bar').forEach(el => el.style.display = 'none');
-        const calWrap = document.getElementById('jenga-calendar');
-        const timWrap = document.getElementById('jenga-timeline');
-        if (calWrap) calWrap.style.display = 'none';
-        if (timWrap) timWrap.style.display = 'none';
+        const calWrap  = document.getElementById('jenga-calendar');
+        const timWrap  = document.getElementById('jenga-timeline');
+        const statWrap = document.getElementById('jenga-status');
+        if (calWrap)  calWrap.style.display  = 'none';
+        if (timWrap)  timWrap.style.display   = 'none';
+        if (statWrap) statWrap.style.display  = 'none';
 
         // Show slideshow container
         const container = document.getElementById('jenga-slideshow-container');
@@ -94,16 +96,24 @@ export class SlideshowController {
 
         // Restore normal UI based on app.view
         document.querySelectorAll('.jenga-top-bar').forEach(el => el.style.display = '');
-        const calWrap = document.getElementById('jenga-calendar');
-        const timWrap = document.getElementById('jenga-timeline');
+        const calWrap  = document.getElementById('jenga-calendar');
+        const timWrap  = document.getElementById('jenga-timeline');
+        const statWrap = document.getElementById('jenga-status');
         if (this.app.view === 'timeline') {
-            if (calWrap) calWrap.style.display = 'none';
-            if (timWrap) timWrap.style.display = '';
+            if (calWrap)  calWrap.style.display  = 'none';
+            if (timWrap)  timWrap.style.display   = '';
+            if (statWrap) statWrap.style.display  = 'none';
             document.body.classList.add('jenga-view--timeline');
             document.getElementById('jenga-view-timeline')?.classList.add('jenga-view-btn--active');
+        } else if (this.app.view === 'status') {
+            if (calWrap)  calWrap.style.display  = 'none';
+            if (timWrap)  timWrap.style.display   = 'none';
+            if (statWrap) statWrap.style.display  = '';
+            document.getElementById('jenga-view-status')?.classList.add('jenga-view-btn--active');
         } else {
-            if (calWrap) calWrap.style.display = '';
-            if (timWrap) timWrap.style.display = 'none';
+            if (calWrap)  calWrap.style.display  = '';
+            if (timWrap)  timWrap.style.display   = 'none';
+            if (statWrap) statWrap.style.display  = 'none';
             document.getElementById('jenga-view-calendar')?.classList.add('jenga-view-btn--active');
         }
     }
@@ -257,6 +267,17 @@ export class SlideshowController {
         const slideWrap = document.createElement('div');
         slideWrap.className = `jenga-slide jenga-slide--${this.currentSlide}`;
         container.appendChild(slideWrap);
+
+        if (this.currentSlide === 4) {
+            const statusInner = document.createElement('div');
+            statusInner.className = 'jenga-status-inner jenga-status-tv';
+            slideWrap.appendChild(statusInner);
+            this.app.statusView.render(statusInner, { tv: true }).then(() => {
+                this._appendBrandWatermark(slideWrap);
+                requestAnimationFrame(() => slideWrap.classList.add('jenga-slide--visible'));
+            });
+            return;
+        }
 
         if (this.currentSlide === 1) {
             // Calendar view — render first, then inject month label so it isn't wiped
