@@ -1525,6 +1525,7 @@ html[data-theme="dark"] .status-global-minor { color: #fbbf24; }
     display: flex;
     flex-direction: column;
     gap: 10px;
+    font-family: var(--brand-font), sans-serif;
 }
 
 .status-major-panel-title {
