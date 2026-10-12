@@ -250,7 +250,7 @@ export class JengaStatusView {
         inner.className = `jenga-status-inner${tv ? ' jenga-status-tv' : ''}`;
         inner.style.setProperty('--status-cols', String(cols));
         inner.innerHTML =
-            this._renderBanner(globalHealth, operational, affected, minorTotal) +
+            this._renderBanner(globalHealth, operational, affected, minorTotal, tv) +
             (majorCards.length ? this._renderMajorIncidents(majorCards) : '') +
             streamData.map(s => this._renderStream(s, healthMap, maxMinorCount, tv)).join('');
 
@@ -328,13 +328,15 @@ export class JengaStatusView {
         } catch { return iso; }
     }
 
-    _renderBanner(health, operational, affected, minorTotal) {
+    _renderBanner(health, operational, affected, minorTotal, tv = false) {
+        const displayHealth = (tv && health === 'minor') ? 'operational' : health;
+        const globalMsg = (tv && health === 'minor') ? 'Gucci.com Operational' : GLOBAL_MSG[displayHealth];
         const minorTag = minorTotal > 0
             ? `<span class="status-global-minor">▲ ${minorTotal} minor (P3/P4)</span>` : '';
         return `
-            <div class="status-global-banner status-global-banner--${health}">
-                <span class="status-dot status-dot--${health}"></span>
-                <span class="status-global-msg">${GLOBAL_MSG[health]}</span>
+            <div class="status-global-banner status-global-banner--${displayHealth}">
+                <span class="status-dot status-dot--${displayHealth}"></span>
+                <span class="status-global-msg">${globalMsg}</span>
                 <span class="status-global-stats">
                     <span class="status-stat status-stat--op">${operational}</span> operational &nbsp;·&nbsp;
                     <span class="status-stat status-stat--aff">${affected}</span> affected

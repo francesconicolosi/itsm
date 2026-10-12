@@ -406,11 +406,27 @@ export class SlideshowController {
                                 this._slideCount = (SLIDE_COUNT - 1) + pages;
                                 this._updateCommandBar();
                             }
-                            // Center the columns horizontally when content is a single page
-                            // and doesn't fill the full slide width (e.g. only 2 of 3 columns used)
+                            // Center the column block when it fits in a single page and
+                            // doesn't fill the full width. Resize the inner to the used-
+                            // column width and center it — the banner (column-span:all)
+                            // will automatically span just the used columns.
                             if (pages === 1 && rightEdge < containerW * 0.9) {
-                                const leftOffset = Math.round((containerW - rightEdge) / 2);
-                                statusInner.style.transform = `translateX(${leftOffset}px)`;
+                                const inner = statusInner.firstElementChild;
+                                if (inner) {
+                                    const cs   = getComputedStyle(inner);
+                                    const cols = parseInt(cs.columnCount, 10) || 1;
+                                    const gap  = parseFloat(cs.columnGap)  || 0;
+                                    if (cols > 1) {
+                                        const colW     = (containerW - (cols - 1) * gap) / cols;
+                                        const usedCols = Math.max(1, Math.round((rightEdge + gap) / (colW + gap)));
+                                        if (usedCols < cols) {
+                                            const newW = usedCols * colW + (usedCols - 1) * gap;
+                                            inner.style.setProperty('--status-cols', String(usedCols));
+                                            inner.style.width  = `${Math.round(newW)}px`;
+                                            inner.style.margin = '0 auto';
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
