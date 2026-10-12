@@ -1616,7 +1616,7 @@ html[data-theme="dark"] .status-major-jira-link { color: #60a5fa; }
 
 .status-major-summary {
     font-size: 14px;
-    font-weight: 600;
+    font-weight: normal;
     line-height: 1.4;
     color: #111827;
 }

@@ -309,7 +309,8 @@ export class StatusView {
         this.mapEl        = null;
         this.legendEl     = null;
         this.listViewEl   = null;
-        this._cards = null;
+        this._cards    = null;
+        this._allCards = null;
         this._boundSearchHandler = null;
         this._boundGoHandler     = null;
         this._boundClearHandler  = null;
@@ -400,16 +401,20 @@ export class StatusView {
 
     async _ensureData() {
         if (this._cards !== null) return;
-        const url = (typeof BRAND !== 'undefined' && BRAND.csv?.jiraCardsCurrent)
-            ? BRAND.csv.jiraCardsCurrent
-            : './jira-cards-current.csv';
-        try {
-            const text = await fetch(url).then(r => r.ok ? r.text() : '').catch(() => '');
-            const stripComments = s => s.replace(/^#[^\n]*\n/gm, '');
-            this._cards = text ? d3.csvParse(stripComments(text)) : [];
-        } catch {
-            this._cards = [];
-        }
+        const stripComments = s => s.replace(/^#[^\n]*\n/gm, '');
+        const fetchCsv = async (url) => {
+            try {
+                const text = await fetch(url).then(r => r.ok ? r.text() : '').catch(() => '');
+                return text ? d3.csvParse(stripComments(text)) : [];
+            } catch { return []; }
+        };
+        const currentUrl = (typeof BRAND !== 'undefined' && BRAND.csv?.jiraCardsCurrent)
+            ? BRAND.csv.jiraCardsCurrent : './jira-cards-current.csv';
+        const allUrl = (typeof BRAND !== 'undefined' && BRAND.csv?.jiraCards)
+            ? BRAND.csv.jiraCards : './jira-cards.csv';
+        const [current, all] = await Promise.all([fetchCsv(currentUrl), fetchCsv(allUrl)]);
+        this._cards    = current;  // current-month slice → health map (P3/P4 badges)
+        this._allCards = all;      // full history → P1/P2 major incidents panel
     }
 
     _buildHealthMap() {
@@ -574,8 +579,10 @@ export class StatusView {
         const affected     = nodes.length - operational;
         const minorTotal   = nodes.reduce((s, n) => s + (healthMap.get(n.id)?.minorIncidents?.length ?? 0), 0);
 
-        const majorCards = (this._cards || []).filter(c =>
-            ACTIVE_STATUSES.has(c.Status) &&
+        const CLOSED_STATUSES = new Set(['Closed', 'Done', 'Resolved', 'Cancelled', 'Canceled']);
+        const majorCards = (this._allCards || []).filter(c =>
+            !CLOSED_STATUSES.has(c.Status) &&
+            (c.IssueType || '').toLowerCase().includes('incident') &&
             (c.Priority === 'P1/Blocker' || c.Priority === 'P2/Critical')
         );
 
