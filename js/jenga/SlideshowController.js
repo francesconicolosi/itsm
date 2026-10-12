@@ -12,6 +12,7 @@ export class SlideshowController {
         this.currentSlide = 1;
         this.slideDuration = slideDuration ?? this._readSlideDuration();
         this._slideCount = SLIDE_COUNT;
+        this._statusPageCount = 1;
         this._timer = null;
         this._reloadTimer = null;
         this._commandBarTimer = null;
@@ -30,6 +31,7 @@ export class SlideshowController {
     }
 
     start({ slideCount } = {}) {
+        this._statusPageCount = 1;
         this._slideCount = (slideCount != null && slideCount > 0) ? slideCount : SLIDE_COUNT;
         this.active = true;
         this.playing = true;
@@ -61,12 +63,14 @@ export class SlideshowController {
         this._startTimer();
         this._attachCommandBar();
         this._reloadTimer = setTimeout(() => location.reload(), SLIDESHOW_RELOAD_MS);
+        this._probeStatusPageCount();
 
         this._escHandler = (e) => { if (e.key === 'Escape') this.stop(); };
         document.addEventListener('keydown', this._escHandler);
     }
 
     stop() {
+        this._statusPageCount = 1;
         this._slideCount = SLIDE_COUNT;
         this.active = false;
         this.playing = false;
@@ -268,14 +272,9 @@ export class SlideshowController {
         slideWrap.className = `jenga-slide jenga-slide--${this.currentSlide}`;
         container.appendChild(slideWrap);
 
-        if (this.currentSlide === 4) {
-            const statusInner = document.createElement('div');
-            statusInner.className = 'jenga-status-inner jenga-status-tv';
-            slideWrap.appendChild(statusInner);
-            this.app.statusView.render(statusInner, { tv: true }).then(() => {
-                this._appendBrandWatermark(slideWrap);
-                requestAnimationFrame(() => slideWrap.classList.add('jenga-slide--visible'));
-            });
+        // Status slides: slide 4 is page 0, slide 5 is page 1, etc.
+        if (this.currentSlide >= 4) {
+            this._renderStatusSlide(slideWrap, this.currentSlide - 4);
             return;
         }
 
@@ -335,7 +334,8 @@ export class SlideshowController {
                     const axisHeader = main.querySelector('.jtl-axis-header');
                     if (axisHeader) main.insertBefore(axisHeader, main.firstChild);
                 } else {
-                    // Slide 3 includes releases (day-aligned chart) — keep axis header, same as slide 2.
+                    // Slide 3 includes releases (a day-aligned chart) so keep the axis
+                    // header for day-ruler context, same as slide 2.
                     const axisHeader = main.querySelector('.jtl-axis-header');
                     if (axisHeader) main.insertBefore(axisHeader, main.firstChild);
                 }
@@ -344,6 +344,84 @@ export class SlideshowController {
             this._appendBrandWatermark(slideWrap);
             requestAnimationFrame(() => slideWrap.classList.add('jenga-slide--visible'));
         }
+    }
+
+    _probeStatusPageCount() {
+        if (!this.app.statusView) return;
+        const container = document.getElementById('jenga-slideshow-container');
+        if (!container) return;
+        const probe = document.createElement('div');
+        probe.className = 'jenga-slide jenga-slide--status';
+        probe.style.cssText = 'opacity:0;pointer-events:none;z-index:-1;';
+        container.appendChild(probe);
+        const inner = document.createElement('div');
+        inner.className = 'jenga-status-inner jenga-status-tv';
+        probe.appendChild(inner);
+        this.app.statusView.render(inner, { tv: true }).then(() => {
+            requestAnimationFrame(() => requestAnimationFrame(() => {
+                if (!inner.isConnected) return;
+                const containerW = inner.clientWidth;
+                if (containerW > 0) {
+                    const streams = inner.querySelectorAll('.status-stream');
+                    if (streams.length > 0) {
+                        const innerRect = inner.getBoundingClientRect();
+                        const lastRect  = streams[streams.length - 1].getBoundingClientRect();
+                        const rightEdge = lastRect.right - innerRect.left;
+                        const pages = Math.max(1, Math.ceil(rightEdge / containerW));
+                        if (pages !== this._statusPageCount) {
+                            this._statusPageCount = pages;
+                            this._slideCount = (SLIDE_COUNT - 1) + pages;
+                            this._updateCommandBar();
+                        }
+                    }
+                }
+                probe.remove();
+            }));
+        }).catch(() => probe.remove());
+    }
+
+    _renderStatusSlide(slideWrap, pageIndex) {
+        slideWrap.classList.add('jenga-slide--status');
+        const statusInner = document.createElement('div');
+        statusInner.className = 'jenga-status-inner jenga-status-tv';
+        slideWrap.appendChild(statusInner);
+        this.app.statusView.render(statusInner, { tv: true }).then(() => {
+            this._appendBrandWatermark(slideWrap);
+            // Two rAFs to ensure the browser has performed layout before measuring
+            requestAnimationFrame(() => requestAnimationFrame(() => {
+                if (!statusInner.isConnected) return;
+                const containerW = statusInner.clientWidth;
+                if (containerW > 0) {
+                    // On the first status page, detect whether content overflows into
+                    // additional column-pages by measuring the last stream's right edge.
+                    if (pageIndex === 0) {
+                        const streams = statusInner.querySelectorAll('.status-stream');
+                        if (streams.length > 0) {
+                            const innerRect = statusInner.getBoundingClientRect();
+                            const lastRect  = streams[streams.length - 1].getBoundingClientRect();
+                            const rightEdge = lastRect.right - innerRect.left;
+                            const pages = Math.max(1, Math.ceil(rightEdge / containerW));
+                            if (pages !== this._statusPageCount) {
+                                this._statusPageCount = pages;
+                                this._slideCount = (SLIDE_COUNT - 1) + pages;
+                                this._updateCommandBar();
+                            }
+                            // Center the columns horizontally when content is a single page
+                            // and doesn't fill the full slide width (e.g. only 2 of 3 columns used)
+                            if (pages === 1 && rightEdge < containerW * 0.9) {
+                                const leftOffset = Math.round((containerW - rightEdge) / 2);
+                                statusInner.style.transform = `translateX(${leftOffset}px)`;
+                            }
+                        }
+                    }
+                    // Translate the column layout so the correct page is visible
+                    if (pageIndex > 0) {
+                        statusInner.style.transform = `translateX(${-pageIndex * containerW}px)`;
+                    }
+                }
+                slideWrap.classList.add('jenga-slide--visible');
+            }));
+        });
     }
 
     _attachCommandBar() {
