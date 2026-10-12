@@ -157,7 +157,7 @@ body {
     display: inline-flex; align-items: center; justify-content: center;
     width: 34px; height: 36px;
     border-radius: 8px; border: 1px solid #ddd; background: #f8f8f8;
-    cursor: pointer; font-size: 16px;
+    cursor: pointer; font-size: 16px; color: #1a1a1a;
 }
 .jenga-view-btn:hover { background: #000; color: #fff; border-color: #000; }
 .jenga-view-btn--active { background: #1a1a1a; color: #fff; border-color: #1a1a1a; }
@@ -5176,23 +5176,45 @@ html[data-theme="dark"] .jenga-cal__cell.jenga--selected {
     }
 }
 
-/* ── TV / slideshow slide 4 ────────────────────────────────────────── */
-.jenga-slide--4 {
+/* ── TV / slideshow status slides (slide 4+) ───────────────────────── */
+.jenga-slide--status {
     overflow: hidden;
     padding: 16px 20px 80px;
     box-sizing: border-box;
+    /* 20px = slide left padding; clips the last column of page N-1 that lands in the padding area after translateX */
+    clip-path: inset(0 0 0 20px);
+    background: #f5f5f7;
+}
+html[data-theme="dark"] .jenga-slide--status {
+    background: #1c1c1e;
 }
 
-.jenga-slide--4 .jenga-status-inner {
+.jenga-slide--status .jenga-status-inner {
     max-width: none;
+    width: 100%;   /* override 'margin: 0 auto' auto-sizing in flex context */
+    margin: 0;
     height: 100%;
-    overflow: hidden;
+    overflow: visible;
+    column-fill: auto;
 }
 
-.jenga-slide--4 .status-stream-name  { font-size: 0.85rem; }
-.jenga-slide--4 .status-svc-primary  { font-size: 0.8rem; }
-.jenga-slide--4 .status-major-card   { padding: 10px 12px; }
-.jenga-slide--4 .status-global-banner { padding: 10px 14px; margin-bottom: 10px; }
+.jenga-slide--status .status-stream-name  { font-size: 1.7rem; }
+.jenga-slide--status .status-svc-primary  { font-size: 0.8rem; }
+.jenga-slide--status .status-major-card   { padding: 10px 12px; }
+.jenga-slide--status .status-global-banner { padding: 10px 14px; margin-bottom: 10px; }
+
+.jenga-slide--status .status-health-bar { height: 12px; border-radius: 6px; overflow: hidden; background: #22c55e; }
+html[data-theme="dark"] .jenga-slide--status .status-health-bar { background: #4ade80; }
+.jenga-slide--status .status-hb-seg--clean { background: transparent; }
+
+@keyframes tv-hb-reveal {
+    from { clip-path: inset(0 100% 0 0); }
+    to   { clip-path: inset(0 0% 0 0); }
+}
+.jenga-slide--status .status-hb-seg--affected,
+.jenga-slide--status .status-hb-seg--minor {
+    animation: tv-hb-reveal 1.5s ease-out 0.6s both;
+}
 
 /* ── Health dots and pills ─────────────────────────────────────────── */
 .status-dot {
@@ -5203,7 +5225,7 @@ html[data-theme="dark"] .jenga-cal__cell.jenga--selected {
     flex-shrink: 0;
 }
 .status-dot--operational { background: #22c55e; }
-.status-dot--minor       { background: #3b82f6; }
+.status-dot--minor       { background: #facc15; }
 .status-dot--degraded    { background: #f59e0b; }
 .status-dot--critical    { background: #ef4444; }
 .status-dot--outage      { background: #dc2626; }
@@ -5219,13 +5241,13 @@ html[data-theme="dark"] .jenga-cal__cell.jenga--selected {
     flex-shrink: 0;
 }
 .status-pill--operational { background: rgba(34,197,94,.15);  color: #16a34a; }
-.status-pill--minor       { background: rgba(59,130,246,.15); color: #2563eb; }
+.status-pill--minor       { background: rgba(250,204,21,.15); color: #a16207; }
 .status-pill--degraded    { background: rgba(245,158,11,.15); color: #d97706; }
 .status-pill--critical    { background: rgba(239,68,68,.15);  color: #dc2626; }
 .status-pill--outage      { background: rgba(220,38,38,.2);   color: #b91c1c; }
 
 html[data-theme="dark"] .status-pill--operational { color: #4ade80; }
-html[data-theme="dark"] .status-pill--minor       { color: #60a5fa; }
+html[data-theme="dark"] .status-pill--minor       { color: #fde047; }
 html[data-theme="dark"] .status-pill--degraded    { color: #fbbf24; }
 html[data-theme="dark"] .status-pill--critical    { color: #f87171; }
 html[data-theme="dark"] .status-pill--outage      { color: #fca5a5; }
@@ -5381,6 +5403,7 @@ html[data-theme="dark"] .status-badge {
 .status-op-toggle:hover { color: #374151; }
 html[data-theme="dark"] .status-op-toggle:hover { color: #d1d5db; }
 .status-op-toggle .status-dot--operational { opacity: .7; }
+.status-minor-toggle .status-dot--minor { opacity: .8; }
 
 .status-op-list { padding-bottom: 2px; }
 
@@ -5474,6 +5497,20 @@ html[data-theme="dark"] .status-cluster-services { border-left-color: #2e2e32; }
 html[data-theme="dark"] .status-minor-badge {
     background: rgba(245,158,11,.18);
     color: #fbbf24;
+}
+.status-major-badge {
+    font-size: 10px;
+    font-weight: 600;
+    padding: 1px 6px;
+    border-radius: 999px;
+    background: rgba(239,68,68,.12);
+    color: #dc2626;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+html[data-theme="dark"] .status-major-badge {
+    background: rgba(239,68,68,.18);
+    color: #f87171;
 }
 
 /* ── Global banner minor indicator ────────────────────────────────── */
