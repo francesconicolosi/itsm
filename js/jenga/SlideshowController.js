@@ -421,9 +421,12 @@ export class SlideshowController {
 
     _renderStatusSlide(slideWrap, pageIndex) {
         slideWrap.classList.add('jenga-slide--status');
+        const statusClip = document.createElement('div');
+        statusClip.style.cssText = 'overflow:hidden;width:100%;height:100%;';
+        slideWrap.appendChild(statusClip);
         const statusInner = document.createElement('div');
         statusInner.className = 'jenga-status-inner jenga-status-tv';
-        slideWrap.appendChild(statusInner);
+        statusClip.appendChild(statusInner);
 
         // When incidents overflow (detected by probe), page 0 = incidents-only,
         // page 1+ = streams. Otherwise every page is a full render (horizontal scroll).

@@ -351,7 +351,7 @@ export class JengaStatusView {
         const affCount = (healthBreakdown.outage || 0) + (healthBreakdown.critical || 0) + (healthBreakdown.degraded || 0);
         const affPct   = Math.round(affCount / total * 100);
         const minorPct = maxMinorCount > 0 ? Math.round(minorCount / maxMinorCount * 45) : 0;
-        const displayHealth = (tv && health === 'minor') ? 'operational' : health;
+        const displayHealth = health === 'minor' ? 'operational' : health;
         return `
             <div class="status-stream" data-health="${health}">
                 <div class="status-stream-header">
@@ -373,25 +373,14 @@ export class JengaStatusView {
 
     _renderTheme(themeData, healthMap, tv = false) {
         const { name, health, clusters, individuals, minorCount = 0 } = themeData;
-        const displayHealth = (tv && health === 'minor') ? 'operational' : health;
+        const displayHealth = health === 'minor' ? 'operational' : health;
 
-        const affectedClusters = tv
-            ? clusters.filter(c => c.health !== 'operational' && c.health !== 'minor')
-            : clusters.filter(c => c.health !== 'operational');
-        const minorClusters = tv
-            ? clusters.filter(c => c.health === 'minor' || (c.health === 'operational' && c.totalMinor > 0))
-            : clusters.filter(c => c.health === 'operational' && c.totalMinor > 0);
+        const affectedClusters = clusters.filter(c => c.health !== 'operational' && c.health !== 'minor');
+        const minorClusters    = clusters.filter(c => c.health === 'minor' || (c.health === 'operational' && c.totalMinor > 0));
         const cleanClusters    = clusters.filter(c => c.health === 'operational' && !c.totalMinor);
 
-        const affectedIndivs = tv
-            ? individuals.filter(n => { const h = healthMap.get(n.id)?.health ?? 'operational'; return h !== 'operational' && h !== 'minor'; })
-            : individuals.filter(n => (healthMap.get(n.id)?.health ?? 'operational') !== 'operational');
-        const minorIndivs = tv
-            ? individuals.filter(n => { const e = healthMap.get(n.id); const h = e?.health ?? 'operational'; return h === 'minor' || (h === 'operational' && (e?.minorIncidents?.length ?? 0) > 0); })
-            : individuals.filter(n => {
-                const e = healthMap.get(n.id);
-                return (e?.health ?? 'operational') === 'operational' && (e?.minorIncidents?.length ?? 0) > 0;
-            });
+        const affectedIndivs = individuals.filter(n => { const h = healthMap.get(n.id)?.health ?? 'operational'; return h !== 'operational' && h !== 'minor'; });
+        const minorIndivs    = individuals.filter(n => { const e = healthMap.get(n.id); const h = e?.health ?? 'operational'; return h === 'minor' || (h === 'operational' && (e?.minorIncidents?.length ?? 0) > 0); });
         const cleanIndivs    = individuals.filter(n => {
             const e = healthMap.get(n.id);
             return (e?.health ?? 'operational') === 'operational' && !(e?.minorIncidents?.length);
@@ -478,16 +467,12 @@ export class JengaStatusView {
             return (e?.health ?? 'operational') === 'operational' && !(e?.minorIncidents?.length);
         });
 
-        const trulyAffSvcs = tv
-            ? nonCleanSvcs.filter(n => { const h = healthMap.get(n.id)?.health ?? 'operational'; return h !== 'operational' && h !== 'minor'; })
-            : nonCleanSvcs;
-        const minorOnlySvcs = tv
-            ? nonCleanSvcs.filter(n => { const e = healthMap.get(n.id); const h = e?.health ?? 'operational'; return h === 'minor' || (h === 'operational' && (e?.minorIncidents?.length ?? 0) > 0); })
-            : [];
-        const collapsibleSvcs = tv ? [...minorOnlySvcs, ...cleanSvcs] : cleanSvcs;
+        const trulyAffSvcs  = nonCleanSvcs.filter(n => { const h = healthMap.get(n.id)?.health ?? 'operational'; return h !== 'operational' && h !== 'minor'; });
+        const minorOnlySvcs = nonCleanSvcs.filter(n => { const e = healthMap.get(n.id); const h = e?.health ?? 'operational'; return h === 'minor' || (h === 'operational' && (e?.minorIncidents?.length ?? 0) > 0); });
+        const collapsibleSvcs = [...minorOnlySvcs, ...cleanSvcs];
 
         let serviceHtml;
-        if (tv && collapsibleSvcs.length > 0 && (trulyAffSvcs.length > 0 || collapsibleSvcs.length < services.length)) {
+        if (collapsibleSvcs.length > 0 && (trulyAffSvcs.length > 0 || collapsibleSvcs.length < services.length)) {
             const MAX_PREVIEW = 5;
             const collNames = collapsibleSvcs.map(n => toFriendlyName(n.id));
             const collPreview = collNames.slice(0, MAX_PREVIEW).join(', ') + (collNames.length > MAX_PREVIEW ? '…' : '');
@@ -505,7 +490,7 @@ export class JengaStatusView {
                 <div class="status-op-list" hidden>
                     ${collapsibleSvcs.map(n => this._renderServiceRow(n, healthMap.get(n.id))).join('')}
                 </div>`;
-        } else if (!tv && cleanSvcs.length > 0 && nonCleanSvcs.length > 0) {
+        } else if (cleanSvcs.length > 0 && nonCleanSvcs.length > 0) {
             const MAX_PREVIEW = 5;
             const previewNames = cleanSvcs.map(n => toFriendlyName(n.id));
             const previewStr = previewNames.slice(0, MAX_PREVIEW).join(', ') +
