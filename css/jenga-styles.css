@@ -163,6 +163,11 @@ body {
 .jenga-view-btn--active { background: #1a1a1a; color: #fff; border-color: #1a1a1a; }
 .jenga-view-btn--active:hover { background: #333; }
 .jenga-view-btn svg { fill: none; stroke: currentColor; }
+/* The imported button { padding:10px 20px } + box-sizing:border-box collapses the
+   flex content area of the 34px button to zero, hiding any SVG child.
+   Override padding+width on the status button only to restore the content area
+   while keeping the visual size in line with the emoji-overflowing sibling buttons. */
+#jenga-view-status { padding: 0; width: 41px; }
 
 .top-bar__action {
     display: inline-flex; align-items: center; justify-content: center;

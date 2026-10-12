@@ -112,7 +112,7 @@ export class JengaStatusView {
 
     // ── Main render ───────────────────────────────────────────────────────────
 
-    async render(containerEl, { tv = false } = {}) {
+    async render(containerEl, { tv = false, section = 'full' } = {}) {
         await this._ensureData();
 
         const healthMap = this._buildHealthMap();
@@ -242,7 +242,7 @@ export class JengaStatusView {
         );
 
         // Compute dynamic column count for TV/multi-column layout
-        const cols = tv
+        const cols = (tv && section !== 'incidents')
             ? Math.min(4, Math.max(2, Math.ceil(streamData.length / 3)))
             : 1;
 
@@ -251,8 +251,8 @@ export class JengaStatusView {
         inner.style.setProperty('--status-cols', String(cols));
         inner.innerHTML =
             this._renderBanner(globalHealth, operational, affected, minorTotal, tv) +
-            (majorCards.length ? this._renderMajorIncidents(majorCards) : '') +
-            streamData.map(s => this._renderStream(s, healthMap, maxMinorCount, tv)).join('');
+            (section !== 'streams' && majorCards.length ? this._renderMajorIncidents(majorCards) : '') +
+            (section !== 'incidents' ? streamData.map(s => this._renderStream(s, healthMap, maxMinorCount, tv)).join('') : '');
 
         containerEl.innerHTML = '';
         containerEl.appendChild(inner);
