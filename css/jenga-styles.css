@@ -5169,6 +5169,9 @@ html[data-theme="dark"] .jenga-cal__cell.jenga--selected {
     break-inside: avoid;
     margin-bottom: 10px;
 }
+.jenga-status-inner .status-major-card {
+    break-inside: avoid;
+}
 
 .jenga-status-inner .status-major-panel,
 .jenga-status-inner .status-global-banner {

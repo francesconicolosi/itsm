@@ -394,36 +394,47 @@ export class SlideshowController {
                 this._statusHasIncidentPage = hasIncidentPage;
 
                 if (hasIncidentPage) {
-                    // Detect how many incident cards fit within the slide's CONTENT area
-                    // (excluding bottom padding, which is 80px). The slide has
-                    // padding: 16px 20px 80px, so contentBottom = probe.bottom - paddingBottom.
-                    const probeStyle = getComputedStyle(probe);
-                    const paddingBottom = parseFloat(probeStyle.paddingBottom) || 0;
-                    const contentBottom = probe.getBoundingClientRect().bottom - paddingBottom;
-                    const majorCardEls  = inner.querySelectorAll('.status-major-card');
-                    let fitCount = majorCardEls.length; // default: all fit
-                    for (let i = 0; i < majorCardEls.length; i++) {
-                        if (majorCardEls[i].getBoundingClientRect().bottom > contentBottom + 1) {
-                            fitCount = i;
-                            break;
-                        }
-                    }
-                    this._statusIncidentFitCount = fitCount > 0 ? fitCount : majorCardEls.length;
-
-                    // Re-render with overflow incidents above the streams so the stream
-                    // page count accounts for the vertical space they occupy.
+                    // Re-render with section:'incidents' (cols=1, no streams) so fitCount
+                    // is measured in the exact same layout as the actual incident slide.
+                    // The section:'full' render above uses multi-column layout which can
+                    // produce different card heights, causing the last card to overflow.
                     inner.innerHTML = '';
-                    this.app.statusView.render(inner, { tv: true, section: 'full', incidentOffset: this._statusIncidentFitCount }).then(() => {
+                    this.app.statusView.render(inner, { tv: true, section: 'incidents' }).then(() => {
                         requestAnimationFrame(() => requestAnimationFrame(() => {
                             if (!inner.isConnected) return;
-                            const streamPages = measureStreamPages(inner, containerW);
-                            const newCount = 1 + streamPages; // 1 incident page + N stream pages
-                            if (newCount !== this._statusPageCount) {
-                                this._statusPageCount = newCount;
-                                this._slideCount = (SLIDE_COUNT - 1) + newCount;
-                                this._updateCommandBar();
+                            const probeStyle    = getComputedStyle(probe);
+                            const paddingBottom = parseFloat(probeStyle.paddingBottom) || 0;
+                            // 8px safety margin absorbs subpixel rounding between probe and actual slide.
+                            const contentBottom = probe.getBoundingClientRect().bottom - paddingBottom - 8;
+                            const majorCardEls  = inner.querySelectorAll('.status-major-card');
+                            let fitCount = majorCardEls.length;
+                            for (let i = 0; i < majorCardEls.length; i++) {
+                                if (majorCardEls[i].getBoundingClientRect().bottom > contentBottom) {
+                                    fitCount = i;
+                                    break;
+                                }
                             }
-                            probe.remove();
+                            this._statusIncidentFitCount = fitCount > 0 ? fitCount : majorCardEls.length;
+
+                            // Re-render section:'full' with incidentOffset so the stream
+                            // page count accounts for any overflow incidents at the top.
+                            inner.innerHTML = '';
+                            this.app.statusView.render(inner, {
+                                tv: true, section: 'full',
+                                incidentOffset: this._statusIncidentFitCount,
+                            }).then(() => {
+                                requestAnimationFrame(() => requestAnimationFrame(() => {
+                                    if (!inner.isConnected) return;
+                                    const streamPages = measureStreamPages(inner, containerW);
+                                    const newCount = 1 + streamPages; // 1 incident page + N stream pages
+                                    if (newCount !== this._statusPageCount) {
+                                        this._statusPageCount = newCount;
+                                        this._slideCount = (SLIDE_COUNT - 1) + newCount;
+                                        this._updateCommandBar();
+                                    }
+                                    probe.remove();
+                                }));
+                            }).catch(() => probe.remove());
                         }));
                     }).catch(() => probe.remove());
                 } else {
@@ -494,12 +505,8 @@ export class SlideshowController {
                                         if (usedCols < cols) {
                                             const newW = usedCols * colW + (usedCols - 1) * gap;
                                             inner.style.setProperty('--status-cols', String(usedCols));
-                                            inner.style.width  = `${Math.round(newW)}px`;
-                                            // Override the parent's multi-column CSS with flex
-                                            // so the narrower inner block is truly centered.
-                                            statusInner.style.display        = 'flex';
-                                            statusInner.style.justifyContent = 'center';
-                                            statusInner.style.alignItems     = 'flex-start';
+                                            inner.style.width      = `${Math.round(newW)}px`;
+                                            inner.style.marginLeft = `${Math.round((containerW - newW) / 2)}px`;
                                         }
                                     }
                                 }
