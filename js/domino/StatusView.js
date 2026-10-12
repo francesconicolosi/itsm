@@ -275,6 +275,7 @@ const CLUSTER_BY_ID = Object.fromEntries(CLUSTERS.map(c => [c.id, c]));
 const ACTIVE_STATUSES = new Set([
     'Sent to Internal Team', 'Pending', 'UAT',
     'Work in progress', 'Work In Progress', 'Scheduled',
+    'Investigating', 'In Progress', 'Open',
 ]);
 
 // Only P1/P2 drive the health dot/pill; P3/P4 → amber minor badge
@@ -573,8 +574,14 @@ export class StatusView {
         const affected     = nodes.length - operational;
         const minorTotal   = nodes.reduce((s, n) => s + (healthMap.get(n.id)?.minorIncidents?.length ?? 0), 0);
 
+        const majorCards = (this._cards || []).filter(c =>
+            ACTIVE_STATUSES.has(c.Status) &&
+            (c.Priority === 'P1/Blocker' || c.Priority === 'P2/Critical')
+        );
+
         contentEl.innerHTML =
             this._renderBanner(globalHealth, operational, affected, minorTotal) +
+            (majorCards.length ? this._renderMajorIncidents(majorCards) : '') +
             (hasFilter && !filtered.length ? '<p class="status-no-results">No matching services or areas found.</p>' : '') +
             filtered.map(s => this._renderStream(s, healthMap, maxMinorCount)).join('');
 
@@ -614,6 +621,72 @@ export class StatusView {
     }
 
     // ── HTML helpers ──────────────────────────────────────────────────────────
+
+    _renderMajorIncidents(cards) {
+        const sorted = [...cards].sort((a, b) => {
+            const ra = ALL_RANK[a.Priority] ?? 9;
+            const rb = ALL_RANK[b.Priority] ?? 9;
+            return ra !== rb ? ra - rb : (a.Created ?? '').localeCompare(b.Created ?? '');
+        });
+
+        const cardHtml = sorted.map(c => {
+            const health    = HEALTH_FROM_RANK[P1P2_RANK[c.Priority]] ?? 'critical';
+            const priority  = (c.Priority || '').split('/')[0].trim();
+            const services  = (c.AffectedServices || '').split('||').map(s => s.trim()).filter(Boolean);
+            const created   = c.Created ? this._formatIncidentDate(c.Created) : '';
+            const summary   = this._cleanSummary(c.Summary || '');
+            const desc      = (c.Description || '').trim();
+            const latest    = (c.LatestComment || '').trim();
+            const jiraKey   = c.Key || '';
+            const jiraUrl   = c.JiraUrl || '';
+            const reporter  = (c.Reporter || '').trim();
+
+            return `
+            <div class="status-major-card status-major-card--${health}">
+                <div class="status-major-card-header">
+                    <span class="status-pill status-pill--${health}">${this._esc(priority)}</span>
+                    <span class="status-major-status">${this._esc(c.Status || '')}</span>
+                    ${created ? `<span class="status-major-created">${created}</span>` : ''}
+                    ${jiraUrl ? `<a class="status-major-jira-link" href="${this._esc(jiraUrl)}" target="_blank" rel="noopener">${this._esc(jiraKey)} ↗</a>` : ''}
+                </div>
+                <div class="status-major-summary">${this._esc(summary)}</div>
+                ${desc ? `<div class="status-major-description">${this._esc(desc)}</div>` : ''}
+                ${latest ? `
+                <div class="status-major-latest">
+                    <span class="status-major-label">Latest update</span>
+                    <span class="status-major-latest-text">${this._esc(latest)}</span>
+                </div>` : ''}
+                <div class="status-major-footer">
+                    ${services.length ? `
+                    <div class="status-major-services">
+                        <span class="status-major-label">Affected</span>
+                        ${services.map(s => `<span class="status-major-svc-tag" data-svc-id="${this._esc(s)}" role="button" tabindex="0">${this._esc(s)}</span>`).join('')}
+                    </div>` : ''}
+                    ${reporter ? `<span class="status-major-reporter">Reported by ${this._esc(reporter)}</span>` : ''}
+                </div>
+            </div>`;
+        }).join('');
+
+        const worstHealth = cards.some(c => c.Priority === 'P1/Blocker') ? 'outage' : 'critical';
+        return `
+        <div class="status-major-panel">
+            <div class="status-major-panel-title">
+                <span class="status-dot status-dot--${worstHealth}"></span>
+                Active Major Incidents
+                <span class="status-major-count">${cards.length}</span>
+            </div>
+            ${cardHtml}
+        </div>`;
+    }
+
+    _formatIncidentDate(iso) {
+        try {
+            const d = new Date(iso);
+            if (isNaN(d)) return iso;
+            return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+                + ' · ' + d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+        } catch { return iso; }
+    }
 
     _renderBanner(health, operational, affected, minorTotal) {
         const minorTag = minorTotal > 0
@@ -815,6 +888,14 @@ export class StatusView {
                     impactedServices: (inc.AffectedServices || '').split('||').map(s => s.trim()).filter(Boolean),
                 }));
                 this.app.graph._openJiraCardsPopup({ id }, 'incident', cards, e);
+            });
+        });
+
+        contentEl.querySelectorAll('.status-major-svc-tag[data-svc-id]').forEach(tag => {
+            tag.style.cursor = 'pointer';
+            tag.addEventListener('click', () => this._navigateToService(tag.dataset.svcId));
+            tag.addEventListener('keydown', e => {
+                if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); this._navigateToService(tag.dataset.svcId); }
             });
         });
 
