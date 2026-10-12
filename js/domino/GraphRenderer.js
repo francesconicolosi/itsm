@@ -253,17 +253,17 @@ export class GraphRenderer {
                 .attr('x2', d => {
                     const dx = d.target.x - d.source.x;
                     const dy = d.target.y - d.source.y;
-                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    const dist = Math.sqrt(dx * dx + dy * dy) || 1;
                     return d.target.x - (dx / dist) * 31;
                 })
                 .attr('y2', d => {
                     const dx = d.target.x - d.source.x;
                     const dy = d.target.y - d.source.y;
-                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    const dist = Math.sqrt(dx * dx + dy * dy) || 1;
                     return d.target.y - (dy / dist) * 31;
                 });
-            this.nodeGraph.attr('transform', d => `translate(${d.x},${d.y})`);
-            this.labels.attr('x', d => d.x).attr('y', d => d.y - 30);
+            this.nodeGraph.attr('transform', d => `translate(${isFinite(d.x) ? d.x : 0},${isFinite(d.y) ? d.y : 0})`);
+            this.labels.attr('x', d => isFinite(d.x) ? d.x : 0).attr('y', d => isFinite(d.y) ? d.y - 30 : -30);
         });
 
         this.zoomIdentity = d3.zoomIdentity;
@@ -826,9 +826,10 @@ export class GraphRenderer {
         search.currentNodes = nodes;
         search.currentSearchedNodes = searchedNodes;
 
+        const mapVisible = document.getElementById('map')?.style.display !== 'none';
         if (document.getElementById('list-view')?.style.display === 'block') {
             listView.renderListFromSearch();
-        } else if (!this.clickedNode && nodeToZoom && (!search.hideStoppedServices || activeServiceNodeIds.has(nodeToZoom.id))) {
+        } else if (mapVisible && !this.clickedNode && nodeToZoom && (!search.hideStoppedServices || activeServiceNodeIds.has(nodeToZoom.id))) {
             this.centerAndZoomOnNode(nodeToZoom);
             drawer.showNodeDetails(nodeToZoom, showDrawer);
             if (showDrawer) this.selectNode(nodeToZoom);
