@@ -112,7 +112,7 @@ export class JengaStatusView {
 
     // ── Main render ───────────────────────────────────────────────────────────
 
-    async render(containerEl, { tv = false, section = 'full', incidentOffset = 0, incidentLimit = Infinity, columnFill = undefined } = {}) {
+    async render(containerEl, { tv = false, section = 'full', incidentOffset = 0, incidentLimit = Infinity, columnFill = undefined, zoom = undefined } = {}) {
         await this._ensureData();
 
         const healthMap = this._buildHealthMap();
@@ -250,6 +250,7 @@ export class JengaStatusView {
         inner.className = `jenga-status-inner${tv ? ' jenga-status-tv' : ''}`;
         inner.style.setProperty('--status-cols', String(cols));
         if (columnFill) inner.style.columnFill = columnFill;
+        if (zoom !== undefined && zoom !== 1) inner.style.zoom = String(zoom);
         const displayCards = isFinite(incidentLimit) || incidentOffset > 0
             ? majorCards.slice(incidentOffset, incidentOffset + incidentLimit)
             : majorCards;

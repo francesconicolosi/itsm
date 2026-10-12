@@ -16,6 +16,7 @@ export class SlideshowController {
         this._statusHasIncidentPage = false;
         this._statusIncidentFitCount = Infinity;
         this._statusStreamColumnFill = 'auto';
+        this._statusStreamZoom = 1;
         this._timer = null;
         this._reloadTimer = null;
         this._commandBarTimer = null;
@@ -436,6 +437,17 @@ export class SlideshowController {
                                             if (balancedPages === 1) {
                                                 this._statusStreamColumnFill = 'balance';
                                                 streamPages = 1;
+                                            } else {
+                                                for (const z of [0.9, 0.85, 0.8, 0.75]) {
+                                                    renderedInner.style.zoom = z;
+                                                    void renderedInner.offsetHeight;
+                                                    if (measureStreamPages(inner, containerW) === 1) {
+                                                        this._statusStreamColumnFill = 'balance';
+                                                        this._statusStreamZoom = z;
+                                                        streamPages = 1;
+                                                        break;
+                                                    }
+                                                }
                                             }
                                         }
                                     }
@@ -462,6 +474,17 @@ export class SlideshowController {
                             if (balancedPages === 1) {
                                 this._statusStreamColumnFill = 'balance';
                                 pages = 1;
+                            } else {
+                                for (const z of [0.9, 0.85, 0.8, 0.75]) {
+                                    renderedInner.style.zoom = z;
+                                    void renderedInner.offsetHeight;
+                                    if (measureStreamPages(inner, containerW) === 1) {
+                                        this._statusStreamColumnFill = 'balance';
+                                        this._statusStreamZoom = z;
+                                        pages = 1;
+                                        break;
+                                    }
+                                }
                             }
                         }
                     }
@@ -497,6 +520,7 @@ export class SlideshowController {
         this.app.statusView.render(statusInner, {
             tv: true, section, incidentOffset, incidentLimit,
             columnFill: isIncidentPage ? undefined : this._statusStreamColumnFill,
+            zoom: isIncidentPage ? undefined : this._statusStreamZoom,
         }).then(() => {
             this._appendBrandWatermark(slideWrap);
             requestAnimationFrame(() => requestAnimationFrame(() => {
