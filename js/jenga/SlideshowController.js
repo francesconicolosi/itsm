@@ -479,9 +479,19 @@ export class SlideshowController {
                             }
                         }
                     }
-                    // Translate the column layout so the correct horizontal page is visible
+                    // Translate to the nearest column-start at or past the page boundary.
+                    // Using an exact multiple of containerW can land mid-column, leaving
+                    // the straddling column's right edge visible at the left edge of the
+                    // new page. Aligning to the actual first-stream x avoids this.
                     if (streamPageIndex > 0) {
-                        statusInner.style.transform = `translateX(${-streamPageIndex * containerW}px)`;
+                        const boundary = streamPageIndex * containerW;
+                        const baseRect = statusInner.getBoundingClientRect();
+                        let tx = boundary;
+                        for (const s of statusInner.querySelectorAll('.status-stream')) {
+                            const sx = s.getBoundingClientRect().left - baseRect.left;
+                            if (sx >= boundary - 1) { tx = sx; break; }
+                        }
+                        statusInner.style.transform = `translateX(${-tx}px)`;
                     }
                 }
                 slideWrap.classList.add('jenga-slide--visible');
