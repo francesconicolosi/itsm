@@ -15,6 +15,7 @@ export class SlideshowController {
         this._statusPageCount = 1;
         this._statusHasIncidentPage = false;
         this._statusIncidentFitCount = Infinity;
+        this._statusStreamColumnFill = 'auto';
         this._timer = null;
         this._reloadTimer = null;
         this._commandBarTimer = null;
@@ -425,7 +426,19 @@ export class SlideshowController {
                             }).then(() => {
                                 requestAnimationFrame(() => requestAnimationFrame(() => {
                                     if (!inner.isConnected) return;
-                                    const streamPages = measureStreamPages(inner, containerW);
+                                    let streamPages = measureStreamPages(inner, containerW);
+                                    if (streamPages > 1) {
+                                        const renderedInner = inner.firstElementChild;
+                                        if (renderedInner) {
+                                            renderedInner.style.columnFill = 'balance';
+                                            void renderedInner.offsetHeight;
+                                            const balancedPages = measureStreamPages(inner, containerW);
+                                            if (balancedPages === 1) {
+                                                this._statusStreamColumnFill = 'balance';
+                                                streamPages = 1;
+                                            }
+                                        }
+                                    }
                                     const newCount = 1 + streamPages; // 1 incident page + N stream pages
                                     if (newCount !== this._statusPageCount) {
                                         this._statusPageCount = newCount;
@@ -439,7 +452,19 @@ export class SlideshowController {
                     }).catch(() => probe.remove());
                 } else {
                     this._statusIncidentFitCount = Infinity;
-                    const pages = measureStreamPages(inner, containerW);
+                    let pages = measureStreamPages(inner, containerW);
+                    if (pages > 1) {
+                        const renderedInner = inner.firstElementChild;
+                        if (renderedInner) {
+                            renderedInner.style.columnFill = 'balance';
+                            void renderedInner.offsetHeight;
+                            const balancedPages = measureStreamPages(inner, containerW);
+                            if (balancedPages === 1) {
+                                this._statusStreamColumnFill = 'balance';
+                                pages = 1;
+                            }
+                        }
+                    }
                     if (pages !== this._statusPageCount) {
                         this._statusPageCount = pages;
                         this._slideCount = (SLIDE_COUNT - 1) + pages;
@@ -469,7 +494,10 @@ export class SlideshowController {
         const incidentOffset  = isIncidentPage ? 0 : (this._statusHasIncidentPage ? fitCount : 0);
         const incidentLimit   = isIncidentPage ? fitCount : Infinity;
 
-        this.app.statusView.render(statusInner, { tv: true, section, incidentOffset, incidentLimit }).then(() => {
+        this.app.statusView.render(statusInner, {
+            tv: true, section, incidentOffset, incidentLimit,
+            columnFill: isIncidentPage ? undefined : this._statusStreamColumnFill,
+        }).then(() => {
             this._appendBrandWatermark(slideWrap);
             requestAnimationFrame(() => requestAnimationFrame(() => {
                 if (!statusInner.isConnected) return;
@@ -496,9 +524,8 @@ export class SlideshowController {
                             if (streamPages === 1 && rightEdge < containerW * 0.9) {
                                 const inner = statusInner.firstElementChild;
                                 if (inner) {
-                                    const cs   = getComputedStyle(inner);
-                                    const cols = parseInt(cs.columnCount, 10) || 1;
-                                    const gap  = parseFloat(cs.columnGap)  || 0;
+                                    const cols = parseInt(inner.style.getPropertyValue('--status-cols'), 10) || 1;
+                                    const gap  = parseFloat(getComputedStyle(inner).columnGap) || 0;
                                     if (cols > 1) {
                                         const colW     = (containerW - (cols - 1) * gap) / cols;
                                         const usedCols = Math.max(1, Math.round((rightEdge + gap) / (colW + gap)));
