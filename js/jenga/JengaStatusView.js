@@ -1,275 +1,10 @@
 /* global BRAND */
 import * as d3 from 'd3';
+import { toFriendlyName, CLUSTERS, CLUSTER_BY_ID, resolveCluster } from '../shared/statusUtils.js';
 
 // ── Exclude 3rd-party and vendor services from the status page ────────────────
 const HIDE_TYPES = new Set(['SaaS', 'Service Provider']);
 
-// ── Friendly names for technical service identifiers ─────────────────────────
-const FRIENDLY_NAMES = {
-    'pdp': 'Product Detail Page',
-    'plp': 'Product Listing Page',
-    'sign-in': 'Sign-In',
-    'sign-in-spa': 'Sign-In SPA',
-    'sign-in-fragments': 'Sign-In Fragments',
-    'checkout-service': 'Checkout Service',
-    'checkout-app': 'Checkout App',
-    'checkout-spa': 'Checkout SPA',
-    'commerce-payment-gateway': 'Payment Gateway',
-    'order-fulfillment-service': 'Order Fulfillment',
-    'order-confirmation-service': 'Order Confirmation',
-    'order-api': 'Order API',
-    'order-validation-service': 'Order Validation',
-    'order-number-generator-service': 'Order Number Generator',
-    'orders-cronjob-service': 'Orders Cron Job',
-    'price-service-api': 'Price Service',
-    'price-ingester': 'Price Ingester',
-    'price-adapter': 'Price Adapter',
-    'price-data-integrity-checker-workflow': 'Price Integrity Checker',
-    'catalog-api': 'Catalog API',
-    'catalog-api-product-worker': 'Catalog Product Worker',
-    'catalog': 'Catalog Service',
-    'analytics-sdk': 'Analytics SDK',
-    'web-tracking-compliance-sdk': 'Tracking Compliance SDK',
-    'baa-spa': 'Book-an-Appointment SPA',
-    'pimgester': 'PIM Ingester',
-    'pim-publisher-app': 'PIM Publisher',
-    'editorial-hub': 'Editorial Hub',
-    'image-server': 'Image Server',
-    'image-server-postgres': 'Image Server DB',
-    'img-viewer-dashboard': 'Image Viewer Dashboard',
-    'idp-user-service': 'Identity Service',
-    'gucci-visualmerchandizetool': 'Visual Merch Tool',
-    'product-management-service': 'Product Management',
-    'product-service-api': 'Product Service API',
-    'product-personalization-cfg': 'Personalisation Config',
-    'product-personalization-view': 'Personalisation View',
-    'orchestrator': 'Content Orchestrator',
-    'esm-proxy': 'ESM Proxy',
-    'feature-flags': 'Feature Flags',
-    'feature-toggle': 'Feature Toggle',
-    'beacon': 'Beacon Tracker',
-    'buy-area': 'Buy Area Widget',
-    'solr': 'Solr Search',
-    'solr-esales': 'Solr eSales',
-    'hybris-api-proxy': 'Hybris API Proxy',
-    'fs-microsites': 'Flagship Microsites',
-    'gucci-store': 'Gucci Store (web)',
-    'gucci-app-android': 'Gucci App (Android)',
-    'gucci-app-ios': 'Gucci App (iOS)',
-    'gucci-app-support': 'App Support Service',
-    'hello-world-demo': 'Demo Service',
-    'iframe-add-to-cart': 'Add-to-Cart iFrame',
-    'reco': 'Recommendations',
-    'yasa': 'YASA Search',
-    'in-store-purchase-api': 'In-Store Purchase API',
-    'my-account (order history)': 'My Account – Orders',
-    'my-account-spa (settings)': 'My Account – Settings',
-    'My-Gucci': 'My Gucci',
-    'email-service': 'Email Service',
-    'client-services': 'Client Services',
-    'cust-anonymization-service': 'Customer Anonymisation',
-    'store-queues-svc': 'Store Queues',
-    'store-queues-svc-db': 'Store Queues DB',
-    'distance-sales-db': 'Distance Sales DB',
-    'distance-sales-service': 'Distance Sales',
-    'payments-mao-adapter': 'Payments MAO Adapter',
-    'payments-service': 'Payments Service',
-    'payments-widget': 'Payments Widget',
-    'shipping-widget': 'Shipping Widget',
-    'stock-management-service': 'Stock Management',
-    'stock-service-api': 'Stock Service API',
-    'stock-integrity-checker': 'Stock Integrity Checker',
-    'tax-calculator-service': 'Tax Calculator',
-    'thank-you-spa': 'Thank-You Page SPA',
-    'apple-pay-widget': 'Apple Pay Widget',
-    'service-pages': 'Service Pages',
-    'services-and-gifting': 'Services & Gifting',
-    'address-validation-service': 'Address Validation',
-    'Geo-Markup': 'Geo Markup',
-};
-
-// ── Service clustering rules ──────────────────────────────────────────────────
-const CLUSTERS = [
-    {
-        id: 'hybris',
-        label: 'SAP Hybris Platform',
-        names: new Set(['SAP Hybris GCOM', 'SAP Hybris Villetta', 'mySQL GCOM', 'mySQL Villetta', 'hybris-api-proxy', 'solr', 'solr-esales']),
-        namePatterns: [/hybris/i, /\bsap\b/i],
-        descPatterns:  [/hybris/i, /\bsap commerce\b/i],
-    },
-    {
-        id: 'sign-in',
-        label: 'Sign-In & Authentication',
-        names: new Set(['sign-in', 'sign-in-spa', 'sign-in-fragments', 'idp-user-service', 'SPiD', 'Security Email']),
-        namePatterns: [/sign.?in/i, /\bidp[\b._-]/i, /\bspid\b/i],
-        descPatterns:  [/authentication/i, /identity.?provider/i, /single.?sign.?on/i, /sso/i],
-    },
-    {
-        id: 'customer-access',
-        label: 'Customer Access (Okta)',
-        names: new Set(['Okta (Customer Access)', 'Okta user proxy', 'Kering Okta', 'Okta']),
-        namePatterns: [/okta/i],
-        descPatterns:  [/okta/i, /customer.?identity/i, /workforce.?identity/i],
-    },
-    {
-        id: 'checkout',
-        label: 'Checkout',
-        names: new Set(['Checkout', 'checkout-service', 'checkout-app', 'checkout-spa']),
-        namePatterns: [/checkout/i],
-        descPatterns:  [/checkout/i, /order.?completion/i, /purchase.?flow/i],
-    },
-    {
-        id: 'cart',
-        label: 'Cart & Buy Area',
-        names: new Set(['Cart/Minicart', 'buy-area']),
-        namePatterns: [/\bcart\b/i, /minicart/i, /buy.?area/i],
-        descPatterns:  [/shopping.?cart/i, /add to cart/i],
-    },
-    {
-        id: 'payments',
-        label: 'Payments',
-        names: new Set([
-            'commerce-payment-gateway', 'payments-service', 'payments-widget',
-            'payments-mao-adapter', 'Paypal', 'Apple Pay', 'Apple Pay Express',
-            'apple-pay-widget', 'Adyen', 'Klarna', 'Toss', 'Kakao Pay',
-            'Cybersource', 'Affirm', 'Amazon Pay', 'Pay By Link', 'Riskified',
-            'CommerceLayer', 'MAO Proxy', 'Vertex', 'tax-calculator-service',
-            'distance-sales-service', 'distance-sales-db', 'address-validation-service',
-        ]),
-        namePatterns: [/payment/i, /\bpay(?!pal)\b/i, /adyen/i, /paypal/i, /klarna/i, /cybersource/i, /affirm/i, /commerce.?layer/i, /riskified/i, /vertex/i],
-        descPatterns:  [/payment gateway/i, /\bpsp\b/i, /payment.?processing/i, /billing/i],
-    },
-    {
-        id: 'orders',
-        label: 'Orders',
-        names: new Set([
-            'order-api', 'order-confirmation-service', 'order-fulfillment-service',
-            'order-number-generator-service', 'order-validation-service',
-            'orders-cronjob-service', 'Order Confirmation Email',
-            'Order Confirmation Email (New Checkout)', 'Thank you page (New Checkout)',
-            'thank-you-spa', 'Collect In-Store', 'shipping-widget',
-            'iPad In-Store', 'in-store-purchase-api', 'services-and-gifting',
-        ]),
-        namePatterns: [/^order/i, /order.?(api|confirm|fulfil|valid|number|cronjob)/i, /fulfil/i, /thank.?you/i, /collect.?in.?store/i, /in.?store.?purchase/i],
-        descPatterns:  [/order.?management/i, /post-purchase/i, /order.?lifecycle/i],
-    },
-    {
-        id: 'pricing',
-        label: 'Pricing',
-        names: new Set(['price-service-api', 'price-ingester', 'price-adapter', 'price-data-integrity-checker-workflow']),
-        namePatterns: [/^price/i],
-        descPatterns:  [/pricing/i, /price.?management/i, /price.?engine/i],
-    },
-    {
-        id: 'stock',
-        label: 'Stock & Inventory',
-        names: new Set(['stock-management-service', 'stock-service-api', 'stock-integrity-checker', 'Relaxed Stock Service', 'SAP (Stock Management)']),
-        namePatterns: [/stock/i, /inventory/i],
-        descPatterns:  [/stock.?management/i, /inventory/i, /warehouse/i],
-    },
-    {
-        id: 'pim',
-        label: 'Product Catalog & PIM',
-        names: new Set(['Akeneo (PIM)', 'pimgester', 'pim-publisher-app', 'catalog-api', 'catalog-api-product-worker', 'product-service-api', 'Pdp Material Composition Flow', 'Concession']),
-        namePatterns: [/\bpim\b/i, /\bakeneo\b/i, /^catalog/i, /catalog.?(api|worker)/i],
-        descPatterns:  [/product.?information.?management/i, /\bpim\b/i, /catalog.?management/i],
-    },
-    {
-        id: 'product-pages',
-        label: 'Product Pages (PDP / PLP)',
-        names: new Set(['pdp', 'plp', 'iframe-add-to-cart', 'product-management-service']),
-        namePatterns: [/^pdp$/i, /^plp$/i],
-        descPatterns:  [/product.?detail/i, /product.?listing/i, /pdp/i, /plp/i],
-    },
-    {
-        id: 'search',
-        label: 'Search & Discovery',
-        names: new Set(['Algolia', 'New Search', 'Search', 'yasa', 'Cataloger', 'gucci-visualmerchandizetool', 'Find In Store', 'Recommendation Engine', 'reco', 'product-personalization-cfg', 'product-personalization-view', 'feature-toggle', 'catalog']),
-        namePatterns: [/\bsearch\b/i, /\balgolia\b/i, /\byasa\b/i, /cataloger/i, /visual.?merch/i, /recommend/i, /personaliz/i],
-        descPatterns:  [/\bsearch\b/i, /product.?discovery/i, /merchandis/i, /personaliz/i, /recommendation/i],
-    },
-    {
-        id: 'my-account',
-        label: 'My Account & Customer Profile',
-        names: new Set(['My Account', 'my-account (order history)', 'my-account-spa (settings)', 'My-Gucci', 'Customer Profiles', 'CRM Customer DB', 'Kering Customer Interaction DB', 'Wishlist', 'cust-anonymization-service', 'Dynamo DB', 'Kering Kafka', 'Kanonymous', 'client-services']),
-        namePatterns: [/my.?account/i, /my.?gucci/i, /customer.?profile/i, /crm.?customer/i, /cust.?anon/i, /wishlist/i],
-        descPatterns:  [/customer.?account/i, /user.?profile/i, /loyalty/i, /crm/i],
-    },
-    {
-        id: 'store-locator',
-        label: 'Store Locator & Appointments',
-        names: new Set(['Store Locator', 'Book an appointment', 'Book An Appointment Confirmation Email', 'baa-spa', 'store-queues-svc', 'store-queues-svc-db', 'Store DB (Kering)', 'Google Maps', 'Powerfront']),
-        namePatterns: [/store.?locator/i, /book.?appoint/i, /\bbaa\b/i, /store.?queue/i],
-        descPatterns:  [/store.?location/i, /appointment/i, /clienteling/i],
-    },
-    {
-        id: 'email',
-        label: 'Email & Notifications',
-        names: new Set(['email-service', 'Account Cancellation Email', 'Account Creation Email', 'OTP Email', 'Order Confirmation Email', 'Newsletter']),
-        namePatterns: [/email/i, /\bnewsletter\b/i, /\botp\b/i],
-        descPatterns:  [/transactional.?email/i, /email.?notification/i, /notification.?service/i],
-    },
-    {
-        id: 'content',
-        label: 'Content & CMS',
-        names: new Set(['Contentful', 'editorial-hub', 'Bubbles', 'Collection/Capsule Pages', 'BrightCove', 'Media Service', 'Optimizely', 'fs-microsites', 'gucci-store', 'GDE_Activator']),
-        namePatterns: [/contentful/i, /editorial/i, /brightcove/i, /optimizely/i, /microsite/i],
-        descPatterns:  [/content.?management/i, /\bcms\b/i, /editorial/i, /digital.?content/i],
-    },
-    {
-        id: 'images',
-        label: 'Image & Media Serving',
-        names: new Set(['image-server', 'image-server-postgres', 'img-viewer-dashboard']),
-        namePatterns: [/image.?server/i, /img.?viewer/i],
-        descPatterns:  [/image.?serve/i, /media.?cdn/i, /image.?optim/i],
-    },
-    {
-        id: 'analytics',
-        label: 'Analytics & Tracking',
-        names: new Set(['Google Analytics', 'Google Tag Manager', 'analytics-sdk', 'web-tracking-compliance-sdk', 'One Trust', 'Wunderkind', 'MyFeelBack', 'beacon']),
-        namePatterns: [/analytics/i, /tag.?manager/i, /wunderkind/i, /myfeelback/i, /one.?trust/i, /\bbeacon\b/i, /tracking/i],
-        descPatterns:  [/analytics/i, /tracking/i, /tag.?management/i, /consent/i],
-    },
-    {
-        id: 'platform-infra',
-        label: 'Platform Infrastructure',
-        names: new Set(['Akamai', 'Bifrost', 'esm-proxy', 'orchestrator', 'feature-flags', 'service-pages', 'Geo-Markup', 'Gucci Backoffice', 'Static Choose Your Country Page On Akamai', 'backoffice']),
-        namePatterns: [/akamai/i, /bifrost/i, /esm.?proxy/i, /orchestrat/i, /feature.?flag/i, /backoffice/i, /geo.?markup/i],
-        descPatterns:  [/\bcdn\b/i, /infrastructure/i, /proxy/i, /feature.?toggle/i, /server.?side/i],
-    },
-    {
-        id: 'contact-support',
-        label: 'Contact & Support',
-        names: new Set(['Contact Us']),
-        namePatterns: [/contact.?us/i, /live.?chat/i, /support.?widget/i],
-        descPatterns:  [/customer.?support/i, /contact.?form/i, /live.?chat/i],
-    },
-];
-
-function buildClusterIndex(clusters) {
-    const index = new Map();
-    for (const cluster of clusters) {
-        for (const name of cluster.names) {
-            if (!index.has(name)) index.set(name, cluster.id);
-        }
-    }
-    return index;
-}
-
-function resolveCluster(node, index, clusters) {
-    if (index.has(node.id)) return index.get(node.id);
-    const nameLower = node.id.toLowerCase();
-    const descLower = (node.Description || '').toLowerCase();
-    for (const cluster of clusters) {
-        for (const p of cluster.namePatterns) { if (p.test(nameLower)) return cluster.id; }
-    }
-    for (const cluster of clusters) {
-        for (const p of cluster.descPatterns) { if (p.test(descLower)) return cluster.id; }
-    }
-    return null;
-}
-
-const CLUSTER_BY_ID = Object.fromEntries(CLUSTERS.map(c => [c.id, c]));
 
 // ── Health helpers ────────────────────────────────────────────────────────────
 const ACTIVE_STATUSES = new Set([
@@ -302,7 +37,6 @@ export class JengaStatusView {
         this._nodes    = null;
         this._cards    = null;
         this._allCards = null;
-        this._clusterIndex = buildClusterIndex(CLUSTERS);
     }
 
     // ── Data ──────────────────────────────────────────────────────────────────
@@ -406,7 +140,7 @@ export class JengaStatusView {
                 const clusterGroups = new Map();
                 const individuals = [];
                 for (const node of svcs) {
-                    const cid = resolveCluster(node, this._clusterIndex, CLUSTERS);
+                    const cid = resolveCluster(node, CLUSTERS);
                     if (cid) {
                         if (!clusterGroups.has(cid)) clusterGroups.set(cid, []);
                         clusterGroups.get(cid).push(node);
@@ -706,9 +440,10 @@ export class JengaStatusView {
     _renderServiceRow(node, entry) {
         const health     = entry?.health ?? 'operational';
         const hasMinor   = Boolean(entry?.minorIncidents?.length);
-        const friendly   = FRIENDLY_NAMES[node.id];
-        const primary    = friendly ?? node.id;
-        const code       = friendly ? node.id : null;
+        const friendly = toFriendlyName(node.id);
+        const primary  = friendly;
+        const isSlug   = /[-_]/.test(node.id) || (!/\s/.test(node.id) && node.id === node.id.toLowerCase());
+        const code     = isSlug ? node.id : null;
         const minorBadge = hasMinor ? `<span class="status-minor-badge">▲ ${entry.minorIncidents.length}</span>` : '';
 
         return `
