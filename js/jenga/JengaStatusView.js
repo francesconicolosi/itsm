@@ -378,6 +378,14 @@ export class JengaStatusView {
         const opCount  = cleanClusters.length + cleanIndivs.length;
         const hasMinor = minorClusters.length + minorIndivs.length > 0;
 
+        const MAX_PREVIEW = 5;
+        const previewNames = [
+            ...cleanClusters.map(c => c.label),
+            ...cleanIndivs.map(n => toFriendlyName(n.id)),
+        ];
+        const previewStr = previewNames.slice(0, MAX_PREVIEW).join(', ') +
+            (previewNames.length > MAX_PREVIEW ? '…' : '');
+
         return `
             <div class="status-theme" data-health="${health}">
                 <div class="status-theme-header">
@@ -394,9 +402,9 @@ export class JengaStatusView {
                             ${minorIndivs.map(n => this._renderServiceRow(n, healthMap.get(n.id))).join('')}
                         </div>` : ''}
                     ${opCount > 0 ? `
-                        <div class="status-op-toggle" tabindex="0" role="button" aria-expanded="false" data-count="${opCount}">
+                        <div class="status-op-toggle" tabindex="0" role="button" aria-expanded="false" data-count="${opCount}" data-preview="${this._esc(previewStr)}">
                             <span class="status-dot status-dot--operational"></span>
-                            <span class="status-op-label">Show ${opCount} fully operational ▼</span>
+                            <span class="status-op-label">Show ${opCount} fully operational: ${this._esc(previewStr)} ▼</span>
                         </div>
                         <div class="status-op-list" hidden>
                             ${cleanClusters.map(c => this._renderCluster(c, healthMap, false)).join('')}
@@ -505,10 +513,11 @@ export class JengaStatusView {
                 list.hidden = expanded;
                 btn.setAttribute('aria-expanded', String(!expanded));
                 const label = btn.querySelector('.status-op-label');
-                const count = btn.dataset.count || '';
+                const count   = btn.dataset.count   || '';
+                const preview = btn.dataset.preview || '';
                 if (label) {
                     label.textContent = expanded
-                        ? `Show ${count} fully operational ▼`
+                        ? `Show ${count} fully operational: ${preview} ▼`
                         : `Hide ${count} fully operational ▲`;
                 }
             });
