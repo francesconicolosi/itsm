@@ -1562,7 +1562,7 @@ html[data-theme="dark"] .status-major-panel-title { color: #9ca3af; }
     display: flex;
     flex-direction: column;
     gap: 8px;
-    font-family: inherit;
+    font-family: var(--brand-font), sans-serif;
 }
 .status-major-card--outage {
     border-color: #dc2626;
