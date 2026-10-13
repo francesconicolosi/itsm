@@ -847,7 +847,7 @@ export class TimelineRenderer {
             leg.appendChild(li);
         });
         const cabLi = document.createElement('li');
-        cabLi.innerHTML = '<span style="font-size:11px;line-height:1;flex-shrink:0">📢</span>Change Advisory Board';
+        cabLi.innerHTML = '<span style="font-size:11px;line-height:1;flex-shrink:0">🚦</span>Change Advisory Board';
         leg.appendChild(cabLi);
 
         const chartArea = document.createElement('div');
@@ -946,7 +946,7 @@ export class TimelineRenderer {
             const marker = document.createElement('button');
             marker.type = 'button';
             marker.className = 'jtl-cab-marker';
-            marker.textContent = '📢';
+            marker.textContent = '🚦';
             marker.style.left = this._cabMarkerLeftCss(day, daysInMonth);
             // CAB is a point marker in the PSPW lane: place it below the phase bars,
             // not on top of RED/AMBER/BLUE windows.

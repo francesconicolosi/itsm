@@ -776,7 +776,7 @@ may be deployed without CAB. All others require CAB approval.<br/><br/>
         if (isCabProtectionEvent(ev)) {
             const icon = document.createElement('span');
             icon.className = 'day-timeline__event-icon';
-            icon.textContent = '📢';
+            icon.textContent = '🚦';
             return icon;
         }
         if (ev.type === 'SERVICE_OP') {

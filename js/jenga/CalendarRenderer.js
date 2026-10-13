@@ -384,7 +384,7 @@ export class CalendarRenderer {
             cab.type = 'button';
             cab.className = 'jenga-cal__cab-badge';
             cab.dataset.key = cabEvent.key;
-            cab.textContent = '📢 Change Advisory board';
+            cab.textContent = '🚦 Change Advisory board';
             cab.addEventListener('mouseenter', (e) => this._showHoverCard(e.clientX, e.clientY, this._cabTooltipFields(cabEvent)));
             cab.addEventListener('mouseleave', () => this._hideHoverCard());
             cab.addEventListener('click', (e) => {
