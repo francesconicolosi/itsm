@@ -5,6 +5,8 @@
  * as a single continuous bar using an absolute-positioned overlay layer.
  */
 
+import { getDayProtectionColor, isPspwDeployViolation } from './EventStore.js';
+
 const TYPE_COLORS_LIGHT = {
     SERVICE_OP:     { bg: '#dbeafe', border: '#3b82f6', text: '#1d4ed8' },
     DELIVERY:       { bg: '#dcfce7', border: '#22c55e', text: '#15803d' },
@@ -95,47 +97,6 @@ export function getEnvTextColor(env) {
 export function getEnvLabel(env) {
     return (_envMeta()[(env || '').toLowerCase()] || { label: (env || '').toUpperCase().slice(0, 3) }).label;
 }
-
-function getDayProtectionColor(date, events) {
-    if (!date || !events?.length) return null;
-
-    const y = date.getFullYear();
-    const m = date.getMonth();
-    const d = date.getDate();
-
-    const dayStart = new Date(y, m, d);
-    const dayEnd = new Date(y, m, d, 23, 59, 59);
-
-    const colors = events
-        .filter(ev => ev.type === 'PEAK_SEASON_PROTECTION_WINDOW')
-        .filter(ev => {
-            let start = ev.startDate || ev.dueDate;
-            let end = ev.dueDate || ev.startDate;
-
-            if (!start || !end) return false;
-
-            // Safety: handle inverted ranges
-            if (start > end) {
-                const tmp = start;
-                start = end;
-                end = tmp;
-            }
-
-            return start <= dayEnd && end >= dayStart;
-        })
-        .map(ev => ev.protectionColor)
-        .filter(Boolean);
-
-    if (!colors.length) return null;
-
-    // Priority: RED wins over AMBER, AMBER wins over BLUE
-    if (colors.includes('RED')) return 'RED';
-    if (colors.includes('AMBER')) return 'AMBER';
-    if (colors.includes('BLUE')) return 'BLUE';
-
-    return null;
-}
-
 
 function isCabProtectionEvent(ev) {
     if (!ev || ev.type !== 'PEAK_SEASON_PROTECTION_WINDOW') return false;
@@ -410,7 +371,7 @@ export class CalendarRenderer {
         const visible = items.slice(0, maxChips);
         const overflow = items.length - visible.length;
 
-        visible.forEach(item => chipsArea.appendChild(this._makeChip(item)));
+        visible.forEach(item => chipsArea.appendChild(this._makeChip(item, protectionColor)));
 
         if (overflow > 0) {
             const overflowItems = items.slice(visible.length);
@@ -457,6 +418,16 @@ export class CalendarRenderer {
                 const warnBadge = document.createElement('span');
                 warnBadge.className = 'jenga-chip__env-badge--mini jenga-chip__overflow-warn';
                 btn.appendChild(warnBadge);
+            }
+
+            const hasPspwOverflow = overflowItems.some(i =>
+                isPspwDeployViolation(i.event, protectionColor, this.app?.amberAllowedServices)
+            );
+            if (hasPspwOverflow) {
+                const pspwBadge = document.createElement('span');
+                pspwBadge.className = 'jenga-chip__pspw-warn';
+                pspwBadge.setAttribute('aria-label', 'Deployment violates peak season protection');
+                btn.appendChild(pspwBadge);
             }
 
             btn.addEventListener('click', e => { e.stopPropagation(); this._showPopover(date, items, btn); });
@@ -704,7 +675,7 @@ export class CalendarRenderer {
         return ev.dueDate < today;
     }
 
-    _makeChip(item) {
+    _makeChip(item, protectionColor = null) {
         const ev = item.event;
         const colors = _typeColors()[ev.type] || _typeColors().OTHER;
 
@@ -729,6 +700,13 @@ export class CalendarRenderer {
             const warn = document.createElement('span');
             warn.className = 'jenga-chip__expired-warn';
             warn.setAttribute('aria-label', 'Due date expired');
+            chip.appendChild(warn);
+        }
+
+        if (isPspwDeployViolation(ev, protectionColor, this.app?.amberAllowedServices)) {
+            const warn = document.createElement('span');
+            warn.className = 'jenga-chip__pspw-warn';
+            warn.setAttribute('aria-label', 'Deployment violates peak season protection');
             chip.appendChild(warn);
         }
 

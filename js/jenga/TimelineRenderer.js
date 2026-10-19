@@ -12,6 +12,7 @@
 
 import * as d3 from 'd3';
 import { getTypeColor, isDateInPeakRange } from './CalendarRenderer.js';
+import { getDayProtectionColor, isPspwDeployViolation } from './EventStore.js';
 
 /** Format a local Date as YYYY-MM-DD (matches CSV values and EventStore.localDateKey). */
 function localDateKey(d) {
@@ -1520,6 +1521,21 @@ export class TimelineRenderer {
                 .attr('fill', s.color)
                 .attr('font-weight', '600')
                 .text(d => d.value || '');
+
+            const pspwWarnData = s.data.filter(d => d.hasPspwWarning && d.value > 0);
+            if (pspwWarnData.length) {
+                const pspwTriPath = d3.symbol().type(d3.symbolTriangle).size(triSize)();
+                sg.selectAll(null)
+                    .data(pspwWarnData)
+                    .join('path')
+                    .attr('d', pspwTriPath)
+                    .attr('transform', d => `translate(${xScale(d.date)},${yScale(d.value) - 18})`)
+                    .attr('fill', '#ef4444')
+                    .attr('stroke', '#b91c1c')
+                    .attr('stroke-width', 1.5)
+                    .attr('class', 'jtl-pspw-warn-triangle')
+                    .style('pointer-events', 'none');
+            }
         });
 
         // ── Comparison overlay lines (solid, behind avg curve) ────────────────
@@ -1883,21 +1899,35 @@ export class TimelineRenderer {
     _buildReleaseData(events, days) {
         const releaseTypes = new Set(['DELIVERY', 'HYBRIS', 'SERVICE_OP']);
         const releaseEvents = events.filter(e => releaseTypes.has(e.type));
+        const amberAllowed = this.app?.amberAllowedServices || new Set();
 
         return ENV_SERIES.map(({ key, label, color }) => {
             const envKeys = ENV_KEYS[key] || [key];
+            const isProd = key === 'prd';
             const data = days.map(date => {
                 const dayStart = new Date(date.getFullYear(), date.getMonth(), date.getDate());
                 const dayEnd   = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 23, 59, 59);
-                const count = releaseEvents.filter(e => {
+                const dayEvents = releaseEvents.filter(e => {
                     const env = (e.environment || '').toLowerCase();
                     if (!envKeys.some(k => env === k || env.startsWith(k))) return false;
                     // Env/service filtering is applied upstream by JengaSearch
                     const due = e.dueDate;
                     if (!due) return false;
                     return due >= dayStart && due <= dayEnd;
-                }).length;
-                return { date: dayStart, value: count };
+                });
+                const count = dayEvents.length;
+                let hasPspwWarning = false;
+                let pspwViolatingEvents = [];
+                if (isProd && count > 0) {
+                    const protColor = getDayProtectionColor(dayStart, events);
+                    if (protColor) {
+                        pspwViolatingEvents = dayEvents.filter(e =>
+                            isPspwDeployViolation(e, protColor, amberAllowed)
+                        );
+                        hasPspwWarning = pspwViolatingEvents.length > 0;
+                    }
+                }
+                return { date: dayStart, value: count, hasPspwWarning, pspwViolatingEvents };
             });
             return { key, label, color, data };
         }).filter(s => s.data.some(d => d.value > 0));

@@ -85,7 +85,9 @@ export class JengaApp {
             ]).then(([eventsCsv, cardsCsv, catalogCsv]) => {
                 this.store.load(eventsCsv);
                 this.store.loadCards(cardsCsv);
-                const serviceNames = this._parseServiceNames(catalogCsv);
+                const { names: serviceNames, amberAllowed } = this._parseServiceNames(catalogCsv);
+                this.amberAllowedServices = amberAllowed;
+                this.dayDrawer.amberAllowedServices = amberAllowed;
                 this.search.setServiceOptions(serviceNames);
                 this._updateLastUpdate();
                 this.timeline._tvMode = isTV;
@@ -502,20 +504,34 @@ export class JengaApp {
     }
 
     _parseServiceNames(csvText) {
-        if (!csvText) return [];
+        if (!csvText) return { names: [], amberAllowed: new Set() };
         // RFC 4180-compliant tokeniser: handles quoted fields containing commas
         // AND embedded newlines (which break a naive split('\n') approach).
         const rows = this._parseCsvRows(csvText);
-        if (rows.length < 2) return [];
+        if (rows.length < 2) return { names: [], amberAllowed: new Set() };
         const headers = rows[0].map(h => h.trim());
-        const nameIdx = headers.indexOf('Service Name');
-        if (nameIdx === -1) return [];
+        const nameIdx     = headers.indexOf('Service Name');
+        const typeIdx     = headers.indexOf('Type');
+        const techRiskIdx = headers.indexOf('Technology Risk Level');
+        if (nameIdx === -1) return { names: [], amberAllowed: new Set() };
+        const AMBER_ALLOWED_TYPES     = new Set(['cots application', 'custom backend', 'custom frontend']);
+        const AMBER_ALLOWED_TECH_RISK = new Set(['low', 'medium']);
         const names = new Set();
+        const amberAllowed = new Set();
         for (let i = 1; i < rows.length; i++) {
             const name = (rows[i][nameIdx] || '').trim();
-            if (name) names.add(name);
+            if (!name) continue;
+            names.add(name);
+            const type     = (typeIdx    >= 0 ? rows[i][typeIdx]    || '' : '').trim().toLowerCase();
+            const techRisk = (techRiskIdx >= 0 ? rows[i][techRiskIdx] || '' : '').trim().toLowerCase();
+            if (AMBER_ALLOWED_TYPES.has(type) && AMBER_ALLOWED_TECH_RISK.has(techRisk)) {
+                amberAllowed.add(name.toLowerCase());
+            }
         }
-        return [...names].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+        return {
+            names: [...names].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' })),
+            amberAllowed,
+        };
     }
 
     /** Parse a CSV string into an array of string arrays (rows × fields).

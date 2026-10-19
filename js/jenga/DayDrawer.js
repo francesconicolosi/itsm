@@ -1,5 +1,6 @@
 import { getTypeColor, getEnvColor, getEnvLabel, HYBRIS_SVG, formatOperation } from './CalendarRenderer.js';
 import { getStatusStyle } from './EventDrawer.js';
+import { getDayProtectionColor, isPspwDeployViolation } from './EventStore.js';
 
 // Always show the full 24-hour day
 const DEFAULT_START_MIN = 0;          // 12:00 AM
@@ -31,6 +32,7 @@ export class DayDrawer {
         this._onClose = null;
         this._slotPopover = null;
         this._slotPopoverOutsideHandler = null;
+        this.amberAllowedServices = new Set();
     }
 
     onEventClick(fn) { this._onEventClick = fn; }
@@ -201,6 +203,7 @@ may be deployed without CAB. All others require CAB approval.<br/><br/>
 
     _buildContent(date, events) {
         const frag = document.createDocumentFragment();
+        const protectionColor = getDayProtectionColor(date, events);
 
         // Multi-day BUSINESS_EVENTs always go to all-day even when they carry a timeSlot
         const allDay = events.filter(e => !e.timeSlot || e.type === 'BUSINESS_EVENT');
@@ -235,6 +238,13 @@ may be deployed without CAB. All others require CAB approval.<br/><br/>
                     sb.style.background = bg;
                     sb.style.color = text;
                     chip.appendChild(sb);
+                }
+                if (isPspwDeployViolation(ev, protectionColor, this.amberAllowedServices)) {
+                    const warn = document.createElement('span');
+                    warn.className = 'day-timeline__pspw-warn';
+                    warn.setAttribute('aria-label', 'Deployment violates peak season protection');
+                    warn.textContent = '⚠';
+                    chip.appendChild(warn);
                 }
                 chip.addEventListener('click', () => this._onEventClick?.(ev));
                 allDaySection.appendChild(chip);
@@ -342,6 +352,17 @@ may be deployed without CAB. All others require CAB approval.<br/><br/>
                 inner.appendChild(title);
                 inner.appendChild(count);
 
+                const hasGroupViolation = groupEvents.some(e =>
+                    isPspwDeployViolation(e, protectionColor, this.amberAllowedServices)
+                );
+                if (hasGroupViolation) {
+                    const warn = document.createElement('span');
+                    warn.className = 'day-timeline__pspw-warn';
+                    warn.setAttribute('aria-label', 'Deployment violates peak season protection');
+                    warn.textContent = '⚠';
+                    inner.appendChild(warn);
+                }
+
                 block.appendChild(inner);
 
                 block.addEventListener('click', (e) => {
@@ -396,6 +417,14 @@ may be deployed without CAB. All others require CAB approval.<br/><br/>
                 opTag.className = 'day-timeline__op-tag';
                 opTag.textContent = opText;
                 inner.appendChild(opTag);
+            }
+
+            if (isPspwDeployViolation(ev, protectionColor, this.amberAllowedServices)) {
+                const warn = document.createElement('span');
+                warn.className = 'day-timeline__pspw-warn';
+                warn.setAttribute('aria-label', 'Deployment violates peak season protection');
+                warn.textContent = '⚠';
+                inner.appendChild(warn);
             }
 
             block.appendChild(inner);

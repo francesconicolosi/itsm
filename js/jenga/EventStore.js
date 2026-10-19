@@ -45,6 +45,57 @@ export function parseProtectionCab(summary) {
 }
 
 /**
+ * Determine the effective PSPW protection color for a given date from a list of events.
+ * Returns 'RED', 'AMBER', 'BLUE', or null. RED > AMBER > BLUE when multiple windows overlap.
+ */
+export function getDayProtectionColor(date, events) {
+    if (!date || !events?.length) return null;
+
+    const y = date.getFullYear();
+    const m = date.getMonth();
+    const d = date.getDate();
+
+    const dayStart = new Date(y, m, d);
+    const dayEnd   = new Date(y, m, d, 23, 59, 59);
+
+    const colors = events
+        .filter(ev => ev.type === 'PEAK_SEASON_PROTECTION_WINDOW')
+        .filter(ev => {
+            let start = ev.startDate || ev.dueDate;
+            let end   = ev.dueDate   || ev.startDate;
+            if (!start || !end) return false;
+            if (start > end) { const tmp = start; start = end; end = tmp; }
+            return start <= dayEnd && end >= dayStart;
+        })
+        .map(ev => ev.protectionColor)
+        .filter(Boolean);
+
+    if (!colors.length) return null;
+    if (colors.includes('RED'))   return 'RED';
+    if (colors.includes('AMBER')) return 'AMBER';
+    if (colors.includes('BLUE'))  return 'BLUE';
+    return null;
+}
+
+/**
+ * Returns true when a SERVICE_OP deployment violates the active PSPW protection rule.
+ *   RED / BLUE : all deployments are violations.
+ *   AMBER      : deployments whose service is NOT in the amber-allowed set are violations.
+ * @param {object}  ev                  - event object with type and service fields
+ * @param {string}  protectionColor     - 'RED' | 'AMBER' | 'BLUE' | null
+ * @param {Set<string>} amberAllowedServices - lowercase service names allowed during AMBER
+ */
+export function isPspwDeployViolation(ev, protectionColor, amberAllowedServices) {
+    if (!protectionColor || ev.type !== 'SERVICE_OP') return false;
+    if (protectionColor === 'RED' || protectionColor === 'BLUE') return true;
+    if (protectionColor === 'AMBER') {
+        if (!amberAllowedServices?.size) return true;
+        return !amberAllowedServices.has((ev.service || '').toLowerCase().trim());
+    }
+    return false;
+}
+
+/**
  * Extract time slot from the last pipe-delimited segment of a summary string.
  * Returns { timeStart, timeEnd, startMin, endMin } or null if not found.
  */

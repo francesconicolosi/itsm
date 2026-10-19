@@ -466,6 +466,32 @@ html[data-theme="dark"] .jenga-cal__mb-hybris {
     content: '⚠';
 }
 
+.jenga-chip__pspw-warn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 14px; height: 14px;
+    margin-left: 3px;
+    flex-shrink: 0;
+    vertical-align: middle;
+}
+.jenga-chip__pspw-warn::before {
+    content: '⚠';
+    font-size: 10px;
+    line-height: 1;
+    color: #ef4444;
+}
+html[data-theme="dark"] .jenga-chip__pspw-warn::before { color: #f87171; }
+
+.day-timeline__pspw-warn {
+    margin-left: 4px;
+    font-size: 11px;
+    color: #ef4444;
+    flex-shrink: 0;
+    line-height: 1;
+}
+html[data-theme="dark"] .day-timeline__pspw-warn { color: #f87171; }
+
 /* Env badge inside service chip */
 .jenga-chip__env-badge {
     display: inline-flex; align-items: center; justify-content: center;
