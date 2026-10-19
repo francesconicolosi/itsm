@@ -250,7 +250,7 @@ export class EventDrawer {
 The CAB reviews and approves production change requests during the peak season protection window. All changes not covered by a pre-approval must go through the official process.<br/><br/>
 <a href="https://itsm.example.com/servicedesk/create/change-request" target="_blank" rel="noopener">Raise a change request</a><br/>
 <a href="https://itsm.example.com/servicedesk/user/requests?status=review" target="_blank" rel="noopener">View submitted requests</a><br/><br/>
-<small style="opacity:0.65">On AMBER days: <a href="domino.html?search=Type%3ACOTS+Application%2CCustom+Backend%2CCustom+Frontend%26Technology+Risk+Level%3ALow%2CMedium&listView=ID%2CDescription%2CType%2CDepends+on%2CStatus%2CDecommission+Date" target="_blank" rel="noopener">view services allowed to deploy</a></small>`;
+<small style="opacity:0.65">On AMBER days: <a href="domino.html?search=Type%3ACOTS+Application%2CCustom+Backend%2CCustom+Frontend%26Technology+Risk+Level%3ALow%2CMedium&listView=ID%2CDescription%2CType%2CDepends+on%2CStatus%2CDecommission+Date" target="_blank" rel="noopener">view services allowed to deploy without CAB approval</a></small>`;
             frag.appendChild(box);
         }
 
