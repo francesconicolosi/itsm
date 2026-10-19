@@ -87,6 +87,7 @@ export function getDayProtectionColor(date, events) {
  */
 export function isPspwDeployViolation(ev, protectionColor, amberAllowedServices) {
     if (!protectionColor || ev.type !== 'SERVICE_OP') return false;
+    if ((ev.operation || '').toLowerCase() !== 'deploy') return false;
     if (protectionColor === 'RED' || protectionColor === 'BLUE') return true;
     if (protectionColor === 'AMBER') {
         if (!amberAllowedServices?.size) return true;
