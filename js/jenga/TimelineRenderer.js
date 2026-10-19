@@ -1524,17 +1524,36 @@ export class TimelineRenderer {
 
             const pspwWarnData = s.data.filter(d => d.hasPspwWarning && d.value > 0);
             if (pspwWarnData.length) {
-                const pspwTriPath = d3.symbol().type(d3.symbolTriangle).size(triSize)();
-                sg.selectAll(null)
+                const pspwTriSize = 100;
+                const pspwTriPath = d3.symbol().type(d3.symbolTriangle).size(pspwTriSize)();
+                const pspwTris = sg.selectAll(null)
                     .data(pspwWarnData)
                     .join('path')
                     .attr('d', pspwTriPath)
-                    .attr('transform', d => `translate(${xScale(d.date)},${yScale(d.value) - 18})`)
+                    .attr('transform', d => `translate(${xScale(d.date)},${yScale(d.value) - 14})`)
                     .attr('fill', '#ef4444')
                     .attr('stroke', '#b91c1c')
                     .attr('stroke-width', 1.5)
                     .attr('class', 'jtl-pspw-warn-triangle')
-                    .style('pointer-events', 'none');
+                    .style('cursor', 'pointer');
+
+                sg.selectAll(null)
+                    .data(pspwWarnData)
+                    .join('text')
+                    .attr('x', d => xScale(d.date))
+                    .attr('y', d => yScale(d.value) - 13)
+                    .attr('text-anchor', 'middle')
+                    .attr('dominant-baseline', 'middle')
+                    .attr('fill', '#fff')
+                    .attr('font-size', '6px')
+                    .attr('font-weight', '900')
+                    .style('pointer-events', 'none')
+                    .text('!');
+
+                pspwTris.on('click', (event, d) => {
+                    event.stopPropagation();
+                    this._showPspwViolationsPopup(event, d.date, d.pspwViolatingEvents || []);
+                });
             }
         });
 
@@ -1714,6 +1733,64 @@ export class TimelineRenderer {
         const close = e => {
             if (!picker.contains(e.target)) {
                 picker.remove();
+                document.removeEventListener('click', close, true);
+            }
+        };
+        setTimeout(() => document.addEventListener('click', close, true), 0);
+    }
+
+    _showPspwViolationsPopup(event, date, violations) {
+        document.getElementById('jtl-pspw-popup')?.remove();
+        if (!violations.length) return;
+
+        const popup = document.createElement('div');
+        popup.id = 'jtl-pspw-popup';
+        popup.className = 'jtl-pspw-popup';
+        popup.style.left = `${event.clientX + 10}px`;
+        popup.style.top  = `${event.clientY - 10}px`;
+
+        const header = document.createElement('div');
+        header.className = 'jtl-pspw-popup__header';
+        const title = document.createElement('span');
+        title.className = 'jtl-pspw-popup__title';
+        title.textContent = date.toLocaleDateString(undefined, { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' });
+        const closeBtn = document.createElement('button');
+        closeBtn.className = 'jtl-pspw-popup__close';
+        closeBtn.textContent = '×';
+        closeBtn.addEventListener('click', e => { e.stopPropagation(); popup.remove(); });
+        header.appendChild(title);
+        header.appendChild(closeBtn);
+        popup.appendChild(header);
+
+        violations.forEach(ev => {
+            const row = document.createElement('div');
+            row.className = 'jtl-pspw-popup__item';
+            const badge = document.createElement('span');
+            badge.className = 'jtl-pspw-popup__badge';
+            badge.textContent = (ev.environment || 'PRD').toUpperCase().slice(0, 6);
+            const name = document.createElement('span');
+            name.className = 'jtl-pspw-popup__name';
+            name.textContent = ev.service || ev.summary || '—';
+            const type = document.createElement('span');
+            type.className = 'jtl-pspw-popup__type';
+            type.textContent = 'Deploy';
+            row.appendChild(badge);
+            row.appendChild(name);
+            row.appendChild(type);
+            popup.appendChild(row);
+        });
+
+        document.body.appendChild(popup);
+
+        requestAnimationFrame(() => {
+            const rect = popup.getBoundingClientRect();
+            if (rect.right  > window.innerWidth  - 8) popup.style.left = `${event.clientX - rect.width  - 10}px`;
+            if (rect.bottom > window.innerHeight - 8) popup.style.top  = `${event.clientY - rect.height + 10}px`;
+        });
+
+        const close = e => {
+            if (!popup.contains(e.target)) {
+                popup.remove();
                 document.removeEventListener('click', close, true);
             }
         };
