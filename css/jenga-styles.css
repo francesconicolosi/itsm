@@ -466,6 +466,26 @@ html[data-theme="dark"] .jenga-cal__mb-hybris {
     content: '⚠';
 }
 
+/* PSPW badge in +more overflow button (badge-style, red — mirrors overflow-warn shape) */
+.jenga-chip__pspw-warn--badge {
+    background: #ef4444 !important;
+    color: #fff !important;
+    font-size: 9px !important;
+    padding: 0 4px !important;
+    border-radius: 2px !important;
+    font-weight: 800 !important;
+    height: 12px !important;
+    line-height: 12px !important;
+}
+.jenga-chip__pspw-warn--badge::before {
+    content: '⚠';
+}
+html[data-theme="dark"] .jenga-chip__pspw-warn--badge {
+    background: #f87171 !important;
+    color: #1a1a1a !important;
+}
+
+/* PSPW violation warning on chips (red — distinct from amber expired-warn) */
 .jenga-chip__pspw-warn {
     display: inline-flex;
     align-items: center;

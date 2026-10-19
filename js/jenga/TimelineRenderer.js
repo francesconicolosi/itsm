@@ -11,7 +11,7 @@
  */
 
 import * as d3 from 'd3';
-import { getTypeColor, isDateInPeakRange } from './CalendarRenderer.js';
+import { getTypeColor, isDateInPeakRange, formatOperation, getEnvColor, getEnvTextColor, getEnvLabel } from './CalendarRenderer.js';
 import { getDayProtectionColor, isPspwDeployViolation } from './EventStore.js';
 
 /** Format a local Date as YYYY-MM-DD (matches CSV values and EventStore.localDateKey). */
@@ -1515,7 +1515,7 @@ export class TimelineRenderer {
                 .data(s.data.filter((_, i) => i % 2 === 0))
                 .join('text')
                 .attr('x', d => xScale(d.date))
-                .attr('y', d => yScale(d.value) - (d.hasCritical ? 32 : d.hasPspwWarning ? 28 : 8))
+                .attr('y', d => yScale(d.value) - (d.hasCritical || d.hasPspwWarning ? 32 : 8))
                 .attr('text-anchor', 'middle')
                 .attr('font-size', '9px')
                 .attr('fill', s.color)
@@ -1531,7 +1531,7 @@ export class TimelineRenderer {
                     .data(pspwWarnData)
                     .join('path')
                     .attr('d', pspwTriPath)
-                    .attr('transform', d => `translate(${xScale(d.date)},${yScale(d.value) - (r + 10)})`)
+                    .attr('transform', d => `translate(${xScale(d.date)},${yScale(d.value)})`)
                     .attr('fill', '#ef4444')
                     .attr('stroke', '#b91c1c')
                     .attr('stroke-width', 2)
@@ -1542,7 +1542,7 @@ export class TimelineRenderer {
                     .data(pspwWarnData)
                     .join('text')
                     .attr('x', d => xScale(d.date))
-                    .attr('y', d => yScale(d.value) - (r + 8))
+                    .attr('y', d => yScale(d.value) + 2)
                     .attr('text-anchor', 'middle')
                     .attr('dominant-baseline', 'middle')
                     .attr('fill', '#111')
@@ -1553,7 +1553,7 @@ export class TimelineRenderer {
 
                 pspwTris.on('click', (event, d) => {
                     event.stopPropagation();
-                    this._showPspwViolationsPopup(event, d.date, d.pspwViolatingEvents || [], dotClickLabel);
+                    this._showPspwViolationsPopup(event, d.date, d.pspwViolatingEvents || []);
                 });
             }
         });
@@ -1740,56 +1740,73 @@ export class TimelineRenderer {
         setTimeout(() => document.addEventListener('click', close, true), 0);
     }
 
-    _showPspwViolationsPopup(event, date, violations, dotClickLabel) {
+    _showPspwViolationsPopup(event, date, violations) {
         document.getElementById('jtl-pspw-popup')?.remove();
         if (!violations.length) return;
 
         const popup = document.createElement('div');
         popup.id = 'jtl-pspw-popup';
-        popup.className = 'jtl-pspw-popup';
+        popup.className = 'jenga-popover';
+        popup.style.position = 'fixed';
+        popup.style.zIndex   = '10002';
         popup.style.left = `${event.clientX + 10}px`;
         popup.style.top  = `${event.clientY - 10}px`;
 
         const header = document.createElement('div');
-        header.className = 'jtl-pspw-popup__header';
+        header.className = 'jenga-popover__header';
         const title = document.createElement('span');
-        title.className = 'jtl-pspw-popup__title';
-        title.textContent = date.toLocaleDateString(undefined, { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' });
+        const n = violations.length;
+        title.textContent = `${n} violating deployment${n === 1 ? '' : 's'} · ${date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}`;
         const closeBtn = document.createElement('button');
-        closeBtn.className = 'jtl-pspw-popup__close';
-        closeBtn.textContent = '×';
-        closeBtn.addEventListener('click', e => { e.stopPropagation(); popup.remove(); });
+        closeBtn.className = 'jenga-popover__close';
+        closeBtn.textContent = '✕';
+        closeBtn.addEventListener('click', e => { e.stopPropagation(); popup.remove(); document.removeEventListener('click', closeListener, true); });
         header.appendChild(title);
         header.appendChild(closeBtn);
         popup.appendChild(header);
 
+        const list = document.createElement('div');
+        list.className = 'jenga-popover__list';
+
         let closeListener;
         violations.forEach(ev => {
-            const row = document.createElement('button');
-            row.className = 'jtl-pspw-popup__item';
+            const chip = document.createElement('div');
+            chip.className = 'jenga-chip jenga-chip--service_op';
+            chip.style.marginBottom = '4px';
+            chip.style.cursor = 'pointer';
+
             const badge = document.createElement('span');
-            badge.className = 'jtl-pspw-popup__badge';
-            badge.textContent = (ev.environment || 'PRD').toUpperCase().slice(0, 6);
-            const name = document.createElement('span');
-            name.className = 'jtl-pspw-popup__name';
-            name.textContent = ev.service || ev.summary || '—';
-            const type = document.createElement('span');
-            type.className = 'jtl-pspw-popup__type';
-            type.textContent = 'Deploy';
-            row.appendChild(badge);
-            row.appendChild(name);
-            row.appendChild(type);
-            if (dotClickLabel && this._onDotClick) {
-                row.addEventListener('click', e => {
-                    e.stopPropagation();
-                    popup.remove();
-                    if (closeListener) document.removeEventListener('click', closeListener, true);
-                    this._onDotClick(date, dotClickLabel);
-                });
-            }
-            popup.appendChild(row);
+            badge.className = 'jenga-chip__env-badge';
+            badge.textContent = getEnvLabel(ev.environment);
+            badge.style.background = getEnvColor(ev.environment);
+            badge.style.color = getEnvTextColor(ev.environment);
+
+            const svc = document.createElement('span');
+            svc.className = 'jenga-chip__service';
+            const n = ev.service || ev.summary || '—';
+            svc.textContent = n.length > 18 ? n.slice(0, 16) + '…' : n;
+
+            const op = document.createElement('span');
+            op.className = 'jenga-chip__operation';
+            const opText = formatOperation(ev.operation || 'Deploy');
+            op.textContent = opText.length > 12 ? opText.slice(0, 10) + '…' : opText;
+
+            chip.appendChild(badge);
+            chip.appendChild(svc);
+            chip.appendChild(op);
+
+            chip.addEventListener('click', e => {
+                e.stopPropagation();
+                popup.remove();
+                document.removeEventListener('click', closeListener, true);
+                this._onEventClick?.(ev);
+            });
+
+            list.appendChild(chip);
         });
 
+        popup.appendChild(list);
+        popup.addEventListener('click', e => e.stopPropagation());
         document.body.appendChild(popup);
 
         requestAnimationFrame(() => {

@@ -425,7 +425,7 @@ export class CalendarRenderer {
             );
             if (hasPspwOverflow) {
                 const pspwBadge = document.createElement('span');
-                pspwBadge.className = 'jenga-chip__pspw-warn';
+                pspwBadge.className = 'jenga-chip__env-badge--mini jenga-chip__pspw-warn--badge';
                 pspwBadge.setAttribute('aria-label', 'Deployment violates peak season protection');
                 btn.appendChild(pspwBadge);
             }
@@ -918,7 +918,7 @@ export class CalendarRenderer {
         pop.querySelector('.jenga-popover__close').addEventListener('click', e => { e.stopPropagation(); this._closePopover(); });
         const list = document.createElement('div');
         list.className = 'jenga-popover__list';
-        const popoverProtectionColor = getDayProtectionColor(date, items.map(i => i.event));
+        const popoverProtectionColor = getDayProtectionColor(date, this._getAllCalendarEvents([]));
         items.forEach(item => { const c = this._makeChip(item, popoverProtectionColor); c.style.marginBottom='4px'; list.appendChild(c); });
         pop.appendChild(list);
         pop.addEventListener('click', e => e.stopPropagation());
