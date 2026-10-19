@@ -5114,11 +5114,17 @@ html[data-theme="light"]     .jtl-month-picker__item:hover { background: rgba(0,
     display: flex;
     align-items: center;
     gap: 8px;
+    width: 100%;
     padding: 6px 12px;
     font-size: 12px;
     color: rgba(255,255,255,.85);
     font-family: var(--brand-font, inherit);
+    background: none;
+    border: none;
+    text-align: left;
+    cursor: pointer;
 }
+.jtl-pspw-popup__item:hover { background: rgba(255,255,255,.08); }
 .jtl-pspw-popup__item + .jtl-pspw-popup__item { border-top: 1px solid rgba(255,255,255,.06); }
 .jtl-pspw-popup__badge {
     background: #ef4444;
@@ -5157,6 +5163,8 @@ html:not([data-theme="dark"]) .jtl-pspw-popup__close:hover,
 html[data-theme="light"]     .jtl-pspw-popup__close:hover { color: rgba(0,0,0,.85); }
 html:not([data-theme="dark"]) .jtl-pspw-popup__item,
 html[data-theme="light"]     .jtl-pspw-popup__item { color: rgba(0,0,0,.85); }
+html:not([data-theme="dark"]) .jtl-pspw-popup__item:hover,
+html[data-theme="light"]     .jtl-pspw-popup__item:hover { background: rgba(0,0,0,.05); }
 html:not([data-theme="dark"]) .jtl-pspw-popup__item + .jtl-pspw-popup__item,
 html[data-theme="light"]     .jtl-pspw-popup__item + .jtl-pspw-popup__item { border-top-color: rgba(0,0,0,.05); }
 

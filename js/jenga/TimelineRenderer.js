@@ -1515,25 +1515,26 @@ export class TimelineRenderer {
                 .data(s.data.filter((_, i) => i % 2 === 0))
                 .join('text')
                 .attr('x', d => xScale(d.date))
-                .attr('y', d => yScale(d.value) - (d.hasCritical ? 32 : 8))
+                .attr('y', d => yScale(d.value) - (d.hasCritical ? 32 : d.hasPspwWarning ? 28 : 8))
                 .attr('text-anchor', 'middle')
                 .attr('font-size', '9px')
                 .attr('fill', s.color)
                 .attr('font-weight', '600')
                 .text(d => d.value || '');
 
+            // PSPW violation warning triangles — sit just above the dot, same style as critical triangles
             const pspwWarnData = s.data.filter(d => d.hasPspwWarning && d.value > 0);
             if (pspwWarnData.length) {
-                const pspwTriSize = 100;
+                const pspwTriSize = dotClickLabel ? 400 : 260;
                 const pspwTriPath = d3.symbol().type(d3.symbolTriangle).size(pspwTriSize)();
                 const pspwTris = sg.selectAll(null)
                     .data(pspwWarnData)
                     .join('path')
                     .attr('d', pspwTriPath)
-                    .attr('transform', d => `translate(${xScale(d.date)},${yScale(d.value) - 14})`)
+                    .attr('transform', d => `translate(${xScale(d.date)},${yScale(d.value) - (r + 10)})`)
                     .attr('fill', '#ef4444')
                     .attr('stroke', '#b91c1c')
-                    .attr('stroke-width', 1.5)
+                    .attr('stroke-width', 2)
                     .attr('class', 'jtl-pspw-warn-triangle')
                     .style('cursor', 'pointer');
 
@@ -1541,18 +1542,18 @@ export class TimelineRenderer {
                     .data(pspwWarnData)
                     .join('text')
                     .attr('x', d => xScale(d.date))
-                    .attr('y', d => yScale(d.value) - 13)
+                    .attr('y', d => yScale(d.value) - (r + 8))
                     .attr('text-anchor', 'middle')
                     .attr('dominant-baseline', 'middle')
-                    .attr('fill', '#fff')
-                    .attr('font-size', '6px')
+                    .attr('fill', '#111')
+                    .attr('font-size', dotClickLabel ? '9px' : '7px')
                     .attr('font-weight', '900')
                     .style('pointer-events', 'none')
                     .text('!');
 
                 pspwTris.on('click', (event, d) => {
                     event.stopPropagation();
-                    this._showPspwViolationsPopup(event, d.date, d.pspwViolatingEvents || []);
+                    this._showPspwViolationsPopup(event, d.date, d.pspwViolatingEvents || [], dotClickLabel);
                 });
             }
         });
@@ -1739,7 +1740,7 @@ export class TimelineRenderer {
         setTimeout(() => document.addEventListener('click', close, true), 0);
     }
 
-    _showPspwViolationsPopup(event, date, violations) {
+    _showPspwViolationsPopup(event, date, violations, dotClickLabel) {
         document.getElementById('jtl-pspw-popup')?.remove();
         if (!violations.length) return;
 
@@ -1762,8 +1763,9 @@ export class TimelineRenderer {
         header.appendChild(closeBtn);
         popup.appendChild(header);
 
+        let closeListener;
         violations.forEach(ev => {
-            const row = document.createElement('div');
+            const row = document.createElement('button');
             row.className = 'jtl-pspw-popup__item';
             const badge = document.createElement('span');
             badge.className = 'jtl-pspw-popup__badge';
@@ -1777,6 +1779,14 @@ export class TimelineRenderer {
             row.appendChild(badge);
             row.appendChild(name);
             row.appendChild(type);
+            if (dotClickLabel && this._onDotClick) {
+                row.addEventListener('click', e => {
+                    e.stopPropagation();
+                    popup.remove();
+                    if (closeListener) document.removeEventListener('click', closeListener, true);
+                    this._onDotClick(date, dotClickLabel);
+                });
+            }
             popup.appendChild(row);
         });
 
@@ -1788,13 +1798,13 @@ export class TimelineRenderer {
             if (rect.bottom > window.innerHeight - 8) popup.style.top  = `${event.clientY - rect.height + 10}px`;
         });
 
-        const close = e => {
+        closeListener = e => {
             if (!popup.contains(e.target)) {
                 popup.remove();
-                document.removeEventListener('click', close, true);
+                document.removeEventListener('click', closeListener, true);
             }
         };
-        setTimeout(() => document.addEventListener('click', close, true), 0);
+        setTimeout(() => document.addEventListener('click', closeListener, true), 0);
     }
 
     // ── Inline insights panel ─────────────────────────────────────────────────

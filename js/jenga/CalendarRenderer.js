@@ -918,7 +918,8 @@ export class CalendarRenderer {
         pop.querySelector('.jenga-popover__close').addEventListener('click', e => { e.stopPropagation(); this._closePopover(); });
         const list = document.createElement('div');
         list.className = 'jenga-popover__list';
-        items.forEach(item => { const c = this._makeChip(item); c.style.marginBottom='4px'; list.appendChild(c); });
+        const popoverProtectionColor = getDayProtectionColor(date, items.map(i => i.event));
+        items.forEach(item => { const c = this._makeChip(item, popoverProtectionColor); c.style.marginBottom='4px'; list.appendChild(c); });
         pop.appendChild(list);
         pop.addEventListener('click', e => e.stopPropagation());
 
