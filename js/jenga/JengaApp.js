@@ -14,6 +14,9 @@ import { MajorIncidentAlert } from './MajorIncidentAlert.js';
 import { JengaStatusView } from './JengaStatusView.js';
 
 const TOPBAR_PIN_STORAGE_KEY = 'jenga.topBarPinned';
+const SPAN_STORAGE_KEY = 'jenga.spanMode';
+const VALID_SPANS = new Set(['month', '1w', '2w', '3w', '4w']);
+const SPAN_WEEKS  = { '1w': 1, '2w': 2, '3w': 3, '4w': 4 };
 
 function localDateStr(date) {
     return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
@@ -39,6 +42,8 @@ export class JengaApp {
         this.currentMonth = new Date().getMonth();
         this.view = 'calendar'; // 'calendar' | 'timeline' | 'status'
         this.topBarPinned = this._loadTopBarPinned();
+        this.spanMode      = this._loadSpanMode(); // 'month' | '1w' | '2w' | '3w' | '4w'
+        this.spanStartDate = null;                 // Date (local-midnight Monday) in week mode
     }
 
     init() {
@@ -62,6 +67,7 @@ export class JengaApp {
         this.cardsDrawer.initEvents();
         this.search.init();
         this._initNavControls();
+        this._initSpanSelector();
         this._initViewToggle();
         this._initSlideshow();
         this._initBuildInfo();
@@ -123,25 +129,33 @@ export class JengaApp {
 
     refresh() {
         if (this._dataLoaded && !this._suppressUrlPush) this._pushUrl();
-        const cur = this.store.getEventsForMonth(this.currentYear, this.currentMonth);
 
-        // Also fetch adjacent months so events on other-month days in the grid are visible
-        const [py, pm] = this.currentMonth === 0
-            ? [this.currentYear - 1, 11]
-            : [this.currentYear, this.currentMonth - 1];
-        const [ny, nm] = this.currentMonth === 11
-            ? [this.currentYear + 1, 0]
-            : [this.currentYear, this.currentMonth + 1];
-        const prev = this.store.getEventsForMonth(py, pm);
-        const next = this.store.getEventsForMonth(ny, nm);
+        let allEvents;
+        if (this.spanMode !== 'month' && this.spanStartDate) {
+            // Week span: fetch events directly from the date range
+            const spanEnd = this._spanEndDate();
+            allEvents = this.store.getEventsForRange(this.spanStartDate, spanEnd);
+        } else {
+            const cur = this.store.getEventsForMonth(this.currentYear, this.currentMonth);
 
-        // Deduplicate by key — multi-day events may overlap month boundaries
-        const seen = new Set();
-        const allEvents = [...cur, ...prev, ...next].filter(e => {
-            if (seen.has(e.key)) return false;
-            seen.add(e.key);
-            return true;
-        });
+            // Also fetch adjacent months so events on other-month days in the grid are visible
+            const [py, pm] = this.currentMonth === 0
+                ? [this.currentYear - 1, 11]
+                : [this.currentYear, this.currentMonth - 1];
+            const [ny, nm] = this.currentMonth === 11
+                ? [this.currentYear + 1, 0]
+                : [this.currentYear, this.currentMonth + 1];
+            const prev = this.store.getEventsForMonth(py, pm);
+            const next = this.store.getEventsForMonth(ny, nm);
+
+            // Deduplicate by key — multi-day events may overlap month boundaries
+            const seen = new Set();
+            allEvents = [...cur, ...prev, ...next].filter(e => {
+                if (seen.has(e.key)) return false;
+                seen.add(e.key);
+                return true;
+            });
+        }
 
         const filtered = this.search.getFilteredEvents(allEvents);
 
@@ -153,7 +167,11 @@ export class JengaApp {
 
         if (this.view === 'calendar') {
             const el = document.getElementById('jenga-calendar');
-            this.calendar.render(el, this.currentYear, this.currentMonth, filtered);
+            if (this.spanMode !== 'month' && this.spanStartDate) {
+                this.calendar.renderSpan(el, this.spanStartDate, this._spanNumWeeks(), filtered);
+            } else {
+                this.calendar.render(el, this.currentYear, this.currentMonth, filtered);
+            }
         } else if (this.view === 'timeline') {
             const el = document.getElementById('jenga-timeline');
             // Peak Season Protection Window must remain visible on the timeline even
@@ -165,7 +183,9 @@ export class JengaApp {
                     ...allEvents.filter(e => e.type === 'PEAK_SEASON_PROTECTION_WINDOW')
                 ].map(e => [e.key, e])).values()
             ];
-            this.timeline.render(el, this.currentYear, this.currentMonth, timelineEvents);
+            this.timeline.render(el, this.currentYear, this.currentMonth, timelineEvents, {
+                spanMode: this.spanMode, spanStart: this.spanStartDate,
+            });
         }
     }
 
@@ -362,8 +382,15 @@ export class JengaApp {
         this.dayDrawer.onEventClick(ev => this.drawer.open(ev, true));
 
         document.getElementById('jenga-prev')?.addEventListener('click', () => {
-            this.currentMonth--;
-            if (this.currentMonth < 0) { this.currentMonth = 11; this.currentYear--; }
+            if (this.spanMode !== 'month' && this.spanStartDate) {
+                this.spanStartDate = new Date(this.spanStartDate);
+                this.spanStartDate.setDate(this.spanStartDate.getDate() - 7);
+                this.currentYear  = this.spanStartDate.getFullYear();
+                this.currentMonth = this.spanStartDate.getMonth();
+            } else {
+                this.currentMonth--;
+                if (this.currentMonth < 0) { this.currentMonth = 11; this.currentYear--; }
+            }
             this._updateMonthLabel();
             this._refreshTopBarPinnedGeometry?.();
             this.refresh();
@@ -371,8 +398,15 @@ export class JengaApp {
         });
 
         document.getElementById('jenga-next')?.addEventListener('click', () => {
-            this.currentMonth++;
-            if (this.currentMonth > 11) { this.currentMonth = 0; this.currentYear++; }
+            if (this.spanMode !== 'month' && this.spanStartDate) {
+                this.spanStartDate = new Date(this.spanStartDate);
+                this.spanStartDate.setDate(this.spanStartDate.getDate() + 7);
+                this.currentYear  = this.spanStartDate.getFullYear();
+                this.currentMonth = this.spanStartDate.getMonth();
+            } else {
+                this.currentMonth++;
+                if (this.currentMonth > 11) { this.currentMonth = 0; this.currentYear++; }
+            }
             this._updateMonthLabel();
             this._refreshTopBarPinnedGeometry?.();
             this.refresh();
@@ -409,8 +443,14 @@ export class JengaApp {
 
     _goToToday() {
         const now = new Date();
-        this.currentYear  = now.getFullYear();
-        this.currentMonth = now.getMonth();
+        if (this.spanMode !== 'month') {
+            this.spanStartDate = this._mondayOf(now);
+            this.currentYear   = this.spanStartDate.getFullYear();
+            this.currentMonth  = this.spanStartDate.getMonth();
+        } else {
+            this.currentYear  = now.getFullYear();
+            this.currentMonth = now.getMonth();
+        }
         this._updateMonthLabel();
         this.refresh();
     }
@@ -418,8 +458,121 @@ export class JengaApp {
     _updateMonthLabel() {
         const label = document.getElementById('jenga-month-label');
         if (!label) return;
-        const d = new Date(this.currentYear, this.currentMonth, 1);
-        label.textContent = d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+        if (this.spanMode !== 'month' && this.spanStartDate) {
+            label.textContent = this._spanLabel();
+        } else {
+            const d = new Date(this.currentYear, this.currentMonth, 1);
+            label.textContent = d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+        }
+    }
+
+    // ── Span mode helpers ─────────────────────────────────────────────────────
+
+    _loadSpanMode() {
+        try {
+            const v = localStorage.getItem(SPAN_STORAGE_KEY);
+            return VALID_SPANS.has(v) ? v : 'month';
+        } catch (_) { return 'month'; }
+    }
+
+    _saveSpanMode(value) {
+        try { localStorage.setItem(SPAN_STORAGE_KEY, value); } catch (_) {}
+    }
+
+    /** Monday (local-midnight) of the week containing `date`. */
+    _mondayOf(date) {
+        const d = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+        const day = d.getDay(); // 0=Sun … 6=Sat
+        d.setDate(d.getDate() - ((day + 6) % 7));
+        return d;
+    }
+
+    /** Number of weeks for the current spanMode (null when 'month'). */
+    _spanNumWeeks() {
+        return SPAN_WEEKS[this.spanMode] ?? null;
+    }
+
+    /** Last Date (local-midnight) of the current span. */
+    _spanEndDate() {
+        if (this.spanMode === 'month' || !this.spanStartDate) {
+            return new Date(this.currentYear, this.currentMonth + 1, 0);
+        }
+        const end = new Date(this.spanStartDate);
+        end.setDate(end.getDate() + SPAN_WEEKS[this.spanMode] * 7 - 1);
+        return end;
+    }
+
+    /** Human-readable label for the current week span (e.g. "13–26 Oct 2026" or "28 Oct – 3 Nov 2026"). */
+    _spanLabel() {
+        if (!this.spanStartDate) return '';
+        const start = this.spanStartDate;
+        const end   = this._spanEndDate();
+        const sm = start.getMonth();
+        const em = end.getMonth();
+        const sy = start.getFullYear();
+        const ey = end.getFullYear();
+
+        const fmtDay  = d => d.getDate();
+        const fmtMon  = d => d.toLocaleDateString('en-GB', { month: 'short' });
+        const fmtYear = d => d.getFullYear();
+
+        if (sy !== ey) {
+            // Cross-year
+            return `${fmtDay(start)} ${fmtMon(start)} ${fmtYear(start)} – ${fmtDay(end)} ${fmtMon(end)} ${fmtYear(end)}`;
+        }
+        if (sm !== em) {
+            // Same year, cross-month
+            return `${fmtDay(start)} ${fmtMon(start)} – ${fmtDay(end)} ${fmtMon(end)} ${sy}`;
+        }
+        // Same month
+        return `${fmtDay(start)}–${fmtDay(end)} ${fmtMon(start)} ${sy}`;
+    }
+
+    _initSpanSelector() {
+        const sel = document.getElementById('jenga-span-select');
+        if (!sel) return;
+
+        // Set selector to the current span mode (loaded from localStorage or default)
+        sel.value = this.spanMode;
+
+        // If starting in week mode, initialise spanStartDate
+        if (this.spanMode !== 'month' && !this.spanStartDate) {
+            const now = new Date();
+            const firstOfMonth = new Date(this.currentYear, this.currentMonth, 1);
+            // If today is in the current month, start from current week's Monday
+            const todayInMonth = now.getFullYear() === this.currentYear && now.getMonth() === this.currentMonth;
+            this.spanStartDate = this._mondayOf(todayInMonth ? now : firstOfMonth);
+        }
+
+        sel.addEventListener('change', () => {
+            const prev = this.spanMode;
+            this.spanMode = sel.value;
+            this._saveSpanMode(this.spanMode);
+
+            if (this.spanMode !== 'month') {
+                if (!this.spanStartDate || prev === 'month') {
+                    // Entering week mode: pick the right Monday
+                    const now = new Date();
+                    const firstOfMonth = new Date(this.currentYear, this.currentMonth, 1);
+                    const todayInMonth = now.getFullYear() === this.currentYear && now.getMonth() === this.currentMonth;
+                    this.spanStartDate = this._mondayOf(todayInMonth ? now : firstOfMonth);
+                }
+                this.currentYear  = this.spanStartDate.getFullYear();
+                this.currentMonth = this.spanStartDate.getMonth();
+            } else {
+                // Returning to month mode: derive year/month from span start if available
+                if (this.spanStartDate) {
+                    this.currentYear  = this.spanStartDate.getFullYear();
+                    this.currentMonth = this.spanStartDate.getMonth();
+                }
+                this.spanStartDate = null;
+            }
+
+            this._updateMonthLabel();
+            this._refreshTopBarPinnedGeometry?.();
+            this.refresh();
+            this._pushUrl();
+        });
     }
 
     _initViewToggle() {
@@ -603,6 +756,20 @@ export class JengaApp {
             if (state.year  !== undefined) this.currentYear  = state.year;
             if (state.month !== undefined) this.currentMonth = state.month;
             if (state.view) this._applyView(state.view);
+            // Restore span state from history entry
+            if (state.spanMode && VALID_SPANS.has(state.spanMode)) {
+                this.spanMode = state.spanMode;
+            } else {
+                this.spanMode = 'month';
+            }
+            if (this.spanMode !== 'month' && state.spanStart) {
+                const [sy, sm, sd] = state.spanStart.split('-').map(Number);
+                this.spanStartDate = new Date(sy, sm - 1, sd);
+            } else {
+                this.spanStartDate = null;
+            }
+            const spanSel = document.getElementById('jenga-span-select');
+            if (spanSel) spanSel.value = this.spanMode;
             this._updateMonthLabel();
             this.refresh();
         });
@@ -617,6 +784,10 @@ export class JengaApp {
             p.set('view',  this.view);
             p.set('year',  String(this.currentYear));
             p.set('month', String(this.currentMonth + 1)); // human 1-12
+            if (this.spanMode !== 'month') {
+                p.set('span', this.spanMode);
+                if (this.spanStartDate) p.set('spanStart', localDateStr(this.spanStartDate));
+            }
             if (extra.day)   p.set('day',   extra.day);
             if (extra.event) p.set('event', extra.event);
             if (extra.group) p.set('group', extra.group);
@@ -642,7 +813,11 @@ export class JengaApp {
             }
 
             const url = `${location.pathname}?${p.toString()}`;
-            const state = { year: this.currentYear, month: this.currentMonth, view: this.view };
+            const state = {
+                year: this.currentYear, month: this.currentMonth, view: this.view,
+                spanMode: this.spanMode,
+                spanStart: this.spanStartDate ? localDateStr(this.spanStartDate) : null,
+            };
             if (push) history.pushState(state, '', url);
             else      history.replaceState(state, '', url);
         } catch (_) {}
@@ -664,6 +839,23 @@ export class JengaApp {
                 if (input) { input.value = q; this.search.query = q; }
             }
             this.search.applyUrlParams?.(p);
+
+            // Restore span mode from URL (overrides localStorage)
+            const span = p.get('span');
+            if (VALID_SPANS.has(span) && span !== 'month') {
+                this.spanMode = span;
+                const ss = p.get('spanStart');
+                if (ss) {
+                    const [sy, sm, sd] = ss.split('-').map(Number);
+                    if (sy && sm && sd) this.spanStartDate = new Date(sy, sm - 1, sd);
+                }
+                if (!this.spanStartDate) {
+                    this.spanStartDate = this._mondayOf(new Date(this.currentYear, this.currentMonth, 1));
+                }
+            }
+            // Sync the selector element to current spanMode
+            const spanSel = document.getElementById('jenga-span-select');
+            if (spanSel) spanSel.value = this.spanMode;
 
             // Restore comparison state (overrides localStorage)
             const compState = {};

@@ -242,21 +242,30 @@ export class SlideshowController {
         const store = app.store;
 
         // Build filtered event list (same logic as JengaApp.refresh)
-        const cur  = store.getEventsForMonth(app.currentYear, app.currentMonth);
-        const [py, pm] = app.currentMonth === 0
-            ? [app.currentYear - 1, 11]
-            : [app.currentYear, app.currentMonth - 1];
-        const [ny, nm] = app.currentMonth === 11
-            ? [app.currentYear + 1, 0]
-            : [app.currentYear, app.currentMonth + 1];
-        const prev = store.getEventsForMonth(py, pm);
-        const next = store.getEventsForMonth(ny, nm);
-        const seen = new Set();
-        const allEvents = [...cur, ...prev, ...next].filter(e => {
-            if (seen.has(e.key)) return false;
-            seen.add(e.key);
-            return true;
-        });
+        const isSpanMode = app.spanMode !== 'month' && app.spanStartDate;
+        let allEvents;
+        if (isSpanMode) {
+            const SPAN_WEEKS_SS = { '1w': 1, '2w': 2, '3w': 3, '4w': 4 };
+            const spanEnd = new Date(app.spanStartDate);
+            spanEnd.setDate(spanEnd.getDate() + (SPAN_WEEKS_SS[app.spanMode] ?? 1) * 7 - 1);
+            allEvents = store.getEventsForRange(app.spanStartDate, spanEnd);
+        } else {
+            const cur  = store.getEventsForMonth(app.currentYear, app.currentMonth);
+            const [py, pm] = app.currentMonth === 0
+                ? [app.currentYear - 1, 11]
+                : [app.currentYear, app.currentMonth - 1];
+            const [ny, nm] = app.currentMonth === 11
+                ? [app.currentYear + 1, 0]
+                : [app.currentYear, app.currentMonth + 1];
+            const prev = store.getEventsForMonth(py, pm);
+            const next = store.getEventsForMonth(ny, nm);
+            const seen = new Set();
+            allEvents = [...cur, ...prev, ...next].filter(e => {
+                if (seen.has(e.key)) return false;
+                seen.add(e.key);
+                return true;
+            });
+        }
         const filtered = app.search.getFilteredEvents(allEvents);
 
         // Immediately remove any previously-queued outgoing slide to avoid stacking
@@ -288,12 +297,22 @@ export class SlideshowController {
         if (this.currentSlide === 1) {
             // Calendar view — render first, then inject month label so it isn't wiped
             // by CalendarRenderer.render() which does containerEl.innerHTML = ''
-            app.calendar.render(slideWrap, app.currentYear, app.currentMonth, filtered, { maxChips: 3 });
+            if (isSpanMode) {
+                const SPAN_WEEKS_SS = { '1w': 1, '2w': 2, '3w': 3, '4w': 4 };
+                const nWeeks = SPAN_WEEKS_SS[app.spanMode] ?? 1;
+                app.calendar.renderSpan(slideWrap, app.spanStartDate, nWeeks, filtered, { maxChips: 3 });
+            } else {
+                app.calendar.render(slideWrap, app.currentYear, app.currentMonth, filtered, { maxChips: 3 });
+            }
 
             const monthLabel = document.createElement('div');
             monthLabel.className = 'ss-month-label';
-            monthLabel.textContent = new Date(app.currentYear, app.currentMonth, 1)
-                .toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+            if (isSpanMode) {
+                monthLabel.textContent = app._spanLabel?.() ?? '';
+            } else {
+                monthLabel.textContent = new Date(app.currentYear, app.currentMonth, 1)
+                    .toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+            }
             slideWrap.appendChild(monthLabel);
             this._appendBrandWatermark(slideWrap);
 
@@ -309,7 +328,10 @@ export class SlideshowController {
                     ...allEvents.filter(e => e.type === 'PEAK_SEASON_PROTECTION_WINDOW')
                 ].map(e => [e.key, e])).values()
             ];
-            app.timeline.render(slideWrap, app.currentYear, app.currentMonth, timelineEvents);
+            app.timeline.render(slideWrap, app.currentYear, app.currentMonth, timelineEvents, {
+                spanMode: app.spanMode,
+                spanStart: app.spanStartDate,
+            });
 
             // Filter by data-lane attribute (set by _makeCollapsible)
             const keepLanes = this.currentSlide === 2

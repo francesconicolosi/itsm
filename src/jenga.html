@@ -75,9 +75,9 @@
         <div class="top-bar__break top-bar__break--3"></div>
         <!-- Row 4 (mobile): nav + view toggle + today -->
         <div class="jenga-month-nav">
-            <button class="jenga-month-btn" id="jenga-prev" aria-label="Previous month">‹</button>
+            <button class="jenga-month-btn" id="jenga-prev" aria-label="Previous">‹</button>
             <span id="jenga-month-label" class="jenga-month-label">June 2026</span>
-            <button class="jenga-month-btn" id="jenga-next" aria-label="Next month">›</button>
+            <button class="jenga-month-btn" id="jenga-next" aria-label="Next">›</button>
         </div>
         <div class="jenga-view-toggle">
             <button class="jenga-view-btn jenga-view-btn--active" id="jenga-view-calendar" title="Calendar view" aria-label="Calendar view">📅</button>
@@ -85,6 +85,13 @@
             <button class="jenga-view-btn" id="jenga-view-status" title="Service status" aria-label="Service status"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="1.1em" height="1.1em" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-0.15em"><rect x="2" y="2" width="20" height="20" rx="5"/><polyline points="4 12 8 12 9.5 15.5 11.5 6.5 13 12 16 12 20 12"/></svg></button>
             <button class="jenga-view-btn" id="jenga-view-slideshow" title="Slideshow view" aria-label="Slideshow view">🎬</button>
         </div>
+        <select id="jenga-span-select" class="jenga-span-select" aria-label="Time span">
+            <option value="month">Month</option>
+            <option value="1w">1 week</option>
+            <option value="2w">2 weeks</option>
+            <option value="3w">3 weeks</option>
+            <option value="4w">4 weeks</option>
+        </select>
         <button class="top-bar__action" id="jenga-today-btn" title="Go to today">Today</button>
     </div>
 </div>

@@ -471,25 +471,34 @@ export class TimelineRenderer {
         return legend;
     }
 
-    render(containerEl, year, month, events) {
+    render(containerEl, year, month, events, { spanMode = 'month', spanStart = null } = {}) {
         if (!containerEl) return;
         containerEl.innerHTML = '';
         this._insightsPanel?.remove();
         this._insightsPanel = null;
         this._initBizTooltip();
 
-        const store        = this.app.store;
-        const daysInMonth  = new Date(year, month + 1, 0).getDate();
-        const days         = this._buildDays(year, month, daysInMonth);
-        const today        = new Date();
-        const todayFmt     = today.getFullYear() === year && today.getMonth() === month
-            ? localDateKey(today) : null;
+        const store = this.app.store;
+        const isSpan = spanMode !== 'month' && spanStart;
+        const SPAN_WEEKS_TL = { '1w': 1, '2w': 2, '3w': 3, '4w': 4 };
+        let startDate, endDate;
+        if (isSpan) {
+            startDate = new Date(spanStart.getFullYear(), spanStart.getMonth(), spanStart.getDate());
+            endDate   = new Date(startDate);
+            endDate.setDate(endDate.getDate() + (SPAN_WEEKS_TL[spanMode] ?? 1) * 7 - 1);
+        } else {
+            startDate = new Date(year, month, 1);
+            endDate   = new Date(year, month + 1, 0);
+        }
+        const days      = this._buildDaysRange(startDate, endDate);
+        const totalDays = days.length;
+        const today     = new Date();
+        const todayFmt  = (today >= startDate && today <= endDate) ? localDateKey(today) : null;
 
-        // JengaApp.refresh() passes current + adjacent month events for the calendar grid.
-        // The timeline only shows events that actually overlap this month.
+        // The timeline only shows events that actually overlap the rendered period.
         // Normalize start/due because some CSV rows may contain StartDate after DueDate.
-        const monthStart = new Date(year, month, 1);
-        const monthEnd   = new Date(year, month + 1, 0, 23, 59, 59);
+        const periodEnd = new Date(endDate);
+        periodEnd.setHours(23, 59, 59);
         events = events.filter(e => {
             const due   = e.dueDate;
             const start = e.startDate || due;
@@ -500,7 +509,7 @@ export class TimelineRenderer {
             const evStart  = rawStart <= rawEnd ? rawStart : rawEnd;
             const evEnd    = rawStart <= rawEnd ? rawEnd   : rawStart;
 
-            return evStart <= monthEnd && evEnd >= monthStart;
+            return evStart <= periodEnd && evEnd >= startDate;
         });
 
         // ── Full-width layout (no sidebar) ───────────────────────────────────
@@ -509,17 +518,32 @@ export class TimelineRenderer {
         containerEl.appendChild(main);
 
         // ── Shared X axis domain ──────────────────────────────────────────────
-        const xDomain = [new Date(year, month, 1), new Date(year, month, daysInMonth)];
+        const xDomain = [startDate, endDate];
 
-        // ── Month label + day-number axis (shown above biz/milestone lanes) ───
+        // ── Month/span label + day-number axis (shown above biz/milestone lanes) ───
         const axisHeader = document.createElement('div');
         axisHeader.className = 'jtl-axis-header';
         const monthLabel = document.createElement('div');
         monthLabel.className = 'jtl-month-label';
-        monthLabel.textContent = new Date(year, month, 1)
-            .toLocaleDateString('en-US', { month: 'long', year: 'numeric' }).toUpperCase();
+        if (isSpan) {
+            // Show date range for week spans
+            const fmtDay = d => d.getDate();
+            const fmtMon = d => d.toLocaleDateString('en-GB', { month: 'short' }).toUpperCase();
+            const sy = startDate.getFullYear(), ey = endDate.getFullYear();
+            const sm = startDate.getMonth(),    em = endDate.getMonth();
+            if (sy !== ey) {
+                monthLabel.textContent = `${fmtDay(startDate)} ${fmtMon(startDate)} ${sy} – ${fmtDay(endDate)} ${fmtMon(endDate)} ${ey}`;
+            } else if (sm !== em) {
+                monthLabel.textContent = `${fmtDay(startDate)} ${fmtMon(startDate)} – ${fmtDay(endDate)} ${fmtMon(endDate)} ${sy}`;
+            } else {
+                monthLabel.textContent = `${fmtDay(startDate)}–${fmtDay(endDate)} ${fmtMon(startDate)} ${sy}`;
+            }
+        } else {
+            monthLabel.textContent = new Date(year, month, 1)
+                .toLocaleDateString('en-US', { month: 'long', year: 'numeric' }).toUpperCase();
+        }
         axisHeader.appendChild(monthLabel);
-        axisHeader.appendChild(this._buildDayAxisRuler(year, month, main));
+        axisHeader.appendChild(this._buildDayAxisRuler(startDate, endDate, main, totalDays));
         main.appendChild(axisHeader);
 
         // ── Business Events row ───────────────────────────────────────────────
@@ -529,34 +553,33 @@ export class TimelineRenderer {
         this._flameDays = new Set();
         bizEvents.forEach(ev => {
             if (!ev.peakDates || !ev.peakDates.length) return;
-            for (let d = 1; d <= daysInMonth; d++) {
-                const cellDate = new Date(year, month, d);
-                if (isDateInPeakRange(cellDate, ev.peakDates)) {
-                    this._flameDays.add(localDateKey(cellDate));
+            for (const day of days) {
+                if (isDateInPeakRange(day, ev.peakDates)) {
+                    this._flameDays.add(localDateKey(day));
                 }
             }
         });
 
         const bizLane = this._makeCollapsible('biz',
             false,
-            this._buildBizEventsRow(bizEvents, year, month, daysInMonth, todayFmt)
+            this._buildBizEventsRow(bizEvents, startDate, endDate, totalDays, todayFmt)
         );
         main.appendChild(bizLane);
 
         // ── Milestones row (collapsed by default) ─────────────────────────────
-        // Milestones are point-in-time events: show them only in the month of their Due Date.
-        // StartDate must not make a milestone appear in previous months.
+        // Milestones are point-in-time events: show them only within the rendered period.
         const milestoneEvents = events.filter(e =>
             e.type === 'MILESTONE' &&
             e.dueDate &&
-            e.dueDate.getFullYear() === year &&
-            e.dueDate.getMonth() === month
+            (isSpan
+                ? e.dueDate >= startDate && e.dueDate <= endDate
+                : e.dueDate.getFullYear() === year && e.dueDate.getMonth() === month)
         );
         let milestoneLane = null;
         if (milestoneEvents.length) {
             milestoneLane = this._makeCollapsible('milestones',
                 true,
-                this._buildMilestonesRow(milestoneEvents, year, month, daysInMonth, todayFmt)
+                this._buildMilestonesRow(milestoneEvents, startDate, endDate, totalDays, todayFmt)
             );
             main.appendChild(milestoneLane);
         }
@@ -584,9 +607,12 @@ export class TimelineRenderer {
         if (peakProtectionEvents.length) {
             main.appendChild(this._makeCollapsible('peak-protection',
                 false,
-                this._buildPeakProtectionRow(peakProtectionEvents, year, month, daysInMonth, todayFmt)
+                this._buildPeakProtectionRow(peakProtectionEvents, startDate, endDate, totalDays, todayFmt)
             ));
         }
+
+        // Comparison overlays (avg curve, month overlays) only apply to full-month view.
+        const showComparison = !isSpan;
 
         // ── Releases chart ────────────────────────────────────────────────────
         const releaseData = this._buildReleaseData(events, days);
@@ -606,10 +632,10 @@ export class TimelineRenderer {
 
         // ── Incidents chart ───────────────────────────────────────────────────
         const issueSummaryQuery = this.getIssueSummaryQuery();
-        const incidentData = this._buildCardData(store, year, month, 'incident', days, issueSummaryQuery);
+        const incidentData = this._buildCardData(store, year, month, 'incident', days, issueSummaryQuery, isSpan ? startDate : null, isSpan ? endDate : null);
 
         // ── Service Requests chart (built here so criticalDays can be merged before rendering) ──
-        const srData = this._buildCardData(store, year, month, 'service request', days, issueSummaryQuery);
+        const srData = this._buildCardData(store, year, month, 'service request', days, issueSummaryQuery, isSpan ? startDate : null, isSpan ? endDate : null);
 
 
         const incidentTotal = incidentData.reduce((s, d) => s + d.value, 0);
@@ -628,6 +654,7 @@ export class TimelineRenderer {
                 laneKey: 'incidents',
                 year,
                 month,
+                showComparison,
             })
         ));
 
@@ -648,6 +675,7 @@ export class TimelineRenderer {
                 laneKey: 'sr',
                 year,
                 month,
+                showComparison,
             })
         ));
 
@@ -710,7 +738,7 @@ export class TimelineRenderer {
 
     // ── Business Events ───────────────────────────────────────────────────────
 
-    _buildBizEventsRow(events, year, month, daysInMonth, todayFmt) {
+    _buildBizEventsRow(events, startDate, endDate, totalDays, todayFmt) {
         const wrap = document.createElement('div');
         wrap.className = 'jtl-panel jtl-panel--biz';
 
@@ -725,7 +753,7 @@ export class TimelineRenderer {
         wrap.appendChild(chartArea);
 
         if (!events.length) {
-            chartArea.innerHTML = '<p class="jtl-empty">No business events this month.</p>';
+            chartArea.innerHTML = '<p class="jtl-empty">No business events this period.</p>';
             return wrap;
         }
 
@@ -733,13 +761,10 @@ export class TimelineRenderer {
         bars.className = 'jtl-biz-bars';
         this._alignBarsToD3PlotArea(bars);
 
-        const monthStart = new Date(year, month, 1);
-        const monthEnd   = new Date(year, month, daysInMonth);
-
-        // Sort by clamped start day
+        // Sort by clamped start period-day
         const sorted = [...events].sort((a, b) => {
-            const as = this._clampToMonth(a.startDate || a.dueDate, monthStart, monthEnd).getDate();
-            const bs = this._clampToMonth(b.startDate || b.dueDate, monthStart, monthEnd).getDate();
+            const as = this._dateToPeriodDay(this._clampToMonth(a.startDate || a.dueDate, startDate, endDate), startDate);
+            const bs = this._dateToPeriodDay(this._clampToMonth(b.startDate || b.dueDate, startDate, endDate), startDate);
             return as - bs;
         });
 
@@ -749,13 +774,15 @@ export class TimelineRenderer {
             const rawEnd   = ev.dueDate   || ev.startDate;
             if (!rawStart || !rawEnd) return;
 
-            // Clamp both ends to the current month so bars are always within bounds
-            const startDay = this._clampToMonth(rawStart, monthStart, monthEnd).getDate();
-            const endDay   = this._clampToMonth(rawEnd,   monthStart, monthEnd).getDate();
+            // Clamp both ends to the rendered period so bars are always within bounds
+            const clampedStart = this._clampToMonth(rawStart, startDate, endDate);
+            const clampedEnd   = this._clampToMonth(rawEnd,   startDate, endDate);
+            const startDay = this._dateToPeriodDay(clampedStart, startDate);
+            const endDay   = this._dateToPeriodDay(clampedEnd,   startDate);
 
             // Business events are all-day spans and must align with the D3 dot scale.
-            const leftPct  = this._dayToPct(startDay, daysInMonth);
-            const widthPct = this._daySpanFromDotPct(startDay, endDay, daysInMonth);
+            const leftPct  = this._dayToPct(startDay, totalDays);
+            const widthPct = this._daySpanFromDotPct(startDay, endDay, totalDays);
 
             let lane = laneEnds.findIndex(e => e < startDay);
             if (lane === -1) lane = laneEnds.length;
@@ -793,13 +820,14 @@ export class TimelineRenderer {
 
             // 🔥 Flame icons for peak days within this bar's span
             if (ev.peakDates && ev.peakDates.length > 0) {
-                for (let d = startDay; d <= endDay; d++) {
-                    const cellDate = new Date(year, month, d);
+                for (let p = startDay; p <= endDay; p++) {
+                    const cellDate = new Date(startDate);
+                    cellDate.setDate(cellDate.getDate() + (p - 1));
                     if (isDateInPeakRange(cellDate, ev.peakDates)) {
                         const flame = document.createElement('div');
                         flame.className = 'jtl-peak-flame';
                         flame.textContent = '🔥';
-                        flame.style.left = this._dotPctCss(d, daysInMonth);
+                        flame.style.left = this._dotPctCss(p, totalDays);
                         flame.style.top  = `${lane * 34}px`;
                         bars.appendChild(flame);
                     }
@@ -811,14 +839,15 @@ export class TimelineRenderer {
         bars.style.minHeight = `${lanes * 34 + 8}px`;
 
         if (todayFmt) {
-            const todayDay = parseInt(todayFmt.slice(8, 10), 10);
+            const todayDate = new Date(todayFmt + 'T00:00:00');
+            const todayPDay = this._dateToPeriodDay(todayDate, startDate);
             const todayLine = document.createElement('div');
             todayLine.className = 'jtl-today-line';
-            todayLine.style.left = this._dotPctCss(todayDay, daysInMonth);
+            todayLine.style.left = this._dotPctCss(todayPDay, totalDays);
             bars.appendChild(todayLine);
         }
 
-        this._appendNoItsmBarOverlay(bars, year, month, daysInMonth);
+        this._appendNoItsmBarOverlay(bars, startDate, endDate, totalDays);
         chartArea.appendChild(bars);
         return wrap;
     }
@@ -826,7 +855,7 @@ export class TimelineRenderer {
 
     // ── Peak Season Protection Window ─────────────────────────────────────────
 
-    _buildPeakProtectionRow(events, year, month, daysInMonth, todayFmt) {
+    _buildPeakProtectionRow(events, startDate, endDate, totalDays, todayFmt) {
         const wrap = document.createElement('div');
         wrap.className = 'jtl-panel jtl-panel--peak-protection';
 
@@ -856,16 +885,13 @@ export class TimelineRenderer {
         wrap.appendChild(chartArea);
 
         if (!events.length) {
-            chartArea.innerHTML = '<p class="jtl-empty">No peak protection windows this month.</p>';
+            chartArea.innerHTML = '<p class="jtl-empty">No peak protection windows this period.</p>';
             return wrap;
         }
 
         const bars = document.createElement('div');
         bars.className = 'jtl-biz-bars jtl-peak-protection-bars';
         this._alignBarsToD3PlotArea(bars);
-
-        const monthStart = new Date(year, month, 1);
-        const monthEnd   = new Date(year, month, daysInMonth);
 
         const cabEvents = events.filter(isCabProtectionEvent);
         const barEvents = events.filter(ev => !isCabProtectionEvent(ev));
@@ -884,12 +910,14 @@ export class TimelineRenderer {
 
         const laneEnds = [];
         normalized.forEach(({ ev, evStart, evEnd }) => {
-            const startDay = this._clampToMonth(evStart, monthStart, monthEnd).getDate();
-            const endDay   = this._clampToMonth(evEnd,   monthStart, monthEnd).getDate();
+            const clampedStart = this._clampToMonth(evStart, startDate, endDate);
+            const clampedEnd   = this._clampToMonth(evEnd,   startDate, endDate);
+            const startDay = this._dateToPeriodDay(clampedStart, startDate);
+            const endDay   = this._dateToPeriodDay(clampedEnd,   startDate);
 
             // PSPW phases must align with the same horizontal scale used by the D3 dots.
-            const leftPct  = this._dayToPct(startDay, daysInMonth);
-            const widthPct = this._daySpanFromDotPct(startDay, endDay, daysInMonth);
+            const leftPct  = this._dayToPct(startDay, totalDays);
+            const widthPct = this._daySpanFromDotPct(startDay, endDay, totalDays);
 
             let lane = laneEnds.findIndex(e => e < startDay);
             if (lane === -1) lane = laneEnds.length;
@@ -926,8 +954,7 @@ export class TimelineRenderer {
                 e.stopPropagation();
                 this._hideHoverCard();
                 // Open the DayDrawer for the first visible day of the phase.
-                // The drawer itself will load the full day and include the protection-window detail.
-                this._onProtectionClick?.(new Date(year, month, startDay), ev);
+                this._onProtectionClick?.(clampedStart, ev);
             });
 
             bars.appendChild(bar);
@@ -941,14 +968,14 @@ export class TimelineRenderer {
         cabEvents.forEach(ev => {
             const rawDate = ev.startDate || ev.dueDate;
             if (!rawDate) return;
-            const markerDate = this._clampToMonth(rawDate, monthStart, monthEnd);
-            const day = markerDate.getDate();
+            const markerDate = this._clampToMonth(rawDate, startDate, endDate);
+            const day = this._dateToPeriodDay(markerDate, startDate);
 
             const marker = document.createElement('button');
             marker.type = 'button';
             marker.className = 'jtl-cab-marker';
             marker.textContent = '🚦';
-            marker.style.left = this._cabMarkerLeftCss(day, daysInMonth);
+            marker.style.left = this._cabMarkerLeftCss(day, totalDays);
             // CAB is a point marker in the PSPW lane: place it below the phase bars,
             // not on top of RED/AMBER/BLUE windows.
             marker.style.top = `${cabMarkerTop}px`;
@@ -964,20 +991,21 @@ export class TimelineRenderer {
                 this._hideHoverCard();
                 // Same behaviour as CalendarRenderer's CAB badge: open the CAB event detail.
                 if (typeof this._onEventClick === 'function') this._onEventClick(ev);
-                else this._onProtectionClick?.(new Date(year, month, day), ev);
+                else this._onProtectionClick?.(markerDate, ev);
             });
             bars.appendChild(marker);
         });
 
         if (todayFmt) {
-            const todayDay = parseInt(todayFmt.slice(8, 10), 10);
+            const todayDate = new Date(todayFmt + 'T00:00:00');
+            const todayPDay = this._dateToPeriodDay(todayDate, startDate);
             const todayLine = document.createElement('div');
             todayLine.className = 'jtl-today-line';
-            todayLine.style.left = this._dotPctCss(todayDay, daysInMonth);
+            todayLine.style.left = this._dotPctCss(todayPDay, totalDays);
             bars.appendChild(todayLine);
         }
 
-        this._appendNoItsmBarOverlay(bars, year, month, daysInMonth);
+        this._appendNoItsmBarOverlay(bars, startDate, endDate, totalDays);
         chartArea.appendChild(bars);
         chartArea.appendChild(leg);
         return wrap;
@@ -985,7 +1013,7 @@ export class TimelineRenderer {
 
     // ── Milestones row ────────────────────────────────────────────────────────
 
-    _buildMilestonesRow(events, year, month, daysInMonth, todayFmt) {
+    _buildMilestonesRow(events, startDate, endDate, totalDays, todayFmt) {
         const wrap = document.createElement('div');
         wrap.className = 'jtl-panel jtl-panel--milestones';
 
@@ -1001,7 +1029,7 @@ export class TimelineRenderer {
         wrap.appendChild(chartArea);
 
         if (!events.length) {
-            chartArea.innerHTML = '<p class="jtl-empty">No milestones this month.</p>';
+            chartArea.innerHTML = '<p class="jtl-empty">No milestones this period.</p>';
             return wrap;
         }
 
@@ -1011,10 +1039,8 @@ export class TimelineRenderer {
         // same D3 plot area used by PSPW bars and release dots.
         this._alignBarsToD3PlotArea(bars);
 
-        const monthStart = new Date(year, month, 1);
-        const monthEnd   = new Date(year, month, daysInMonth);
-        const _milDark   = document.documentElement?.dataset?.theme === 'dark';
-        const typeColor  = _milDark ? getTypeColor('MILESTONE') : '#6d28d9';
+        const _milDark  = document.documentElement?.dataset?.theme === 'dark';
+        const typeColor = _milDark ? getTypeColor('MILESTONE') : '#6d28d9';
 
         // Sort by due date
         const sorted = [...events].sort((a, b) => (a.dueDate || 0) - (b.dueDate || 0));
@@ -1023,7 +1049,7 @@ export class TimelineRenderer {
         // can do a second pass to set max-width on each label based on real bar width.
         const DIAMOND_GAP_PX = 21; // diamond (14px) + gap (7px)
         const CHAR_PX_EST    = 6.5;
-        const CHART_PX_EST   = daysInMonth * 40;
+        const CHART_PX_EST   = totalDays * 40;
         const FLIP_THRESHOLD = 76; // flip label left when marker is in the last ~24% of chart
         // laneItems[lane] = array of { leftPct, labelEl, flipped } sorted by leftPct ascending
         const laneItems = [];
@@ -1032,12 +1058,11 @@ export class TimelineRenderer {
 
         sorted.forEach(ev => {
             if (!ev.dueDate) return;
-            // Milestones are point-in-time: render only on their actual Due Date,
-            // and only when that Due Date belongs to the currently rendered month.
-            if (ev.dueDate.getFullYear() !== year || ev.dueDate.getMonth() !== month) return;
-            const day = ev.dueDate.getDate();
+            // Milestones are point-in-time: render only when their Due Date is within the period.
+            if (ev.dueDate < startDate || ev.dueDate > endDate) return;
+            const day = this._dateToPeriodDay(ev.dueDate, startDate);
             // Milestones are point-in-time: align to the D3 scale (same formula as _dayToPct)
-            const leftPct  = this._dayToPct(day, daysInMonth);
+            const leftPct  = this._dayToPct(day, totalDays);
             const flipped  = leftPct > FLIP_THRESHOLD;
             const labelPx  = (ev.summary.length * CHAR_PX_EST) + DIAMOND_GAP_PX;
             // Use the same estimated label extent for lane collision detection regardless of
@@ -1128,33 +1153,34 @@ export class TimelineRenderer {
             const bandOpacity = document.documentElement?.dataset?.theme === 'dark' ? 0.18 : 0.13;
             this._flameDays.forEach(dateKey => {
                 const d = new Date(dateKey + 'T00:00:00');
-                if (d.getFullYear() !== year || d.getMonth() !== month) return;
-                const day = d.getDate();
+                if (d < startDate || d > endDate) return;
+                const day = this._dateToPeriodDay(d, startDate);
                 const band = document.createElement('div');
                 band.className = 'jtl-milestone-flame-band';
-                band.style.left    = this._dotPctCss(day, daysInMonth);
-                band.style.width   = `${(1 / Math.max(daysInMonth - 1, 1)) * 100}%`;
+                band.style.left    = this._dotPctCss(day, totalDays);
+                band.style.width   = `${(1 / Math.max(totalDays - 1, 1)) * 100}%`;
                 band.style.opacity = bandOpacity;
                 bars.appendChild(band);
             });
         }
 
         if (todayFmt) {
-            const todayDay = parseInt(todayFmt.slice(8, 10), 10);
+            const todayDate = new Date(todayFmt + 'T00:00:00');
+            const todayPDay = this._dateToPeriodDay(todayDate, startDate);
             const todayLine = document.createElement('div');
             todayLine.className = 'jtl-today-line';
-            todayLine.style.left = this._dotPctCss(todayDay, daysInMonth);
+            todayLine.style.left = this._dotPctCss(todayPDay, totalDays);
             bars.appendChild(todayLine);
         }
 
-        this._appendNoItsmBarOverlay(bars, year, month, daysInMonth);
+        this._appendNoItsmBarOverlay(bars, startDate, endDate, totalDays);
         chartArea.appendChild(bars);
         return wrap;
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
-    /** Clamp a date to [monthStart, monthEnd]. */
+    /** Clamp a date to [periodStart, periodEnd]. */
     _clampToMonth(date, monthStart, monthEnd) {
         if (!date) return monthStart;
         if (date < monthStart) return monthStart;
@@ -1209,7 +1235,7 @@ export class TimelineRenderer {
 
     // ── Line chart panel ──────────────────────────────────────────────────────
 
-    _buildLinePanel({ title, subtitle, icon, iconColor, series, xDomain, todayFmt, dotClickLabel, totalCount, laneKey, year, month }) {
+    _buildLinePanel({ title, subtitle, icon, iconColor, series, xDomain, todayFmt, dotClickLabel, totalCount, laneKey, year, month, showComparison = true }) {
         const isItsmLane = laneKey === 'incidents' || laneKey === 'sr';
         const wrap = document.createElement('div');
         wrap.className = 'jtl-panel' + (isItsmLane ? ' jtl-panel--itsm' : '');
@@ -1251,7 +1277,7 @@ export class TimelineRenderer {
         const avgCurve    = issueType ? this._getAvgCurve(laneKey, year, month, issueType)    : null;
         const compareData = issueType ? this._getCompareData(laneKey, year, month, issueType) : null;
 
-        if (isItsmLane && year !== undefined) {
+        if (isItsmLane && year !== undefined && showComparison) {
             // Store lane context for per-lane re-render
             if (laneKey === 'incidents') {
                 this._incidentXDomain  = xDomain;
@@ -1999,6 +2025,21 @@ export class TimelineRenderer {
         return days;
     }
 
+    _buildDaysRange(startDate, endDate) {
+        const days = [];
+        const cur  = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
+        while (cur <= endDate) {
+            days.push(new Date(cur));
+            cur.setDate(cur.getDate() + 1);
+        }
+        return days;
+    }
+
+    /** Returns 1-based position of `date` within a period starting at `periodStart`. */
+    _dateToPeriodDay(date, periodStart) {
+        return Math.round((date - periodStart) / 86400000) + 1;
+    }
+
     /** Build release counts per env series per day. */
     _buildReleaseData(events, days) {
         const releaseTypes = new Set(['DELIVERY', 'HYBRIS', 'SERVICE_OP']);
@@ -2038,21 +2079,20 @@ export class TimelineRenderer {
     }
 
     /** Build card counts per day (incidents or service requests). */
-    _buildCardData(store, year, month, issueTypeFragment, days, summaryQuery = '') {
+    _buildCardData(store, year, month, issueTypeFragment, days, summaryQuery = '', rangeStartDate = null, rangeEndDate = null) {
         const activeServices = this.app.search?.activeServices;
         const services = activeServices && activeServices.size > 0 ? activeServices : undefined;
         const q = (summaryQuery || '').trim().toLowerCase();
+        const isRange = rangeStartDate !== null && rangeEndDate !== null;
 
-        // Fast path: keep the existing EventStore aggregation when the issue search is empty.
+        // Fast path: keep the EventStore aggregation when the issue search is empty.
         if (!q) {
-            const counts = store.getCardCountsForMonth(year, month, {
-                issueType: issueTypeFragment,
-                services,
-            });
-            const criticalDays = store.getCriticalDaysForMonth(year, month, {
-                issueType: issueTypeFragment,
-                services,
-            });
+            const counts = isRange
+                ? store.getCardCountsForRange(rangeStartDate, rangeEndDate, { issueType: issueTypeFragment, services })
+                : store.getCardCountsForMonth(year, month, { issueType: issueTypeFragment, services });
+            const criticalDays = isRange
+                ? store.getCriticalDaysForRange(rangeStartDate, rangeEndDate, { issueType: issueTypeFragment, services })
+                : store.getCriticalDaysForMonth(year, month, { issueType: issueTypeFragment, services });
             return days.map(date => ({
                 date,
                 value: counts.get(localDateKey(date)) || 0,
@@ -2062,14 +2102,14 @@ export class TimelineRenderer {
 
         // Search Issues filters ONLY on Jira card Summary, and only affects the
         // Incidents Created / Service Requests Created timeline series.
-        const monthStart = new Date(year, month, 1);
-        const monthEnd   = new Date(year, month + 1, 0, 23, 59, 59);
+        const periodStart = isRange ? rangeStartDate : new Date(year, month, 1);
+        const periodEnd   = isRange ? rangeEndDate   : new Date(year, month + 1, 0, 23, 59, 59);
         const counts = new Map();
         const criticalDays = new Set();
 
         (store.cards || []).forEach(c => {
             if (!c.created) return;
-            if (c.created < monthStart || c.created > monthEnd) return;
+            if (c.created < periodStart || c.created > periodEnd) return;
             if (issueTypeFragment && !(c.issueType || '').toLowerCase().includes(issueTypeFragment.toLowerCase())) return;
             if (!(c.summary || '').toLowerCase().includes(q)) return;
 
@@ -2126,11 +2166,29 @@ export class TimelineRenderer {
         const evStart = rawStart <= rawEnd ? rawStart : rawEnd;
         const evEnd   = rawStart <= rawEnd ? rawEnd   : rawStart;
 
-        // xDomain is the currently rendered month. A PSPW phase can start in the
-        // previous month or end in the next one: for timeline background bands we
-        // must render only the visible overlap with the current month.
+        // xDomain is the rendered period. A PSPW phase can extend outside it:
+        // render only the visible overlap with the current period.
         const domainStart = xDomain?.[0];
         const domainEnd   = xDomain?.[1];
+
+        // Use period-based positioning when both domain endpoints are Dates.
+        if (domainStart instanceof Date && domainEnd instanceof Date) {
+            const totalDays = Math.round((domainEnd - domainStart) / 86400000) + 1;
+            const visibleStart = evStart < domainStart ? domainStart : evStart;
+            const visibleEnd   = evEnd   > domainEnd   ? domainEnd   : evEnd;
+            if (visibleEnd < domainStart || visibleStart > domainEnd) return null;
+
+            const startDay = Math.max(1, Math.min(totalDays, Math.round((visibleStart - domainStart) / 86400000) + 1));
+            const endDay   = Math.max(1, Math.min(totalDays, Math.round((visibleEnd   - domainStart) / 86400000) + 1));
+            const dayStep  = totalDays <= 1 ? innerW : innerW / (totalDays - 1);
+
+            return {
+                x: ((startDay - 1) / Math.max(totalDays - 1, 1)) * innerW,
+                width: Math.max((endDay - startDay + 1) * dayStep, dayStep),
+            };
+        }
+
+        // Legacy month-mode fallback
         const monthStart = domainStart instanceof Date
             ? new Date(domainStart.getFullYear(), domainStart.getMonth(), 1)
             : new Date(evStart.getFullYear(), evStart.getMonth(), 1);
@@ -2156,18 +2214,23 @@ export class TimelineRenderer {
         const criticalDays = this._flameDays;
         if (!criticalDays || !criticalDays.size) return;
 
-        const domainEnd = xDomain?.[1];
-        const daysInMonth = domainEnd instanceof Date ? domainEnd.getDate() : 31;
+        const domainStart = xDomain?.[0];
+        const domainEnd   = xDomain?.[1];
+        const totalDays   = (domainStart instanceof Date && domainEnd instanceof Date)
+            ? Math.round((domainEnd - domainStart) / 86400000) + 1
+            : 31;
         const bandOpacity = document.documentElement?.dataset?.theme === 'dark' ? 0.18 : 0.13;
-        const dayStep = daysInMonth <= 1 ? innerW : innerW / (daysInMonth - 1);
+        const dayStep = totalDays <= 1 ? innerW : innerW / (totalDays - 1);
 
         const bandLayer = g.append('g').attr('class', 'jtl-critical-day-band-layer');
 
         criticalDays.forEach(dateKey => {
             const d = new Date(dateKey + 'T00:00:00');
-            if (d.getMonth() !== (xDomain?.[0]?.getMonth?.() ?? d.getMonth())) return;
-            const day = d.getDate();
-            const x = ((day - 1) / Math.max(daysInMonth - 1, 1)) * innerW - dayStep * 0.5;
+            if (domainStart instanceof Date && (d < domainStart || d > domainEnd)) return;
+            const day = domainStart instanceof Date
+                ? Math.round((d - domainStart) / 86400000) + 1
+                : d.getDate();
+            const x = ((day - 1) / Math.max(totalDays - 1, 1)) * innerW - dayStep * 0.5;
             bandLayer.append('rect')
                 .attr('class', 'jtl-critical-day-band')
                 .attr('x', x)
@@ -2184,8 +2247,11 @@ export class TimelineRenderer {
         const events = (this._peakProtectionEvents || []).filter(ev => !isCabProtectionEvent(ev));
         if (!events.length) return;
 
-        const domainEnd = xDomain?.[1];
-        const daysInMonth = domainEnd instanceof Date ? domainEnd.getDate() : 31;
+        const domainStart = xDomain?.[0];
+        const domainEnd   = xDomain?.[1];
+        const daysInMonth = (domainStart instanceof Date && domainEnd instanceof Date)
+            ? Math.round((domainEnd - domainStart) / 86400000) + 1
+            : (domainEnd instanceof Date ? domainEnd.getDate() : 31);
         const dark = document.documentElement?.dataset?.theme === 'dark';
         const bandOpacity = dark ? 0.15 : 0.08;
         const DARK_COLORS = { RED: '#f87171', AMBER: '#fbbf24', BLUE: '#60a5fa' };
@@ -2220,18 +2286,21 @@ export class TimelineRenderer {
      * @param {HTMLElement} main  — the .jtl-main element (used for rAF measurement)
      * @returns {HTMLElement}  the ruler div (ss-day-axis class, positioning set in rAF)
      */
-    _buildDayAxisRuler(year, month, main) {
-        const daysInMonth = new Date(year, month + 1, 0).getDate();
+    _buildDayAxisRuler(startDate, endDate, main, totalDays) {
         const ruler = document.createElement('div');
         ruler.className = 'ss-day-axis';
 
-        for (let d = 1; d <= daysInMonth; d++) {
+        const cur = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
+        let periodDay = 1;
+        while (cur <= endDate) {
             const span = document.createElement('span');
             span.className = 'ss-day-axis__day';
-            span.textContent = d;
-            const pct = daysInMonth > 1 ? ((d - 1) / (daysInMonth - 1)) * 100 : 0;
+            span.textContent = cur.getDate();
+            const pct = totalDays > 1 ? ((periodDay - 1) / (totalDays - 1)) * 100 : 0;
             span.style.left = `${pct}%`;
             ruler.appendChild(span);
+            cur.setDate(cur.getDate() + 1);
+            periodDay++;
         }
 
         // After layout settles: offset ruler so its left edge aligns with the D3 plot area,
@@ -2294,24 +2363,24 @@ export class TimelineRenderer {
      * that predates the ITSM retention window.  Used for biz-events, milestones,
      * peak-protection, and releases rows (which are HTML, not SVG).
      */
-    _appendNoItsmBarOverlay(bars, year, month, daysInMonth) {
+    _appendNoItsmBarOverlay(bars, startDate, endDate, totalDays) {
         const cutoff = itsmCutoffDate();
-        const monthStart = new Date(year, month, 1);
-        const monthEnd   = new Date(year, month, daysInMonth, 23, 59, 59);
+        const periodEnd = new Date(endDate);
+        periodEnd.setHours(23, 59, 59);
 
-        if (monthStart >= cutoff) return; // entire month is within retention
+        if (startDate >= cutoff) return; // entire period is within retention
 
         const isDark = document.documentElement?.dataset?.theme === 'dark';
 
         // Width of the greyed region as a percentage of the bars area.
-        // If the cutoff is beyond month-end, grey the whole row.
+        // If the cutoff is beyond period-end, grey the whole row.
         let widthPct;
-        if (cutoff >= monthEnd) {
+        if (cutoff >= periodEnd) {
             widthPct = 100;
         } else {
-            // Align with _dayToPct: cutoffDay is the day-of-month at local midnight.
-            const cutoffDay = cutoff.getDate();
-            widthPct = this._dayToPct(cutoffDay, daysInMonth);
+            // Align with _dayToPct: compute 1-based period day for the cutoff.
+            const cutoffDay = this._dateToPeriodDay(cutoff, startDate);
+            widthPct = this._dayToPct(cutoffDay, totalDays);
         }
 
         const overlay = document.createElement('div');
@@ -2337,8 +2406,8 @@ export class TimelineRenderer {
 
         bars.appendChild(overlay);
 
-        // Dashed boundary line at the cutoff edge (only when inside the month)
-        if (cutoff > monthStart && cutoff <= monthEnd) {
+        // Dashed boundary line at the cutoff edge (only when inside the period)
+        if (cutoff > startDate && cutoff <= periodEnd) {
             const line = document.createElement('div');
             line.style.cssText = [
                 'position:absolute',

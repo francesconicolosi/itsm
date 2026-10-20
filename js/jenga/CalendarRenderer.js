@@ -273,6 +273,96 @@ export class CalendarRenderer {
         }
     }
 
+    // ── Week-span render ─────────────────────────────────────────────────────
+
+    /** Render exactly numWeeks rows starting from startDate (must be a Monday). */
+    renderSpan(containerEl, startDate, numWeeks, events, { maxChips = MAX_CHIPS } = {}) {
+        if (!containerEl) return;
+        containerEl.innerHTML = '';
+        this._closePopover();
+
+        const weeks = this._buildWeeksExact(startDate, numWeeks);
+
+        const multiDay = [];
+        const singleByDay = new Map();
+        events.forEach(e => {
+            if (!e.dueDate) return;
+            const isMulti = e.type === 'BUSINESS_EVENT' ||
+                (e.startDate && e.startDate < e.dueDate && e.type === 'DELIVERY');
+            if (isMulti) {
+                multiDay.push(e);
+            } else {
+                const k = this._dayKey(e.dueDate);
+                if (!singleByDay.has(k)) singleByDay.set(k, []);
+                singleByDay.get(k).push(e);
+            }
+        });
+
+        const peakDaySet = new Set();
+        for (const ev of multiDay) {
+            if (ev.type === 'BUSINESS_EVENT' && ev.peakDates && ev.peakDates.length > 0) {
+                for (const week of weeks) {
+                    for (const cellDate of week) {
+                        if (this._isDateInPeakRange(cellDate, ev.peakDates)) {
+                            peakDaySet.add(this._dayKey(cellDate));
+                        }
+                    }
+                }
+            }
+        }
+
+        const wrap = document.createElement('div');
+        wrap.className = 'jenga-cal jenga-cal--span';
+
+        const headerRow = document.createElement('div');
+        headerRow.className = 'jenga-cal__header';
+        ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].forEach((d, i) => {
+            const cell = document.createElement('div');
+            cell.className = 'jenga-cal__dayname' + (i >= 5 ? ' jenga-cal__dayname--weekend' : '');
+            cell.textContent = d;
+            headerRow.appendChild(cell);
+        });
+        wrap.appendChild(headerRow);
+
+        const allCalendarEvents = this._getAllCalendarEvents(events);
+
+        weeks.forEach((week, weekIdx) => {
+            const row = document.createElement('div');
+            row.className = 'jenga-cal__week';
+            row.dataset.weekIdx = weekIdx;
+
+            week.forEach(date => {
+                // Pass date.getMonth() so no cell is ever marked "other-month" in span mode.
+                const cell = this._makeCell(date, date.getMonth(), singleByDay, allCalendarEvents, peakDaySet, maxChips);
+                // Mark first day of a new month with a small month tag for context
+                if (date.getDate() === 1) {
+                    const tag = document.createElement('span');
+                    tag.className = 'jenga-cal__monthtag';
+                    tag.textContent = date.toLocaleDateString('en-GB', { month: 'short' }).toUpperCase();
+                    const daynum = cell.querySelector('.jenga-cal__daynum');
+                    if (daynum) daynum.appendChild(tag);
+                }
+                row.appendChild(cell);
+            });
+
+            this._appendMultiDayBars(row, week, multiDay, week[0].getMonth());
+            wrap.appendChild(row);
+        });
+
+        containerEl.appendChild(wrap);
+        if (!this._outsideClickHandler) {
+            this._outsideClickHandler = (e) => {
+                if (!this._popover) return;
+                if (this._popover.contains(e.target) || this._popoverAnchor?.contains(e.target)) return;
+                this._closePopover();
+                if (e.target.closest('.jenga-calendar-wrap, .jenga-timeline-wrap')) {
+                    e.stopPropagation();
+                }
+            };
+            document.addEventListener('click', this._outsideClickHandler, true);
+        }
+    }
+
     // ── Single-day cell ───────────────────────────────────────────────────────
 
 
@@ -996,6 +1086,18 @@ export class CalendarRenderer {
             for (let d = 0; d < 7; d++) { week.push(new Date(cur)); cur.setDate(cur.getDate()+1); }
             weeks.push(week);
             if (cur > lastDay && weeks.length >= 5) break;
+        }
+        return weeks;
+    }
+
+    /** Build exactly numWeeks week rows starting from startMonday (already a Monday). */
+    _buildWeeksExact(startMonday, numWeeks) {
+        const weeks = [];
+        const cur = new Date(startMonday.getFullYear(), startMonday.getMonth(), startMonday.getDate());
+        for (let w = 0; w < numWeeks; w++) {
+            const week = [];
+            for (let d = 0; d < 7; d++) { week.push(new Date(cur)); cur.setDate(cur.getDate() + 1); }
+            weeks.push(week);
         }
         return weeks;
     }

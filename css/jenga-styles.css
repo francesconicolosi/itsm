@@ -146,6 +146,23 @@ body {
     font-family: var(--brand-font);
 }
 
+/* Span selector */
+.jenga-span-select {
+    height: 36px;
+    padding: 0 6px;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+    background: #f8f8f8;
+    color: #1a1a1a;
+    font-size: 13px;
+    font-family: var(--brand-font);
+    cursor: pointer;
+    flex-shrink: 0;
+    margin-left: 4px;
+}
+.jenga-span-select:hover { background: #eee; }
+.jenga-span-select:focus { outline: 2px solid var(--brand-amber, #f59e0b); outline-offset: 1px; }
+
 /* View toggle */
 .jenga-view-toggle {
     display: flex;
@@ -1630,6 +1647,7 @@ html[data-theme="dark"] .top-bar__action { background: #2e2e32; border-color: rg
 html[data-theme="dark"] .jenga-month-btn:hover,
 html[data-theme="dark"] .top-bar__action:hover { background: rgba(255,255,255,.10); }
 html[data-theme="dark"] .jenga-month-label { color: #f5f5f7; }
+html[data-theme="dark"] .jenga-span-select { background: #2e2e32; border-color: rgba(255,255,255,.10); color: #f5f5f7; }
 html[data-theme="dark"] .jenga-view-btn { background: #2e2e32; border-color: rgba(255,255,255,.10); color: #f5f5f7; }
 html[data-theme="dark"] .jenga-view-btn--active { background: #4b5563; color: #f5f5f7; border-color: #6b7280; }
 

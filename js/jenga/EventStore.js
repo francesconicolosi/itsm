@@ -432,6 +432,66 @@ export class EventStore {
         });
     }
 
+    /** Return events overlapping an arbitrary date range [startDate, endDate] (both inclusive). */
+    getEventsForRange(startDate, endDate) {
+        const rangeEnd = new Date(endDate);
+        rangeEnd.setHours(23, 59, 59);
+        return this.events.filter(e => {
+            const due   = e.dueDate;
+            const start = e.startDate || due;
+            if (!due && !start) return false;
+            const rawStart = start || due;
+            const rawEnd   = due   || start;
+            const evStart  = rawStart <= rawEnd ? rawStart : rawEnd;
+            const evEnd    = rawStart <= rawEnd ? rawEnd   : rawStart;
+            return evStart <= rangeEnd && evEnd >= startDate;
+        });
+    }
+
+    /** Count cards per day for an arbitrary date range [startDate, endDate].
+     *  Returns Map<YYYY-MM-DD, count>. Mirrors getCardCountsForMonth. */
+    getCardCountsForRange(startDate, endDate, { issueType, serviceQuery, services } = {}) {
+        const rangeEnd = new Date(endDate);
+        rangeEnd.setHours(23, 59, 59);
+        const counts = new Map();
+        (this.cards || []).forEach(c => {
+            if (!c.created) return;
+            if (c.created < startDate || c.created > rangeEnd) return;
+            if (issueType && !c.issueType.toLowerCase().includes(issueType.toLowerCase())) return;
+            if (serviceQuery) {
+                const q = serviceQuery.toLowerCase();
+                const hay = `${c.summary} ${c.affectedServices} ${c.requestType}`.toLowerCase();
+                if (!hay.includes(q)) return;
+            }
+            if (services && services.size > 0) {
+                const cardServices = (c.affectedServices || '')
+                    .split('||').map(s => s.trim()).filter(Boolean);
+                if (!cardServices.some(s => services.has(s))) return;
+            }
+            const k = localDateKey(c.created);
+            counts.set(k, (counts.get(k) || 0) + 1);
+        });
+        return counts;
+    }
+
+    /** Return Set<YYYY-MM-DD> of days with at least one P1/P2 card in a date range. */
+    getCriticalDaysForRange(startDate, endDate, { issueType, services } = {}) {
+        const rangeEnd = new Date(endDate);
+        rangeEnd.setHours(23, 59, 59);
+        const critical = new Set();
+        (this.cards || []).forEach(c => {
+            if (!c.created || c.created < startDate || c.created > rangeEnd) return;
+            if (issueType && !(c.issueType || '').toLowerCase().includes(issueType.toLowerCase())) return;
+            if (services && services.size > 0) {
+                const cardSvcs = (c.affectedServices || '').split('||').map(s => s.trim()).filter(Boolean);
+                if (!cardSvcs.some(s => services.has(s))) return;
+            }
+            const p = (c.priority || '').trim().toUpperCase();
+            if (p.startsWith('P1') || p.startsWith('P2')) critical.add(localDateKey(c.created));
+        });
+        return critical;
+    }
+
     /** Load ITSM cards CSV (incidents + service requests from jira-cards.csv). */
     loadCards(csvText) {
         this.cards = [];
