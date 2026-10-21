@@ -35,7 +35,8 @@ export class ServiceCatalogStore {
         const colorScale = d3.scaleOrdinal(d3.schemeCategory10);
 
         this.nodes = data.map(d => {
-            const node = { id: d['Service Name'], color: colorScale(d['Type']) };
+            const color = d['Type'] ? colorScale(d['Type']) : '#888888';
+            const node = { id: d['Service Name'], color };
             for (const key in d) node[key] = d[key];
             return node;
         });
