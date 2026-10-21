@@ -5,7 +5,7 @@
  * as a single continuous bar using an absolute-positioned overlay layer.
  */
 
-import { getDayProtectionColor, isPspwDeployViolation } from './EventStore.js';
+import { getDayProtectionColor, getViolationColor, isPspwDeployViolation } from './EventStore.js';
 
 const TYPE_COLORS_LIGHT = {
     SERVICE_OP:     { bg: '#dbeafe', border: '#3b82f6', text: '#1d4ed8' },
@@ -382,6 +382,7 @@ export class CalendarRenderer {
         cell.dataset.date = this._dayKey(date);
 
         const protectionColor = getDayProtectionColor(date, allEvents);
+        const violationColor  = getViolationColor(date, allEvents);
 
         if (protectionColor) {
             cell.classList.add(`jenga-cal__cell--pspw-${protectionColor.toLowerCase()}`);
@@ -461,7 +462,7 @@ export class CalendarRenderer {
         const visible = items.slice(0, maxChips);
         const overflow = items.length - visible.length;
 
-        visible.forEach(item => chipsArea.appendChild(this._makeChip(item, protectionColor)));
+        visible.forEach(item => chipsArea.appendChild(this._makeChip(item, protectionColor, violationColor)));
 
         if (overflow > 0) {
             const overflowItems = items.slice(visible.length);
@@ -511,7 +512,7 @@ export class CalendarRenderer {
             }
 
             const hasPspwOverflow = overflowItems.some(i =>
-                isPspwDeployViolation(i.event, protectionColor, this.app?.amberAllowedServices)
+                isPspwDeployViolation(i.event, violationColor, this.app?.amberAllowedServices)
             );
             if (hasPspwOverflow) {
                 const pspwBadge = document.createElement('span');
@@ -765,7 +766,7 @@ export class CalendarRenderer {
         return ev.dueDate < today;
     }
 
-    _makeChip(item, protectionColor = null) {
+    _makeChip(item, protectionColor = null, violationColor = null) {
         const ev = item.event;
         const colors = _typeColors()[ev.type] || _typeColors().OTHER;
 
@@ -793,7 +794,7 @@ export class CalendarRenderer {
             chip.appendChild(warn);
         }
 
-        if (isPspwDeployViolation(ev, protectionColor, this.app?.amberAllowedServices)) {
+        if (isPspwDeployViolation(ev, violationColor ?? protectionColor, this.app?.amberAllowedServices)) {
             const warn = document.createElement('span');
             warn.className = 'jenga-chip__pspw-warn';
             warn.setAttribute('aria-label', 'Deployment violates peak season protection');
@@ -1009,7 +1010,8 @@ export class CalendarRenderer {
         const list = document.createElement('div');
         list.className = 'jenga-popover__list';
         const popoverProtectionColor = getDayProtectionColor(date, this._getAllCalendarEvents([]));
-        items.forEach(item => { const c = this._makeChip(item, popoverProtectionColor); c.style.marginBottom='4px'; list.appendChild(c); });
+        const popoverViolationColor  = getViolationColor(date, this._getAllCalendarEvents([]));
+        items.forEach(item => { const c = this._makeChip(item, popoverProtectionColor, popoverViolationColor); c.style.marginBottom='4px'; list.appendChild(c); });
         pop.appendChild(list);
         pop.addEventListener('click', e => e.stopPropagation());
 

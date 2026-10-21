@@ -78,6 +78,25 @@ export function getDayProtectionColor(date, events) {
 }
 
 /**
+ * Like getDayProtectionColor but downgrades BLUE → AMBER when the blue day is fully
+ * sandwiched between restrictive days (prev AND next are both RED or AMBER).
+ * Use this for violation-check logic; use getDayProtectionColor for display/CSS.
+ */
+export function getViolationColor(date, events) {
+    const color = getDayProtectionColor(date, events);
+    if (color !== 'BLUE') return color;
+
+    const prevDay = new Date(date.getFullYear(), date.getMonth(), date.getDate() - 1);
+    const nextDay = new Date(date.getFullYear(), date.getMonth(), date.getDate() + 1);
+    const prevColor = getDayProtectionColor(prevDay, events);
+    const nextColor = getDayProtectionColor(nextDay, events);
+
+    const isRestrictive = c => c === 'AMBER' || c === 'RED';
+    if (isRestrictive(prevColor) && isRestrictive(nextColor)) return 'AMBER';
+    return 'BLUE';
+}
+
+/**
  * Returns true when a SERVICE_OP deployment violates the active PSPW protection rule.
  *   RED / BLUE : all deployments are violations.
  *   AMBER      : deployments whose service is NOT in the amber-allowed set are violations.

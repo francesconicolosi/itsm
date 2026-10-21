@@ -12,7 +12,7 @@
 
 import * as d3 from 'd3';
 import { getTypeColor, isDateInPeakRange, formatOperation, getEnvColor, getEnvTextColor, getEnvLabel } from './CalendarRenderer.js';
-import { getDayProtectionColor, isPspwDeployViolation } from './EventStore.js';
+import { getDayProtectionColor, getViolationColor, isPspwDeployViolation } from './EventStore.js';
 
 /** Format a local Date as YYYY-MM-DD (matches CSV values and EventStore.localDateKey). */
 function localDateKey(d) {
@@ -2064,7 +2064,7 @@ export class TimelineRenderer {
                 let hasPspwWarning = false;
                 let pspwViolatingEvents = [];
                 if (isProd && count > 0) {
-                    const protColor = getDayProtectionColor(dayStart, events);
+                    const protColor = getViolationColor(dayStart, events);
                     if (protColor) {
                         pspwViolatingEvents = dayEvents.filter(e =>
                             isPspwDeployViolation(e, protColor, amberAllowed)
