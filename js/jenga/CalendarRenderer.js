@@ -98,6 +98,7 @@ export function getEnvLabel(env) {
     return (_envMeta()[(env || '').toLowerCase()] || { label: (env || '').toUpperCase().slice(0, 3) }).label;
 }
 
+
 function isCabProtectionEvent(ev) {
     if (!ev || ev.type !== 'PEAK_SEASON_PROTECTION_WINDOW') return false;
     return Boolean(ev.isCab) || /^CAB\s*[|]/i.test(ev.summary || '');
@@ -487,7 +488,7 @@ export class CalendarRenderer {
                         badge.className = 'jenga-chip__env-badge jenga-chip__env-badge--mini';
                         badge.textContent = label;
                         badge.style.background = getEnvColor(ev.environment);
-                        badge.style.color = getEnvColor(ev.environment) === '#eab308' ? '#1a1a1a' : '#fff';
+                        badge.style.color = getEnvTextColor(ev.environment);
                         btn.appendChild(badge);
                     }
                 } else {
@@ -819,7 +820,7 @@ export class CalendarRenderer {
         badge.className = 'jenga-chip__env-badge';
         badge.textContent = envMeta.label;
         badge.style.background = envMeta.color;
-        badge.style.color = envMeta.color === '#eab308' ? '#1a1a1a' : '#fff';
+        badge.style.color = envMeta.text || '#ffffff';
 
         const svc = document.createElement('span');
         svc.className = 'jenga-chip__service';
@@ -961,34 +962,39 @@ export class CalendarRenderer {
             document.body.appendChild(card);
         }
         this._hoverCard = card;
+        this._hoverTimer = null;
     }
 
     _showHoverCard(clientX, clientY, fields) {
         const card = this._hoverCard;
         if (!card) return;
-        card.innerHTML = fields
-            .filter(f => f.value)
-            .map(f => `<div class="jtl-hover-card__row"><span class="jtl-hover-card__lbl">${f.label}</span><span class="jtl-hover-card__val">${f.value}</span></div>`)
-            .join('');
-        card.style.display = 'block';
-        card.style.visibility = 'hidden';
-        card.style.top = '-9999px';
-        requestAnimationFrame(() => {
-            const cw = card.offsetWidth;
-            const ch = card.offsetHeight;
-            let left = clientX + 14;
-            let top  = clientY + 18;
-            if (left + cw + 8 > window.innerWidth)  left = clientX - cw - 14;
-            if (top  + ch + 8 > window.innerHeight) top  = clientY - ch - 18;
-            left = Math.max(8, left);
-            top  = Math.max(8, top);
-            card.style.left = `${left}px`;
-            card.style.top  = `${top}px`;
-            card.style.visibility = 'visible';
-        });
+        clearTimeout(this._hoverTimer);
+        this._hoverTimer = setTimeout(() => {
+            card.innerHTML = fields
+                .filter(f => f.value)
+                .map(f => `<div class="jtl-hover-card__row"><span class="jtl-hover-card__lbl">${f.label}</span><span class="jtl-hover-card__val">${f.value}</span></div>`)
+                .join('');
+            card.style.opacity = '0';
+            card.style.display = 'block';
+            card.style.top = '-9999px';
+            requestAnimationFrame(() => {
+                const cw = card.offsetWidth;
+                const ch = card.offsetHeight;
+                let left = clientX + 14;
+                let top  = clientY + 18;
+                if (left + cw + 8 > window.innerWidth)  left = clientX - cw - 14;
+                if (top  + ch + 8 > window.innerHeight) top  = clientY - ch - 18;
+                left = Math.max(8, left);
+                top  = Math.max(8, top);
+                card.style.left = `${left}px`;
+                card.style.top  = `${top}px`;
+                card.style.opacity = '1';
+            });
+        }, 400);
     }
 
     _hideHoverCard() {
+        clearTimeout(this._hoverTimer);
         if (this._hoverCard) this._hoverCard.style.display = 'none';
     }
 

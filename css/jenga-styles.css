@@ -507,7 +507,8 @@ html[data-theme="dark"] .jenga-chip__pspw-warn--badge {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 14px; height: 14px;
+    width: 14px;
+    height: 14px;
     margin-left: 3px;
     flex-shrink: 0;
     vertical-align: middle;
@@ -518,8 +519,11 @@ html[data-theme="dark"] .jenga-chip__pspw-warn--badge {
     line-height: 1;
     color: #ef4444;
 }
-html[data-theme="dark"] .jenga-chip__pspw-warn::before { color: #f87171; }
+html[data-theme="dark"] .jenga-chip__pspw-warn::before {
+    color: #f87171;
+}
 
+/* PSPW violation warning on DayDrawer event blocks and all-day chips */
 .day-timeline__pspw-warn {
     margin-left: 4px;
     font-size: 11px;
@@ -527,7 +531,9 @@ html[data-theme="dark"] .jenga-chip__pspw-warn::before { color: #f87171; }
     flex-shrink: 0;
     line-height: 1;
 }
-html[data-theme="dark"] .day-timeline__pspw-warn { color: #f87171; }
+html[data-theme="dark"] .day-timeline__pspw-warn {
+    color: #f87171;
+}
 
 /* Env badge inside service chip */
 .jenga-chip__env-badge {
@@ -1931,6 +1937,8 @@ html:not([data-theme="dark"]) .jtl-panel__total { color: rgba(0,0,0,.55); }
     pointer-events: none;
     font-size: 12px;
     font-family: var(--brand-font);
+    opacity: 0;
+    transition: opacity 180ms ease;
 }
 
 html:not([data-theme="dark"]) .jtl-hover-card {
@@ -5360,7 +5368,9 @@ html[data-theme="dark"] .jenga-slide--status {
     width: 100%;   /* override 'margin: 0 auto' auto-sizing in flex context */
     margin: 0;
     height: 100%;
+    /* visible so CSS columns can overflow rightward for multi-page detection */
     overflow: visible;
+    /* fill columns to slide height before overflowing right (prevents OMS spilling to own page) */
     column-fill: auto;
 }
 
@@ -5369,10 +5379,13 @@ html[data-theme="dark"] .jenga-slide--status {
 .jenga-slide--status .status-major-card   { padding: 10px 12px; }
 .jenga-slide--status .status-global-banner { padding: 10px 14px; margin-bottom: 10px; }
 
+/* TV: triple-height health bar — solid green base so undrawn segments show as green before animation */
 .jenga-slide--status .status-health-bar { height: 12px; border-radius: 6px; overflow: hidden; background: #22c55e; }
 html[data-theme="dark"] .jenga-slide--status .status-health-bar { background: #4ade80; }
+/* Clean segment is now transparent — the bar background (green) shows through */
 .jenga-slide--status .status-hb-seg--clean { background: transparent; }
 
+/* TV: clip-path reveal — segments grow left→right over the green base */
 @keyframes tv-hb-reveal {
     from { clip-path: inset(0 100% 0 0); }
     to   { clip-path: inset(0 0% 0 0); }

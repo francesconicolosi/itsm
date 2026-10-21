@@ -35,10 +35,10 @@ function itsmCutoffDate() {
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const ENV_SERIES = [
-    { key: 'prd',     label: 'PROD', color: '#a855f7' },
-    { key: 'qa',      label: 'QA',   color: '#3b82f6' },
-    { key: 'staging', label: 'STG',  color: '#10b981' },
-    { key: 'devops',  label: 'DEV',  color: '#9ca3af' },
+    { key: 'prd',     label: 'PROD', color: '#af7ac5' },
+    { key: 'qa',      label: 'QA',   color: '#e0aa5e' },
+    { key: 'staging', label: 'STG',  color: '#55b8a5' },
+    { key: 'devops',  label: 'DEV',  color: '#7799c6' },
 ];
 
 const ENV_KEYS = {
@@ -622,7 +622,7 @@ export class TimelineRenderer {
                 title: 'RELEASES',
                 subtitle: '(count per day)',
                 icon: '🚀',
-                iconColor: '#a855f7',
+                iconColor: '#af7ac5',
                 series: releaseData,
                 xDomain,
                 todayFmt,
@@ -701,13 +701,13 @@ export class TimelineRenderer {
         bar.className = 'jtl-filterbar';
 
         const series = [
-            { key: 'biz',       label: 'Business Events',     color: '#db2777' },
-            { key: 'prd',       label: 'Releases (PROD)',      color: '#a855f7' },
-            { key: 'qa',        label: 'Releases (QA)',        color: '#3b82f6' },
-            { key: 'staging',   label: 'Releases (STG)',       color: '#10b981' },
-            { key: 'devops',    label: 'Releases (DEV)',       color: '#9ca3af' },
-            { key: 'incidents', label: 'Incidents Created',    color: '#ef4444' },
-            { key: 'sr',        label: 'Service Requests Created', color: '#3b82f6' },
+            { key: 'biz',       label: 'Business Events', color: '#b66a8b' },
+            { key: 'prd',       label: 'Releases (PROD)', color: '#af7ac5' },
+            { key: 'qa',        label: 'Releases (QA)',   color: '#e0aa5e' },
+            { key: 'staging',   label: 'Releases (STG)',  color: '#55b8a5' },
+            { key: 'devops',    label: 'Releases (DEV)',  color: '#7799c6' },
+            { key: 'incidents', label: 'Incidents Created', color: '#c87982' },
+            { key: 'sr',        label: 'Service Requests Created', color: '#5b9bd5' },
         ];
 
         series.forEach(({ key, label, color }) => {
@@ -861,8 +861,10 @@ export class TimelineRenderer {
 
         const label = document.createElement('div');
         label.className = 'jtl-panel__label';
-        label.innerHTML = '<span class="jtl-panel__icon" style="color:#f59e0b">🛡️</span>' +
-            '<span class="jtl-panel__title" style="color:#f59e0b">PEAK SEASON<br>PROTECTION</span>';
+        label.innerHTML =
+            '<span class="jtl-panel__icon" style="color:#b66a8b">🛡️</span>' +
+            '<span class="jtl-panel__title" style="color:#b66a8b">PEAK SEASON<br>PROTECTION</span>';
+
         wrap.appendChild(label);
 
         const leg = document.createElement('ul');
@@ -1197,34 +1199,39 @@ export class TimelineRenderer {
             document.body.appendChild(card);
         }
         this._hoverCard = card;
+        this._hoverTimer = null;
     }
 
     _showHoverCard(clientX, clientY, fields) {
         const card = this._hoverCard;
         if (!card) return;
-        card.innerHTML = fields
-            .filter(f => f.value)
-            .map(f => `<div class="jtl-hover-card__row"><span class="jtl-hover-card__lbl">${f.label}</span><span class="jtl-hover-card__val">${f.value}</span></div>`)
-            .join('');
-        card.style.display = 'block';
-        card.style.visibility = 'hidden';
-        card.style.top = '-9999px';
-        requestAnimationFrame(() => {
-            const cw = card.offsetWidth;
-            const ch = card.offsetHeight;
-            let left = clientX + 14;
-            let top  = clientY + 18;
-            if (left + cw + 8 > window.innerWidth)  left = clientX - cw - 14;
-            if (top  + ch + 8 > window.innerHeight) top  = clientY - ch - 18;
-            left = Math.max(8, left);
-            top  = Math.max(8, top);
-            card.style.left = `${left}px`;
-            card.style.top  = `${top}px`;
-            card.style.visibility = 'visible';
-        });
+        clearTimeout(this._hoverTimer);
+        this._hoverTimer = setTimeout(() => {
+            card.innerHTML = fields
+                .filter(f => f.value)
+                .map(f => `<div class="jtl-hover-card__row"><span class="jtl-hover-card__lbl">${f.label}</span><span class="jtl-hover-card__val">${f.value}</span></div>`)
+                .join('');
+            card.style.opacity = '0';
+            card.style.display = 'block';
+            card.style.top = '-9999px';
+            requestAnimationFrame(() => {
+                const cw = card.offsetWidth;
+                const ch = card.offsetHeight;
+                let left = clientX + 14;
+                let top  = clientY + 18;
+                if (left + cw + 8 > window.innerWidth)  left = clientX - cw - 14;
+                if (top  + ch + 8 > window.innerHeight) top  = clientY - ch - 18;
+                left = Math.max(8, left);
+                top  = Math.max(8, top);
+                card.style.left = `${left}px`;
+                card.style.top  = `${top}px`;
+                card.style.opacity = '1';
+            });
+        }, 400);
     }
 
     _hideHoverCard() {
+        clearTimeout(this._hoverTimer);
         if (this._hoverCard) this._hoverCard.style.display = 'none';
     }
 
@@ -1422,7 +1429,7 @@ export class TimelineRenderer {
             g.append('line')
                 .attr('x1', tx).attr('x2', tx)
                 .attr('y1', -m.top + 4).attr('y2', innerH)
-                .attr('stroke', '#3b82f6')
+                .attr('stroke', '#5b9bd5')
                 .attr('stroke-width', 1.5)
                 .attr('stroke-dasharray', '4,3');
         }
@@ -1548,7 +1555,7 @@ export class TimelineRenderer {
                 .attr('font-weight', '600')
                 .text(d => d.value || '');
 
-            // PSPW violation warning triangles — sit just above the dot, same style as critical triangles
+            // PSPW violation warning triangles — centered on the dot (same position as critical triangles)
             const pspwWarnData = s.data.filter(d => d.hasPspwWarning && d.value > 0);
             if (pspwWarnData.length) {
                 const pspwTriSize = dotClickLabel ? 400 : 260;
@@ -2237,7 +2244,7 @@ export class TimelineRenderer {
                 .attr('y', -CHART_MARGIN.top)
                 .attr('width', dayStep)
                 .attr('height', innerH + CHART_MARGIN.top + CHART_MARGIN.bottom)
-                .attr('fill', '#f97316')
+                .attr('fill', '#be8b49')
                 .attr('fill-opacity', bandOpacity)
                 .attr('rx', 2);
         });
