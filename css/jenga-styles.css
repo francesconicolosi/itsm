@@ -5294,7 +5294,7 @@ html[data-theme="light"]     .jtl-pspw-popup__item + .jtl-pspw-popup__item { bor
     outline-offset: -2px;
     animation: jenga-sel-ring 1.8s ease-in-out infinite;
     z-index: 999;
-    background: transparent !important;
+    background: rgba(245,158,11,0.07) !important;
 }
 
 /* Dark mode */
@@ -5313,6 +5313,7 @@ html[data-theme="dark"] .jenga-multiday-bar.jenga--selected {
 html[data-theme="dark"] .jenga-cal__cell.jenga--selected {
     outline-color: rgba(251,191,36,.70);
     animation: jenga-sel-ring-dark 1.8s ease-in-out infinite;
+    background: rgba(245,158,11,0.12) !important;
 }
 
 /* Preserve PSPW background tint when a cell is selected (overrides transparent !important above) */
