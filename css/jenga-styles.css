@@ -5299,7 +5299,7 @@ html[data-theme="light"]     .jtl-pspw-popup__item + .jtl-pspw-popup__item { bor
 /* Light mode chips have near-white bg (#f1f5f9) — dim them so they integrate
    with the amber cell tint instead of appearing stark white */
 html:not([data-theme="dark"]) .jenga-cal__cell.jenga--selected .jenga-chip {
-    filter: brightness(0.88);
+    filter: brightness(0.76);
 }
 
 /* Dark mode */
