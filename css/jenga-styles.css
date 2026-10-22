@@ -86,8 +86,9 @@ body {
     cursor: pointer;
     font-size: 16px;
     flex-shrink: 0;
+    transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
 }
-.top-bar__hamburger:hover { background: #000; color: #fff; border-color: #000; }
+.top-bar__hamburger:hover { background: #e8e8e8; color: #111; border-color: #aaa; }
 
 .top-search {
     /* Grows to fill available space but capped so navigation isn't pushed off */
@@ -138,8 +139,9 @@ body {
     width: 36px; height: 36px;
     border-radius: 6px; border: 1px solid #ddd; background: #f8f8f8;
     cursor: pointer; font-size: 18px; color: #555;
+    transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
 }
-.jenga-month-btn:hover { background: #000; color: #fff; border-color: #000; }
+.jenga-month-btn:hover { background: #e8e8e8; color: #111; border-color: #aaa; }
 
 .jenga-month-label {
     font-size: 16px; font-weight: 700; min-width: 140px; text-align: center;
@@ -175,8 +177,9 @@ body {
     width: 34px; height: 36px;
     border-radius: 8px; border: 1px solid #ddd; background: #f8f8f8;
     cursor: pointer; font-size: 16px; color: #1a1a1a;
+    transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
 }
-.jenga-view-btn:hover { background: #000; color: #fff; border-color: #000; }
+.jenga-view-btn:hover { background: #e8e8e8; color: #111; border-color: #aaa; }
 .jenga-view-btn--active { background: #1a1a1a; color: #fff; border-color: #1a1a1a; }
 .jenga-view-btn--active:hover { background: #333; }
 .jenga-view-btn svg { fill: none; stroke: currentColor; }
@@ -193,8 +196,9 @@ body {
     box-shadow: 0 1px 2px rgba(0,0,0,.10);
     cursor: pointer; font-size: 13px; font-family: var(--brand-font);
     white-space: nowrap; flex-shrink: 0;
+    transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
 }
-.top-bar__action:hover { background: #000; color: #fff; border-color: #000; }
+.top-bar__action:hover { background: #e8e8e8; color: #111; border-color: #aaa; }
 
 /* ── Calendar grid ───────────────────────────────────────────────────────── */
 
@@ -417,7 +421,6 @@ html[data-theme="dark"] .jenga-cal__mb-hybris {
 
 .jenga-chip--more {
     background: none;
-    border-left-color: transparent;
     color: #666;
     font-size: 10px;
     font-weight: 600;

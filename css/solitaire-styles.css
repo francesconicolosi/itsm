@@ -264,9 +264,9 @@ input:checked + .slider::before {
 }
 .top-bar__hamburger:hover,
 .top-bar__action:hover {
-    background: #000;
-    color: #fff;
-    border-color: #000;
+    background: #e8e8e8;
+    color: #111;
+    border-color: #aaa;
 }
 
 /* ── Quick Filters ────────────────────────────────────────────────────────── */
@@ -314,7 +314,7 @@ input:checked + .slider::before {
     transition: background 0.12s ease, color 0.12s ease;
     line-height: 1;
 }
-.qf-dropdown-btn:hover { background: #000; color: #fff; border-color: #000; }
+.qf-dropdown-btn:hover { background: #e8e8e8; color: #111; border-color: #aaa; }
 .qf-dropdown-btn__caret { font-size: 10px; opacity: 0.7; }
 
 /* Slot in the search row that contains the dropdown wrapper */
@@ -456,7 +456,7 @@ input:checked + .slider::before {
     transition: background 0.12s ease, color 0.12s ease;
     line-height: 1.2;
 }
-.qf-chip:hover { background: #000; color: #fff; border-color: #000; }
+.qf-chip:hover { background: #e8e8e8; color: #111; border-color: #aaa; }
 .qf-chip--active {
     background: #1a1a1a;
     border-color: #1a1a1a;
@@ -615,8 +615,8 @@ input:checked + .slider::before {
 }
 
 #side-drawer .actions button:hover {
-    background-color: black;
-    color: white;
+    background-color: #e8e8e8;
+    color: #111;
 }
 
 .drawer-footer {
@@ -671,8 +671,8 @@ h1, h3, text, label, button, a, footer {
 }
 
 button:hover, .custom-file-upload:hover {
-    background-color: black;
-    color: white;
+    background-color: #e8e8e8;
+    color: #111;
 }
 
 /* Unified style for drawer header action buttons */
@@ -1119,9 +1119,9 @@ body.drawer-open {
 
 
 .contact-fab:hover {
-    background-color: black;
-    color: white;
-    border-color: black;
+    background-color: #e8e8e8;
+    color: #111;
+    border-color: #aaa;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.30);
     transform: translateY(-1px);
 }
@@ -2115,8 +2115,8 @@ html[data-theme="dark"] #canvas.is-zooming .profile-box--neutral { fill: #1c1c1e
 }
 
 .drawer-icon-btn:hover {
-    background-color: #000;
-    color: #fff;
+    background-color: rgba(0,0,0,.07);
+    color: #111;
 }
 
 /* Sub-panel header: ‹ title × — title fills the middle and wraps if long */
