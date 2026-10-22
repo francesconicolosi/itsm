@@ -340,9 +340,7 @@ export function createFormattedLongTextElementsFrom(longText) {
             cb.type = 'checkbox';
             if (taskMatch[1].toLowerCase() === 'x') cb.checked = true;
             const span = document.createElement('span');
-            const tpl = document.createElement('template');
-            tpl.innerHTML = taskMatch[2];
-            span.append(...Array.from(tpl.content.childNodes));
+            span.append(...createFormattedElementsFrom([taskMatch[2]]));
             li.append(cb, span);
             currentList.appendChild(li);
         } else if (bulletMatch) {
@@ -352,9 +350,7 @@ export function createFormattedLongTextElementsFrom(longText) {
                 currentListType = 'bullet';
             }
             const li = document.createElement('li');
-            const tpl = document.createElement('template');
-            tpl.innerHTML = bulletMatch[1];
-            li.append(...Array.from(tpl.content.childNodes));
+            li.append(...createFormattedElementsFrom([bulletMatch[1]]));
             currentList.appendChild(li);
         } else if (line.trimStart().startsWith('<table')) {
             flushList();
