@@ -5314,6 +5314,18 @@ html[data-theme="dark"] .jenga-cal__cell.jenga--selected {
     outline-color: rgba(251,191,36,.70);
     animation: jenga-sel-ring-dark 1.8s ease-in-out infinite;
 }
+
+/* Preserve PSPW background tint when a cell is selected (overrides transparent !important above) */
+.jenga-cal__cell--pspw-red.jenga--selected   { background: rgba(239,68,68,0.12) !important; }
+.jenga-cal__cell--pspw-amber.jenga--selected { background: rgba(234,179,8,0.16) !important; }
+.jenga-cal__cell--pspw-blue.jenga--selected  { background: rgba(59,130,246,0.15) !important; }
+.jenga-cal__cell--peak.jenga--selected       { background: linear-gradient(to bottom, rgba(251,146,60,0.32) 0%, rgba(251,146,60,0.12) 50%, transparent 100%) !important; }
+
+html[data-theme="dark"] .jenga-cal__cell--pspw-red.jenga--selected   { background: rgba(239,68,68,0.18) !important; }
+html[data-theme="dark"] .jenga-cal__cell--pspw-amber.jenga--selected { background: rgba(234,179,8,0.18) !important; }
+html[data-theme="dark"] .jenga-cal__cell--pspw-blue.jenga--selected  { background: rgba(59,130,246,0.18) !important; }
+html[data-theme="dark"] .jenga-cal__cell--peak.jenga--selected       { background: linear-gradient(to bottom, rgba(251,146,60,0.35) 0%, rgba(251,146,60,0.14) 50%, transparent 100%) !important; }
+
 /* ═══════════════════════════════════════════════════════════════════════════
    STATUS VIEW — shared across regular & slideshow mode
    CSS copied from css/styles.css; multi-column layout added for Jenga
