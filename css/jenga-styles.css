@@ -5294,7 +5294,12 @@ html[data-theme="light"]     .jtl-pspw-popup__item + .jtl-pspw-popup__item { bor
     outline-offset: -2px;
     animation: jenga-sel-ring 1.8s ease-in-out infinite;
     z-index: 999;
-    background: rgba(245,158,11,0.07) !important;
+    background: rgba(245,158,11,0.12) !important;
+}
+/* Light mode chips have near-white bg (#f1f5f9) — dim them so they integrate
+   with the amber cell tint instead of appearing stark white */
+html:not([data-theme="dark"]) .jenga-cal__cell.jenga--selected .jenga-chip {
+    filter: brightness(0.88);
 }
 
 /* Dark mode */
