@@ -131,6 +131,8 @@ input:checked + .slider::before {
   border-color: #111;
   box-shadow: none;
 }
+.top-bar__action.is-active span { filter: brightness(0) invert(1); }
+html[data-theme="dark"] .top-bar__action.is-active span { filter: none; }
 html[data-theme="dark"] .top-bar__action.is-active {
   background: rgba(255,255,255,0.18);
   border-color: rgba(255,255,255,0.35);
