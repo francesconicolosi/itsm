@@ -1730,14 +1730,37 @@ export class TimelineRenderer {
 
     // ── Day / month collision picker ──────────────────────────────────────────
 
+    /**
+     * Positions a fixed popup near an SVG anchor element and keeps it there as
+     * the .jtl-main container scrolls. Returns a cleanup function that removes
+     * the scroll listener; call it when the popup is closed.
+     */
+    _anchorPopupToTarget(popup, anchorEl) {
+        let pw = 0, ph = 0;
+        const position = () => {
+            const aRect = anchorEl.getBoundingClientRect();
+            const ax = aRect.left + aRect.width  / 2;
+            const ay = aRect.top  + aRect.height / 2;
+            if (!pw) { pw = popup.offsetWidth; ph = popup.offsetHeight; }
+            let left = ax + 10;
+            let top  = ay - 10;
+            if (left + pw + 8 > window.innerWidth)  left = ax - pw - 10;
+            if (top  + ph + 8 > window.innerHeight) top  = ay - ph + 10;
+            popup.style.left = `${Math.max(8, left)}px`;
+            popup.style.top  = `${Math.max(8, top)}px`;
+        };
+        requestAnimationFrame(position);
+        const container = document.querySelector('.jtl-main');
+        container?.addEventListener('scroll', position);
+        return () => container?.removeEventListener('scroll', position);
+    }
+
     _showDayMonthPicker(event, entries, dotClickLabel) {
         document.getElementById('jtl-month-picker')?.remove();
 
         const picker = document.createElement('div');
         picker.id = 'jtl-month-picker';
         picker.className = 'jtl-month-picker';
-        picker.style.left = `${event.clientX + 10}px`;
-        picker.style.top  = `${event.clientY - 10}px`;
 
         entries.forEach(entry => {
             const btn = document.createElement('button');
@@ -1750,23 +1773,19 @@ export class TimelineRenderer {
             btn.addEventListener('click', e => {
                 e.stopPropagation();
                 picker.remove();
+                cleanup();
                 this._onDotClick(entry.date, dotClickLabel);
             });
             picker.appendChild(btn);
         });
 
         document.body.appendChild(picker);
-
-        // Flip position if near viewport edge
-        requestAnimationFrame(() => {
-            const rect = picker.getBoundingClientRect();
-            if (rect.right  > window.innerWidth  - 8) picker.style.left = `${event.clientX - rect.width  - 10}px`;
-            if (rect.bottom > window.innerHeight - 8) picker.style.top  = `${event.clientY - rect.height + 10}px`;
-        });
+        const cleanup = this._anchorPopupToTarget(picker, event.target);
 
         const close = e => {
             if (!picker.contains(e.target)) {
                 picker.remove();
+                cleanup();
                 document.removeEventListener('click', close, true);
             }
         };
@@ -1782,8 +1801,6 @@ export class TimelineRenderer {
         popup.className = 'jenga-popover';
         popup.style.position = 'fixed';
         popup.style.zIndex   = '10002';
-        popup.style.left = `${event.clientX + 10}px`;
-        popup.style.top  = `${event.clientY - 10}px`;
 
         const header = document.createElement('div');
         header.className = 'jenga-popover__header';
@@ -1793,7 +1810,7 @@ export class TimelineRenderer {
         const closeBtn = document.createElement('button');
         closeBtn.className = 'jenga-popover__close';
         closeBtn.textContent = '✕';
-        closeBtn.addEventListener('click', e => { e.stopPropagation(); popup.remove(); document.removeEventListener('click', closeListener, true); });
+        closeBtn.addEventListener('click', e => { e.stopPropagation(); popup.remove(); cleanup(); document.removeEventListener('click', closeListener, true); });
         header.appendChild(title);
         header.appendChild(closeBtn);
         popup.appendChild(header);
@@ -1831,6 +1848,7 @@ export class TimelineRenderer {
             chip.addEventListener('click', e => {
                 e.stopPropagation();
                 popup.remove();
+                cleanup();
                 document.removeEventListener('click', closeListener, true);
                 this._onEventClick?.(ev);
             });
@@ -1841,16 +1859,12 @@ export class TimelineRenderer {
         popup.appendChild(list);
         popup.addEventListener('click', e => e.stopPropagation());
         document.body.appendChild(popup);
-
-        requestAnimationFrame(() => {
-            const rect = popup.getBoundingClientRect();
-            if (rect.right  > window.innerWidth  - 8) popup.style.left = `${event.clientX - rect.width  - 10}px`;
-            if (rect.bottom > window.innerHeight - 8) popup.style.top  = `${event.clientY - rect.height + 10}px`;
-        });
+        const cleanup = this._anchorPopupToTarget(popup, event.target);
 
         closeListener = e => {
             if (!popup.contains(e.target)) {
                 popup.remove();
+                cleanup();
                 document.removeEventListener('click', closeListener, true);
             }
         };
