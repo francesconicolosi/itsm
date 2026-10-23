@@ -428,10 +428,20 @@ export class JengaApp {
         const allForDay = this.store.getEventsForDay(date);
         const filtered  = this.search.getFilteredEvents(allForDay);
 
+        // Include PSPW events from neighbouring days so getViolationColor can
+        // compute the BLUE→AMBER sandwich upgrade correctly inside the drawer.
+        const prevDay = new Date(date.getFullYear(), date.getMonth(), date.getDate() - 1);
+        const nextDay = new Date(date.getFullYear(), date.getMonth(), date.getDate() + 1);
+        const neighbourPspw = [
+            ...this.store.getEventsForDay(prevDay),
+            ...this.store.getEventsForDay(nextDay),
+        ].filter(e => e.type === 'PEAK_SEASON_PROTECTION_WINDOW');
+
         const finalEvents = [
             ...new Map([
                 ...filtered,
-                ...allForDay.filter(e => e.type === 'PEAK_SEASON_PROTECTION_WINDOW')
+                ...allForDay.filter(e => e.type === 'PEAK_SEASON_PROTECTION_WINDOW'),
+                ...neighbourPspw,
             ].map(e => [e.key, e])).values()
         ];
 
