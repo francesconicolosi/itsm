@@ -1731,17 +1731,23 @@ export class TimelineRenderer {
     // ── Day / month collision picker ──────────────────────────────────────────
 
     /**
-     * Positions a fixed popup near an SVG anchor element and keeps it there as
-     * the .jtl-main container scrolls. Returns a cleanup function that removes
-     * the scroll listener; call it when the popup is closed.
+     * Positions a fixed popup near the click coordinates and tracks it as the
+     * .jtl-main container (or window) scrolls. Returns a cleanup function.
      */
-    _anchorPopupToTarget(popup, anchorEl) {
-        let pw = 0, ph = 0;
-        const position = () => {
-            const aRect = anchorEl.getBoundingClientRect();
-            const ax = aRect.left + aRect.width  / 2;
-            const ay = aRect.top  + aRect.height / 2;
-            if (!pw) { pw = popup.offsetWidth; ph = popup.offsetHeight; }
+    _anchorPopupToTarget(popup, clientX, clientY) {
+        const container = document.querySelector('.jtl-main');
+        const initSL = container?.scrollLeft ?? 0;
+        const initST = container?.scrollTop  ?? 0;
+        const initWX = window.scrollX;
+        const initWY = window.scrollY;
+
+        const place = () => {
+            const dL = (container?.scrollLeft ?? 0) - initSL;
+            const dT = (container?.scrollTop  ?? 0) - initST;
+            const ax = clientX - dL - (window.scrollX - initWX);
+            const ay = clientY - dT - (window.scrollY - initWY);
+            const pw = popup.offsetWidth  || 0;
+            const ph = popup.offsetHeight || 0;
             let left = ax + 10;
             let top  = ay - 10;
             if (left + pw + 8 > window.innerWidth)  left = ax - pw - 10;
@@ -1749,10 +1755,14 @@ export class TimelineRenderer {
             popup.style.left = `${Math.max(8, left)}px`;
             popup.style.top  = `${Math.max(8, top)}px`;
         };
-        requestAnimationFrame(position);
-        const container = document.querySelector('.jtl-main');
-        container?.addEventListener('scroll', position);
-        return () => container?.removeEventListener('scroll', position);
+
+        requestAnimationFrame(place);
+        container?.addEventListener('scroll', place);
+        window.addEventListener('scroll', place, { passive: true });
+        return () => {
+            container?.removeEventListener('scroll', place);
+            window.removeEventListener('scroll', place);
+        };
     }
 
     _showDayMonthPicker(event, entries, dotClickLabel) {
@@ -1780,7 +1790,7 @@ export class TimelineRenderer {
         });
 
         document.body.appendChild(picker);
-        const cleanup = this._anchorPopupToTarget(picker, event.target);
+        const cleanup = this._anchorPopupToTarget(picker, event.clientX, event.clientY);
 
         const close = e => {
             if (!picker.contains(e.target)) {
@@ -1859,7 +1869,7 @@ export class TimelineRenderer {
         popup.appendChild(list);
         popup.addEventListener('click', e => e.stopPropagation());
         document.body.appendChild(popup);
-        const cleanup = this._anchorPopupToTarget(popup, event.target);
+        const cleanup = this._anchorPopupToTarget(popup, event.clientX, event.clientY);
 
         closeListener = e => {
             if (!popup.contains(e.target)) {
