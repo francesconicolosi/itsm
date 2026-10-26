@@ -203,12 +203,29 @@ may be deployed without CAB. All others require CAB approval.<br/><br/>
 
     _buildContent(date, events) {
         const frag = document.createDocumentFragment();
+        // getViolationColor needs all events (including neighbour PSPW events passed by
+        // _openDayForDate) so it can apply the BLUE→AMBER sandwich upgrade.
         const protectionColor = getDayProtectionColor(date, events);
         const violationColor  = getViolationColor(date, events);
 
+        // For display, strip out PSPW events that don't actually cover this date.
+        // Neighbour PSPW events are passed only for the sandwich-upgrade computation above
+        // and must not appear in the all-day chip list or drive the protection banner.
+        const y = date.getFullYear(), mo = date.getMonth(), dd = date.getDate();
+        const dayStart = new Date(y, mo, dd);
+        const dayEnd   = new Date(y, mo, dd, 23, 59, 59);
+        const displayEvents = events.filter(e => {
+            if (e.type !== 'PEAK_SEASON_PROTECTION_WINDOW') return true;
+            let s = e.startDate || e.dueDate;
+            let en = e.dueDate  || e.startDate;
+            if (!s || !en) return true;
+            if (s > en) { const t = s; s = en; en = t; }
+            return s <= dayEnd && en >= dayStart;
+        });
+
         // Multi-day BUSINESS_EVENTs always go to all-day even when they carry a timeSlot
-        const allDay = events.filter(e => !e.timeSlot || e.type === 'BUSINESS_EVENT');
-        const timed  = events.filter(e => e.timeSlot  && e.type !== 'BUSINESS_EVENT');
+        const allDay = displayEvents.filter(e => !e.timeSlot || e.type === 'BUSINESS_EVENT');
+        const timed  = displayEvents.filter(e => e.timeSlot  && e.type !== 'BUSINESS_EVENT');
 
         // ── All-day section (hidden when empty or all filtered out) ──────────
         if (allDay.length > 0) {
@@ -254,10 +271,10 @@ may be deployed without CAB. All others require CAB approval.<br/><br/>
             frag.appendChild(allDaySection);
         }
 
-        const peakBanner = this._buildPeakEventsBanner(date, events);
+        const peakBanner = this._buildPeakEventsBanner(date, displayEvents);
         if (peakBanner) frag.appendChild(peakBanner);
 
-        const protectionBox = this._buildProtectionInfo(events);
+        const protectionBox = this._buildProtectionInfo(displayEvents);
         if (protectionBox) {
             frag.appendChild(protectionBox);
         }
