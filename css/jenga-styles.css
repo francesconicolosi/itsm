@@ -5931,26 +5931,45 @@ html[data-theme="dark"] .status-thermometer {
     height: auto;
     max-height: 200px;
 }
-/* TV: thermometer slot anchored bottom-right, one column wide — CSS only, no JS */
-.status-thermometer-tv-slot {
-    position: absolute;
-    bottom: 0;
-    right: 0;
-    width: calc(100% / var(--status-cols, 2));
-    box-sizing: border-box;
+/* TV: thermometer styled as a stream block — same border, header look as other streams */
+.jenga-status-tv .status-thermometer {
+    margin-top: 10px;
+    padding: 0;
+    background: transparent;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    overflow: hidden;
+    break-inside: avoid;
 }
-.status-thermometer-tv-slot .status-thermometer {
-    margin-top: 0;
-    padding: 12px 16px;
+html[data-theme="dark"] .jenga-status-tv .status-thermometer {
+    border-color: #2e2e32;
+    color: rgba(255, 255, 255, 0.85);
+}
+.jenga-status-tv .status-thermometer-title {
+    display: block;
+    padding: 10px 14px;
+    background: #f3f4f6;
+    font-size: 1.7rem;
+    font-weight: 700;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+    opacity: 1;
+    margin-bottom: 0;
+}
+html[data-theme="dark"] .jenga-status-tv .status-thermometer-title {
+    background: #1c1c1e;
+}
+.jenga-status-tv .status-thermometer-chart-body {
+    padding: 8px 10px;
 }
 /* Padding-bottom trick maintains SVG 560:220 aspect ratio on all browsers (incl. old TV Chromium) */
-.status-thermometer-tv-slot .status-thermometer-chart-wrap {
+.jenga-status-tv .status-thermometer-chart-wrap {
     position: relative;
     width: 100%;
     padding-bottom: 39.3%;
     height: 0;
 }
-.status-thermometer-tv-slot .status-thermometer-chart {
+.jenga-status-tv .status-thermometer-chart {
     position: absolute;
     top: 0;
     left: 0;
@@ -5958,7 +5977,4 @@ html[data-theme="dark"] .status-thermometer {
     height: 100%;
     max-height: none;
     min-height: 0;
-}
-html[data-theme="dark"] .status-thermometer-tv-slot {
-    color: rgba(255, 255, 255, 0.85);
 }

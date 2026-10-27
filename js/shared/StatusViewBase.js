@@ -523,6 +523,8 @@ export class StatusViewBase {
 
         // SVG canvas
         const W = 560, H = 220;
+        const fs1 = tv ? (11 * 0.75).toFixed(2) : 11;
+        const fs2 = tv ? (10 * 0.75).toFixed(2) : 10;
         const mt = 20, mr = 20, mb = 55, ml = 42;
         const cw = W - ml - mr;
         const ch = H - mt - mb;
@@ -542,7 +544,7 @@ export class StatusViewBase {
         for (let t = 0; t <= yMax; t += step) {
             const y = yPos(t).toFixed(1);
             yLines.push(`<line x1="${ml}" y1="${y}" x2="${ml + cw}" y2="${y}" stroke="currentColor" stroke-opacity="0.1" stroke-width="1"/>`);
-            yLines.push(`<text x="${ml - 6}" y="${(+y + 4).toFixed(1)}" text-anchor="end" font-size="11" fill="currentColor" fill-opacity="0.55">${t}</text>`);
+            yLines.push(`<text x="${ml - 6}" y="${(+y + 4).toFixed(1)}" text-anchor="end" font-size="${fs1}" fill="currentColor" fill-opacity="0.55">${t}</text>`);
         }
 
         // Bars + x-axis labels
@@ -559,8 +561,8 @@ export class StatusViewBase {
                 parts.push(`<rect x="${bx}" y="${yPos(m.p1 + m.p2).toFixed(1)}" width="${barW}" height="${h}" fill="#d97706" rx="2"/>`);
             }
             const lx = cx.toFixed(1);
-            parts.push(`<text x="${lx}" y="${(H - mb + 16).toFixed(1)}" text-anchor="middle" font-size="11" fill="currentColor" fill-opacity="0.6">${MONTH_NAMES[m.month]}</text>`);
-            parts.push(`<text x="${lx}" y="${(H - mb + 30).toFixed(1)}" text-anchor="middle" font-size="10" fill="currentColor" fill-opacity="0.45">${m.year}</text>`);
+            parts.push(`<text x="${lx}" y="${(H - mb + 16).toFixed(1)}" text-anchor="middle" font-size="${fs1}" fill="currentColor" fill-opacity="0.6">${MONTH_NAMES[m.month]}</text>`);
+            parts.push(`<text x="${lx}" y="${(H - mb + 30).toFixed(1)}" text-anchor="middle" font-size="${fs2}" fill="currentColor" fill-opacity="0.45">${m.year}</text>`);
             return parts.join('');
         }).join('');
 
@@ -569,14 +571,14 @@ export class StatusViewBase {
         const legY = H - 6;
         const legend = `
             <rect x="${legX}" y="${legY - 10}" width="11" height="11" fill="#991b1b" rx="2"/>
-            <text x="${legX + 16}" y="${legY}" font-size="11" fill="currentColor" fill-opacity="0.7">P1</text>
+            <text x="${legX + 16}" y="${legY}" font-size="${fs1}" fill="currentColor" fill-opacity="0.7">P1</text>
             <rect x="${legX + 50}" y="${legY - 10}" width="11" height="11" fill="#d97706" rx="2"/>
-            <text x="${legX + 66}" y="${legY}" font-size="11" fill="currentColor" fill-opacity="0.7">P2</text>`;
+            <text x="${legX + 66}" y="${legY}" font-size="${fs1}" fill="currentColor" fill-opacity="0.7">P2</text>`;
 
         return `
             <div class="status-thermometer${tv ? ' status-thermometer--tv' : ''}">
                 <div class="status-thermometer-title">Stability Thermometer</div>
-                ${tv ? '<div class="status-thermometer-chart-wrap">' : ''}
+                ${tv ? '<div class="status-thermometer-chart-body"><div class="status-thermometer-chart-wrap">' : ''}
                 <svg viewBox="0 0 ${W} ${H}" class="status-thermometer-chart" role="img" aria-label="P1 and P2 incidents per month">
                     <line x1="${ml}" y1="${mt}" x2="${ml}" y2="${mt + ch}" stroke="currentColor" stroke-opacity="0.25" stroke-width="1"/>
                     <line x1="${ml}" y1="${mt + ch}" x2="${ml + cw}" y2="${mt + ch}" stroke="currentColor" stroke-opacity="0.25" stroke-width="1"/>
@@ -584,7 +586,7 @@ export class StatusViewBase {
                     ${bars}
                     ${legend}
                 </svg>
-                ${tv ? '</div>' : ''}
+                ${tv ? '</div></div>' : ''}
             </div>`;
     }
 
