@@ -5908,28 +5908,38 @@ html[data-theme="dark"] .status-major-svc-tag {
 /* ── Stability Thermometer ────────────────────────────────────────── */
 .status-thermometer {
     margin-top: 28px;
-    padding: 16px 20px;
-    background: rgba(0,0,0,.02);
-    border: 1px solid rgba(0,0,0,.07);
-    border-radius: 10px;
+    padding: 0;
+    background: transparent;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    overflow: hidden;
 }
 html[data-theme="dark"] .status-thermometer {
-    background: rgba(255,255,255,.02);
-    border-color: rgba(255,255,255,.07);
+    border-color: #2e2e32;
+    background: transparent;
 }
 .status-thermometer-title {
+    display: block;
+    padding: 10px 14px;
+    background: #f3f4f6;
     font-size: 12px;
-    font-weight: 600;
-    letter-spacing: .06em;
+    font-weight: 700;
+    letter-spacing: .05em;
     text-transform: uppercase;
-    opacity: .5;
-    margin-bottom: 10px;
+    opacity: 1;
+    margin-bottom: 0;
+}
+html[data-theme="dark"] .status-thermometer-title {
+    background: #1c1c1e;
+}
+.status-thermometer-chart-body {
+    padding: 12px 16px;
 }
 .status-thermometer-chart {
     display: block;
     width: 100%;
     height: auto;
-    max-height: 200px;
+    max-height: none;
 }
 /* TV: thermometer styled as a stream block — same border, header look as other streams */
 .jenga-status-tv .status-thermometer {
