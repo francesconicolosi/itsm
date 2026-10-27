@@ -202,9 +202,10 @@ export class StatusView {
 
         // Exclude decommissioned, 3rd-party types, and unmapped (no stream/theme) services
         const DEAD = new Set(['Stopped', 'Decommissioned']);
+        const brandHideTypes = this.app?.brandHideTypes;
         const nodes = store.nodes.filter(n => {
             if (DEAD.has(n.Status) || n['Decommission Date']) return false;
-            if (HIDE_TYPES.has(n['Type'])) return false;
+            if (HIDE_TYPES.has(n['Type']) || brandHideTypes?.has(n['Type'])) return false;
             return Boolean((n['Stream'] || '').trim()) && Boolean((n['Theme'] || '').trim());
         });
 

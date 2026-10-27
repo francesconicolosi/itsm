@@ -118,8 +118,9 @@ export class JengaStatusView {
         const healthMap = this._buildHealthMap();
 
         const activeServices = this.app?.search?.activeServices;
+        const brandHideTypes = this.app?.brandHideTypes;
         const nodes = (this._nodes || []).filter(n => {
-            if (HIDE_TYPES.has(n['Type'])) return false;
+            if (HIDE_TYPES.has(n['Type']) || brandHideTypes?.has(n['Type'])) return false;
             if (!Boolean((n['Stream'] || '').trim()) || !Boolean((n['Theme'] || '').trim())) return false;
             if (activeServices?.size > 0 && !activeServices.has(n.id)) return false;
             return true;

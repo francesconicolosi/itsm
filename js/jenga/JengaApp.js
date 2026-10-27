@@ -32,6 +32,7 @@ export class JengaApp {
         this.cardsDrawer = new CardsDrawer();
         this.search     = new JengaSearch(this);
         this.slideshow  = new SlideshowController(this);
+        this.brandHideTypes = new Set(BRAND.statusHideTypes || []);
         this.statusView = new JengaStatusView(this);
         this.majorIncidentAlert = new MajorIncidentAlert();
         this.postIt = new PostItNote('jenga');

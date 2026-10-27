@@ -60,6 +60,12 @@ M 271.125 27.303 Q 271.125 34.953 273.825 40.691 Q 276.525 46.428 281.4 49.616 Q
         jiraUpdateRequest: 'https://itsmdigital.atlas.net/servicedesk/customer/portal/1/create/174',
     },
 
+    /**
+     * Service types to hide from the status page in addition to the generic
+     * exclusions (SaaS, Service Provider). Brand-specific only.
+     */
+    statusHideTypes: [],
+
     /** CSV data sources fetched at startup */
     csv: {
         /** Solitaire org-chart data (relative to the HTML page, i.e. inside dist/) */

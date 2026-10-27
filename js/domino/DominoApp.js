@@ -22,6 +22,7 @@ export class DominoApp {
         this.legend = new DominoLegend(this);
         this.listView = new ListView(this);
         this.drawer = new DetailDrawer(this);
+        this.brandHideTypes = new Set(BRAND.statusHideTypes || []);
         this.statusView = new StatusView(this);
         this.postIt = new PostItNote('domino');
         this.announcementBar = new AnnouncementBar();
