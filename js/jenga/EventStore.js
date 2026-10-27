@@ -107,6 +107,8 @@ export function getViolationColor(date, events) {
 export function isPspwDeployViolation(ev, protectionColor, amberAllowedServices) {
     if (!protectionColor || ev.type !== 'SERVICE_OP') return false;
     if ((ev.operation || '').toLowerCase() !== 'deploy') return false;
+    const env = (ev.environment || '').toLowerCase().trim();
+    if (env && env !== 'prd' && env !== 'prod') return false;
     if (protectionColor === 'RED' || protectionColor === 'BLUE') return true;
     if (protectionColor === 'AMBER') {
         if (!amberAllowedServices?.size) return true;
