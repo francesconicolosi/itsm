@@ -1204,6 +1204,8 @@ html[data-theme="dark"] .status-stream-header {
 }
 
 .status-stream-name { flex: 1; }
+.status-solitaire-link { color: inherit; text-decoration: none; }
+.status-solitaire-link:hover { text-decoration: underline; }
 
 .status-stream-body {
     padding: 6px 0 4px;

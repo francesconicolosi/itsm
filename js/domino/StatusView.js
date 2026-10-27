@@ -467,7 +467,7 @@ export class StatusView {
             <div class="status-stream" data-health="${health}">
                 <div class="status-stream-header">
                     <span class="status-dot status-dot--${displayHealth}"></span>
-                    <span class="status-stream-name">${name}</span>
+                    <a class="status-stream-name status-solitaire-link" href="solitaire.html?search=${encodeURIComponent(`stream:"${name}"`)}" title="View in Solitaire">${name}</a>
                     ${this._pill(displayHealth)}
                     ${minorCount > 0 ? `<span class="status-minor-badge">▲ ${minorCount}</span>` : ''}
                 </div>
@@ -519,7 +519,7 @@ export class StatusView {
         return `
             <div class="status-theme" data-health="${health}">
                 <div class="status-theme-header">
-                    <span class="status-theme-name">${name}</span>
+                    <a class="status-theme-name status-solitaire-link" href="solitaire.html?search=${encodeURIComponent(`theme:"${name}"`)}" title="View in Solitaire">${name}</a>
                     ${this._pill(displayHealth)}
                     ${minorCount > 0 ? `<span class="status-minor-badge">▲ ${minorCount}</span>` : ''}
                 </div>
