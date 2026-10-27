@@ -5917,9 +5917,6 @@ html[data-theme="dark"] .status-thermometer {
     background: rgba(255,255,255,.02);
     border-color: rgba(255,255,255,.07);
 }
-.status-thermometer--tv {
-    break-inside: avoid;
-}
 .status-thermometer-title {
     font-size: 12px;
     font-weight: 600;

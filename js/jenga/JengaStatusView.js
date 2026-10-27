@@ -84,31 +84,76 @@ export class JengaStatusView extends StatusViewBase {
         const displayCards = isFinite(incidentLimit) || incidentOffset > 0
             ? majorCards.slice(incidentOffset, incidentOffset + incidentLimit)
             : majorCards;
+        // TV mode: thermometer is NOT in the column flow (added as absolute overlay below)
         inner.innerHTML =
             this._renderBanner(globalHealth, operational, affected, minorTotal, tv) +
             (section !== 'streams' && displayCards.length ? this._renderMajorIncidents(displayCards, majorCards) : '') +
             (section !== 'incidents' ? streamData.map(s => this._renderStream(s, healthMap, maxMinorCount, tv)).join('') : '') +
-            (section !== 'incidents' ? this._renderStabilityThermometer(tv) : '');
+            (!tv && section !== 'incidents' ? this._renderStabilityThermometer(false) : '');
 
         containerEl.innerHTML = '';
         containerEl.appendChild(inner);
 
         this._bindInteractions(healthMap, inner);
 
-        // TV: expand thermometer chart to fill remaining column space
+        // TV: overlay thermometer absolutely in the rightmost column's empty space.
+        // Keeping it out of the column flow prevents it overflowing to a clipped Col 3.
         if (tv && section !== 'incidents') {
             requestAnimationFrame(() => {
-                const thermoEl = inner.querySelector('.status-thermometer');
-                const chartEl  = thermoEl?.querySelector('.status-thermometer-chart');
-                if (!thermoEl || !chartEl) return;
-                const zoom        = parseFloat(inner.style.zoom) || 1;
-                const visualGap   = inner.getBoundingClientRect().bottom - thermoEl.getBoundingClientRect().bottom;
-                if (visualGap > 10) {
-                    const logicalGap = Math.round(visualGap / zoom);
-                    const curLogical = Math.round(chartEl.getBoundingClientRect().height / zoom);
-                    chartEl.style.height    = `${curLogical + logicalGap - 8}px`;
-                    chartEl.style.maxHeight = 'none';
+                if (!inner.isConnected) return;
+                const innerRect = inner.getBoundingClientRect();
+                if (innerRect.width <= 0 || innerRect.height <= 0) return;
+
+                const zoomFactor = parseFloat(inner.style.zoom) || 1;
+                const colW       = innerRect.width / cols;
+                const rightColX  = innerRect.left + (cols - 1) * colW;
+
+                // Content start = bottom of column-spanning elements (banner, incidents panel)
+                let contentBottom = innerRect.top;
+                inner.querySelectorAll('.status-global-banner, .status-major-panel').forEach(el => {
+                    contentBottom = Math.max(contentBottom, el.getBoundingClientRect().bottom);
+                });
+
+                // Advance to the bottom of any streams in the rightmost column
+                inner.querySelectorAll('.status-stream').forEach(el => {
+                    const r = el.getBoundingClientRect();
+                    if (r.left >= rightColX - 20) {
+                        contentBottom = Math.max(contentBottom, r.bottom);
+                    }
+                });
+
+                const availH = innerRect.bottom - contentBottom - 12;
+                if (availH < 60) return;
+
+                const tmpDiv = document.createElement('div');
+                tmpDiv.innerHTML = this._renderStabilityThermometer(true);
+                const thermoEl = tmpDiv.firstElementChild;
+                if (!thermoEl) return;
+
+                const topLogical    = Math.round((contentBottom - innerRect.top + 12) / zoomFactor);
+                const widthLogical  = Math.round(colW / zoomFactor);
+                const heightLogical = Math.round((availH - 8) / zoomFactor);
+
+                thermoEl.style.position   = 'absolute';
+                thermoEl.style.top        = `${topLogical}px`;
+                thermoEl.style.right      = '0';
+                thermoEl.style.width      = `${widthLogical}px`;
+                thermoEl.style.height     = `${heightLogical}px`;
+                thermoEl.style.marginTop  = '0';
+                thermoEl.style.boxSizing  = 'border-box';
+
+                const chartEl = thermoEl.querySelector('.status-thermometer-chart');
+                if (chartEl) {
+                    const chartH = heightLogical - 30 - 32; // 30 = title, 32 = padding
+                    if (chartH > 50) {
+                        chartEl.style.height    = `${chartH}px`;
+                        chartEl.style.maxHeight = 'none';
+                        chartEl.style.minHeight = '0';
+                    }
                 }
+
+                inner.style.position = 'relative';
+                inner.appendChild(thermoEl);
             });
         }
     }
