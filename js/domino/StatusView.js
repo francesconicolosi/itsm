@@ -162,7 +162,8 @@ export class StatusView extends StatusViewBase {
             this._renderBanner(globalHealth, operational, affected, minorTotal) +
             (majorCards.length ? this._renderMajorIncidents(majorCards) : '') +
             (hasFilter && !filtered.length ? '<p class="status-no-results">No matching services or areas found.</p>' : '') +
-            filtered.map(s => this._renderStream(s, healthMap, maxMinorCount)).join('');
+            filtered.map(s => this._renderStream(s, healthMap, maxMinorCount)).join('') +
+            this._renderStabilityThermometer();
 
         this._bindInteractions(healthMap, contentEl);
     }

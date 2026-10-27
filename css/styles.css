@@ -1764,3 +1764,30 @@ html[data-theme="dark"] .status-search-clear:hover { color: #e5e7eb; background:
     color: #9ca3af;
     font-size: 14px;
 }
+
+/* ── Stability Thermometer ────────────────────────────────────────── */
+.status-thermometer {
+    margin-top: 28px;
+    padding: 16px 20px;
+    background: rgba(0,0,0,.02);
+    border: 1px solid rgba(0,0,0,.07);
+    border-radius: 10px;
+}
+html[data-theme="dark"] .status-thermometer {
+    background: rgba(255,255,255,.02);
+    border-color: rgba(255,255,255,.07);
+}
+.status-thermometer-title {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    opacity: .5;
+    margin-bottom: 10px;
+}
+.status-thermometer-chart {
+    display: block;
+    width: 100%;
+    height: auto;
+    max-height: 200px;
+}
