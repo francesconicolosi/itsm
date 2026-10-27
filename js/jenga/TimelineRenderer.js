@@ -798,7 +798,7 @@ export class TimelineRenderer {
             bar.style.color      = getTypeColor('BUSINESS_EVENT');
 
             const icon = document.createElement('span');
-            icon.textContent = '🎁 ';
+            icon.textContent = '👜 ';
             const txt = document.createElement('span');
             txt.textContent = this._bizLabel(ev);
             bar.appendChild(icon);
