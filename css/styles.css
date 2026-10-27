@@ -1782,6 +1782,7 @@ html[data-theme="dark"] .status-thermometer {
     display: block;
     padding: 10px 14px;
     background: #f3f4f6;
+    font-family: var(--brand-font), sans-serif;
     font-size: 12px;
     font-weight: 700;
     letter-spacing: .05em;
