@@ -87,12 +87,30 @@ export class JengaStatusView extends StatusViewBase {
         inner.innerHTML =
             this._renderBanner(globalHealth, operational, affected, minorTotal, tv) +
             (section !== 'streams' && displayCards.length ? this._renderMajorIncidents(displayCards, majorCards) : '') +
-            (section !== 'incidents' ? streamData.map(s => this._renderStream(s, healthMap, maxMinorCount, tv)).join('') : '');
+            (section !== 'incidents' ? streamData.map(s => this._renderStream(s, healthMap, maxMinorCount, tv)).join('') : '') +
+            (section !== 'incidents' ? this._renderStabilityThermometer(tv) : '');
 
         containerEl.innerHTML = '';
         containerEl.appendChild(inner);
 
         this._bindInteractions(healthMap, inner);
+
+        // TV: expand thermometer chart to fill remaining column space
+        if (tv && section !== 'incidents') {
+            requestAnimationFrame(() => {
+                const thermoEl = inner.querySelector('.status-thermometer');
+                const chartEl  = thermoEl?.querySelector('.status-thermometer-chart');
+                if (!thermoEl || !chartEl) return;
+                const zoom        = parseFloat(inner.style.zoom) || 1;
+                const visualGap   = inner.getBoundingClientRect().bottom - thermoEl.getBoundingClientRect().bottom;
+                if (visualGap > 10) {
+                    const logicalGap = Math.round(visualGap / zoom);
+                    const curLogical = Math.round(chartEl.getBoundingClientRect().height / zoom);
+                    chartEl.style.height    = `${curLogical + logicalGap - 8}px`;
+                    chartEl.style.maxHeight = 'none';
+                }
+            });
+        }
     }
 
     // ── Interactions ──────────────────────────────────────────────────────────

@@ -495,6 +495,97 @@ export class StatusViewBase {
         return String(s).replace(/§\[Roi\w+(?:,Roi\w+)*\]/g, '').trim();
     }
 
+    // ── Stability Thermometer ─────────────────────────────────────────────────
+
+    _renderStabilityThermometer(tv = false) {
+        const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+        const now = new Date();
+
+        // Build last 7 calendar months
+        const months = [];
+        for (let i = 6; i >= 0; i--) {
+            const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+            months.push({ year: d.getFullYear(), month: d.getMonth(), p1: 0, p2: 0 });
+        }
+
+        // Count all P1/P2 incidents (including closed) grouped by Created month
+        for (const card of (this._allCards || [])) {
+            if (!card.Created) continue;
+            if (card.Priority !== 'P1/Blocker' && card.Priority !== 'P2/Critical') continue;
+            if (!(card.IssueType || '').toLowerCase().includes('incident')) continue;
+            const d = new Date(card.Created);
+            if (isNaN(d)) continue;
+            const mi = months.findIndex(m => m.year === d.getFullYear() && m.month === d.getMonth());
+            if (mi === -1) continue;
+            if (card.Priority === 'P1/Blocker') months[mi].p1++;
+            else months[mi].p2++;
+        }
+
+        // SVG canvas
+        const W = 560, H = 220;
+        const mt = 20, mr = 20, mb = 55, ml = 42;
+        const cw = W - ml - mr;
+        const ch = H - mt - mb;
+
+        // Y scale – integer steps, min range 3
+        const maxTotal = Math.max(...months.map(m => m.p1 + m.p2), 0);
+        const rawMax   = Math.ceil(maxTotal) + 1;
+        const step     = rawMax <= 11 ? 1 : rawMax <= 22 ? 2 : rawMax <= 55 ? 5 : 10;
+        const yMax     = Math.max(Math.ceil(rawMax / step) * step, 3);
+
+        const yPos = v => mt + ch * (1 - v / yMax);
+        const barW = Math.round(cw / months.length * 0.55);
+        const gapW = cw / months.length;
+
+        // Y grid + tick labels
+        const yLines = [];
+        for (let t = 0; t <= yMax; t += step) {
+            const y = yPos(t).toFixed(1);
+            yLines.push(`<line x1="${ml}" y1="${y}" x2="${ml + cw}" y2="${y}" stroke="currentColor" stroke-opacity="0.1" stroke-width="1"/>`);
+            yLines.push(`<text x="${ml - 6}" y="${(+y + 4).toFixed(1)}" text-anchor="end" font-size="11" fill="currentColor" fill-opacity="0.55">${t}</text>`);
+        }
+
+        // Bars + x-axis labels
+        const bars = months.map((m, i) => {
+            const cx = ml + (i + 0.5) * gapW;
+            const bx = (cx - barW / 2).toFixed(1);
+            const parts = [];
+            if (m.p1 > 0) {
+                const h = (m.p1 / yMax * ch).toFixed(1);
+                parts.push(`<rect x="${bx}" y="${yPos(m.p1).toFixed(1)}" width="${barW}" height="${h}" fill="#991b1b" rx="2"/>`);
+            }
+            if (m.p2 > 0) {
+                const h = (m.p2 / yMax * ch).toFixed(1);
+                parts.push(`<rect x="${bx}" y="${yPos(m.p1 + m.p2).toFixed(1)}" width="${barW}" height="${h}" fill="#d97706" rx="2"/>`);
+            }
+            const lx = cx.toFixed(1);
+            parts.push(`<text x="${lx}" y="${(H - mb + 16).toFixed(1)}" text-anchor="middle" font-size="11" fill="currentColor" fill-opacity="0.6">${MONTH_NAMES[m.month]}</text>`);
+            parts.push(`<text x="${lx}" y="${(H - mb + 30).toFixed(1)}" text-anchor="middle" font-size="10" fill="currentColor" fill-opacity="0.45">${m.year}</text>`);
+            return parts.join('');
+        }).join('');
+
+        // Legend
+        const legX = Math.round(W / 2 - 55);
+        const legY = H - 6;
+        const legend = `
+            <rect x="${legX}" y="${legY - 10}" width="11" height="11" fill="#991b1b" rx="2"/>
+            <text x="${legX + 16}" y="${legY}" font-size="11" fill="currentColor" fill-opacity="0.7">P1</text>
+            <rect x="${legX + 50}" y="${legY - 10}" width="11" height="11" fill="#d97706" rx="2"/>
+            <text x="${legX + 66}" y="${legY}" font-size="11" fill="currentColor" fill-opacity="0.7">P2</text>`;
+
+        return `
+            <div class="status-thermometer${tv ? ' status-thermometer--tv' : ''}">
+                <div class="status-thermometer-title">Stability Thermometer</div>
+                <svg viewBox="0 0 ${W} ${H}" class="status-thermometer-chart" role="img" aria-label="P1 and P2 incidents per month">
+                    <line x1="${ml}" y1="${mt}" x2="${ml}" y2="${mt + ch}" stroke="currentColor" stroke-opacity="0.25" stroke-width="1"/>
+                    <line x1="${ml}" y1="${mt + ch}" x2="${ml + cw}" y2="${mt + ch}" stroke="currentColor" stroke-opacity="0.25" stroke-width="1"/>
+                    ${yLines.join('')}
+                    ${bars}
+                    ${legend}
+                </svg>
+            </div>`;
+    }
+
     // ── Shared interactions ───────────────────────────────────────────────────
 
     _bindCommonInteractions(healthMap, contentEl) {
