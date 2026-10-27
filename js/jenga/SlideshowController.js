@@ -42,6 +42,11 @@ export class SlideshowController {
         this.active = true;
         this.playing = true;
         this.currentSlide = 1;
+        // ?startSlide=N: jump directly to slide N (testing aid — combine with ?tvmode=true)
+        try {
+            const s = parseInt(new URLSearchParams(window.location.search).get('startSlide'), 10);
+            if (!isNaN(s) && s > 0) this.currentSlide = s;
+        } catch {}
 
         // Hide normal UI
         document.body.classList.remove('jenga-view--timeline');

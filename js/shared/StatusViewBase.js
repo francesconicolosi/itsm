@@ -576,6 +576,7 @@ export class StatusViewBase {
         return `
             <div class="status-thermometer${tv ? ' status-thermometer--tv' : ''}">
                 <div class="status-thermometer-title">Stability Thermometer</div>
+                ${tv ? '<div class="status-thermometer-chart-wrap">' : ''}
                 <svg viewBox="0 0 ${W} ${H}" class="status-thermometer-chart" role="img" aria-label="P1 and P2 incidents per month">
                     <line x1="${ml}" y1="${mt}" x2="${ml}" y2="${mt + ch}" stroke="currentColor" stroke-opacity="0.25" stroke-width="1"/>
                     <line x1="${ml}" y1="${mt + ch}" x2="${ml + cw}" y2="${mt + ch}" stroke="currentColor" stroke-opacity="0.25" stroke-width="1"/>
@@ -583,6 +584,7 @@ export class StatusViewBase {
                     ${bars}
                     ${legend}
                 </svg>
+                ${tv ? '</div>' : ''}
             </div>`;
     }
 
