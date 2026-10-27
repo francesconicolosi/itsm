@@ -5931,10 +5931,23 @@ html[data-theme="dark"] .status-thermometer {
     height: auto;
     max-height: 200px;
 }
-.jenga-status-tv .status-thermometer {
-    margin-top: 12px;
+/* TV: thermometer slot anchored bottom-right, one column wide — CSS only, no JS */
+.status-thermometer-tv-slot {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: calc(100% / var(--status-cols, 2));
+    box-sizing: border-box;
 }
-.jenga-status-tv .status-thermometer-chart {
+.status-thermometer-tv-slot .status-thermometer {
+    margin-top: 0;
+    padding: 10px 14px;
+}
+.status-thermometer-tv-slot .status-thermometer-chart {
+    height: 130px;
     max-height: none;
-    min-height: 100px;
+    min-height: 0;
+}
+html[data-theme="dark"] .status-thermometer-tv-slot {
+    color: rgba(255, 255, 255, 0.85);
 }

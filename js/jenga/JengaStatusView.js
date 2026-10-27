@@ -96,65 +96,14 @@ export class JengaStatusView extends StatusViewBase {
 
         this._bindInteractions(healthMap, inner);
 
-        // TV: overlay thermometer absolutely in the rightmost column's empty space.
-        // Keeping it out of the column flow prevents it overflowing to a clipped Col 3.
+        // TV: anchor thermometer to bottom-right via pure CSS — avoids getBoundingClientRect/zoom
+        // fragility on TV browsers (Samsung Tizen / LG WebOS old Chromium).
         if (tv && section !== 'incidents') {
-            requestAnimationFrame(() => {
-                if (!inner.isConnected) return;
-                const innerRect = inner.getBoundingClientRect();
-                if (innerRect.width <= 0 || innerRect.height <= 0) return;
-
-                const zoomFactor = parseFloat(inner.style.zoom) || 1;
-                const colW       = innerRect.width / cols;
-                const rightColX  = innerRect.left + (cols - 1) * colW;
-
-                // Content start = bottom of column-spanning elements (banner, incidents panel)
-                let contentBottom = innerRect.top;
-                inner.querySelectorAll('.status-global-banner, .status-major-panel').forEach(el => {
-                    contentBottom = Math.max(contentBottom, el.getBoundingClientRect().bottom);
-                });
-
-                // Advance to the bottom of any streams in the rightmost column
-                inner.querySelectorAll('.status-stream').forEach(el => {
-                    const r = el.getBoundingClientRect();
-                    if (r.left >= rightColX - 20) {
-                        contentBottom = Math.max(contentBottom, r.bottom);
-                    }
-                });
-
-                const availH = innerRect.bottom - contentBottom - 12;
-                if (availH < 60) return;
-
-                const tmpDiv = document.createElement('div');
-                tmpDiv.innerHTML = this._renderStabilityThermometer(true);
-                const thermoEl = tmpDiv.firstElementChild;
-                if (!thermoEl) return;
-
-                const topLogical    = Math.round((contentBottom - innerRect.top + 12) / zoomFactor);
-                const widthLogical  = Math.round(colW / zoomFactor);
-                const heightLogical = Math.round((availH - 8) / zoomFactor);
-
-                thermoEl.style.position   = 'absolute';
-                thermoEl.style.top        = `${topLogical}px`;
-                thermoEl.style.right      = '0';
-                thermoEl.style.width      = `${widthLogical}px`;
-                thermoEl.style.height     = `${heightLogical}px`;
-                thermoEl.style.marginTop  = '0';
-                thermoEl.style.boxSizing  = 'border-box';
-
-                const chartEl = thermoEl.querySelector('.status-thermometer-chart');
-                if (chartEl) {
-                    const chartH = heightLogical - 30 - 32; // 30 = title, 32 = padding
-                    if (chartH > 50) {
-                        chartEl.style.height    = `${chartH}px`;
-                        chartEl.style.maxHeight = 'none';
-                        chartEl.style.minHeight = '0';
-                    }
-                }
-
-                inner.style.position = 'relative';
-                inner.appendChild(thermoEl);
-            });
+            const slot = document.createElement('div');
+            slot.className = 'status-thermometer-tv-slot';
+            slot.innerHTML = this._renderStabilityThermometer(true);
+            inner.style.position = 'relative';
+            inner.appendChild(slot);
         }
     }
 
