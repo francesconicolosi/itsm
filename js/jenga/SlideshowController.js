@@ -622,6 +622,37 @@ export class SlideshowController {
                     }
                 }
                 slideWrap.classList.add('jenga-slide--visible');
+
+                // Watch for section expand/collapse inside this slide and re-measure page count.
+                // When a theme/cluster is toggled, the CSS multi-column layout may reflow and
+                // push content to a new column (new page). We detect this via MutationObserver
+                // watching hidden-attribute changes, then update _statusPageCount / _slideCount.
+                if (!isIncidentPage) {
+                    const observer = new MutationObserver(() => {
+                        requestAnimationFrame(() => {
+                            if (!statusInner.isConnected) { observer.disconnect(); return; }
+                            const w = statusInner.clientWidth;
+                            if (w <= 0) return;
+                            const allItems = [
+                                ...Array.from(statusInner.querySelectorAll('.status-stream')),
+                                ...(statusInner.querySelector('.status-thermometer')
+                                    ? [statusInner.querySelector('.status-thermometer')]
+                                    : []),
+                            ];
+                            if (!allItems.length) return;
+                            const innerRect     = statusInner.getBoundingClientRect();
+                            const rightmostLeft = Math.max(...allItems.map(e => e.getBoundingClientRect().left - innerRect.left));
+                            const newStreamPages = Math.max(1, Math.floor(rightmostLeft / w) + 1);
+                            const newTotal = (this._statusHasIncidentPage ? 1 : 0) + newStreamPages;
+                            if (newTotal !== this._statusPageCount) {
+                                this._statusPageCount = newTotal;
+                                this._slideCount = (SLIDE_COUNT - 1) + newTotal;
+                                this._updateCommandBar();
+                            }
+                        });
+                    });
+                    observer.observe(statusInner, { subtree: true, attributes: true, attributeFilter: ['hidden'] });
+                }
             }));
         });
     }
