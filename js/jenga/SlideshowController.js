@@ -392,14 +392,17 @@ export class SlideshowController {
         inner.className = 'jenga-status-inner jenga-status-tv';
         probe.appendChild(inner);
 
-        // Use last stream's LEFT edge (not right) to avoid padding/margin causing a
-        // spurious extra page when the last stream's right edge slightly exceeds N*containerW.
-        const measureStreamPages = (el, containerW) => {
-            const streams = el.querySelectorAll('.status-stream');
-            if (!streams.length) return 1;
-            const innerRect = el.getBoundingClientRect();
-            const lastRect  = streams[streams.length - 1].getBoundingClientRect();
-            return Math.max(1, Math.floor((lastRect.left - innerRect.left) / containerW) + 1);
+        // Use LEFT edges (not right) to avoid padding/margin causing a spurious extra page
+        // when an element's right edge slightly exceeds N*containerW.
+        // Includes the thermometer so it gets its own slide if it overflows to a new column.
+        const measureContentPages = (el, containerW) => {
+            const streams = Array.from(el.querySelectorAll('.status-stream'));
+            const thermo  = el.querySelector('.status-thermometer');
+            const items   = thermo ? [...streams, thermo] : streams;
+            if (!items.length) return 1;
+            const innerRect     = el.getBoundingClientRect();
+            const rightmostLeft = Math.max(...items.map(e => e.getBoundingClientRect().left - innerRect.left));
+            return Math.max(1, Math.floor(rightmostLeft / containerW) + 1);
         };
 
         this.app.statusView.render(inner, { tv: true }).then(() => {
@@ -454,13 +457,13 @@ export class SlideshowController {
                             }).then(() => {
                                 requestAnimationFrame(() => requestAnimationFrame(() => {
                                     if (!inner.isConnected) return;
-                                    let streamPages = measureStreamPages(inner, containerW);
+                                    let streamPages = measureContentPages(inner, containerW);
                                     if (streamPages > 1) {
                                         const renderedInner = inner.firstElementChild;
                                         if (renderedInner) {
                                             renderedInner.style.columnFill = 'balance';
                                             void renderedInner.offsetHeight;
-                                            const balancedPages = measureStreamPages(inner, containerW);
+                                            const balancedPages = measureContentPages(inner, containerW);
                                             if (balancedPages === 1) {
                                                 this._statusStreamColumnFill = 'balance';
                                                 streamPages = 1;
@@ -468,7 +471,7 @@ export class SlideshowController {
                                                 for (const z of [0.9, 0.85, 0.8, 0.75]) {
                                                     renderedInner.style.zoom = z;
                                                     void renderedInner.offsetHeight;
-                                                    if (measureStreamPages(inner, containerW) === 1) {
+                                                    if (measureContentPages(inner, containerW) === 1) {
                                                         this._statusStreamColumnFill = 'balance';
                                                         this._statusStreamZoom = z;
                                                         streamPages = 1;
@@ -491,13 +494,13 @@ export class SlideshowController {
                     }).catch(() => probe.remove());
                 } else {
                     this._statusIncidentFitCount = Infinity;
-                    let pages = measureStreamPages(inner, containerW);
+                    let pages = measureContentPages(inner, containerW);
                     if (pages > 1) {
                         const renderedInner = inner.firstElementChild;
                         if (renderedInner) {
                             renderedInner.style.columnFill = 'balance';
                             void renderedInner.offsetHeight;
-                            const balancedPages = measureStreamPages(inner, containerW);
+                            const balancedPages = measureContentPages(inner, containerW);
                             if (balancedPages === 1) {
                                 this._statusStreamColumnFill = 'balance';
                                 pages = 1;
@@ -505,7 +508,7 @@ export class SlideshowController {
                                 for (const z of [0.9, 0.85, 0.8, 0.75]) {
                                     renderedInner.style.zoom = z;
                                     void renderedInner.offsetHeight;
-                                    if (measureStreamPages(inner, containerW) === 1) {
+                                    if (measureContentPages(inner, containerW) === 1) {
                                         this._statusStreamColumnFill = 'balance';
                                         this._statusStreamZoom = z;
                                         pages = 1;
@@ -557,13 +560,16 @@ export class SlideshowController {
                     // On the first stream page, measure horizontal overflow and apply
                     // centering when all streams fit in a single page.
                     if (streamPageIndex === 0) {
-                        const streams = statusInner.querySelectorAll('.status-stream');
-                        if (streams.length > 0) {
+                        const streams = Array.from(statusInner.querySelectorAll('.status-stream'));
+                        const thermo  = statusInner.querySelector('.status-thermometer');
+                        if (streams.length > 0 || thermo) {
                             const innerRect = statusInner.getBoundingClientRect();
-                            const lastRect  = streams[streams.length - 1].getBoundingClientRect();
-                            const lastLeft  = lastRect.left  - innerRect.left;  // page count (avoids margin overhang)
-                            const rightEdge = lastRect.right - innerRect.left;  // centering (actual content right edge)
-                            const streamPages = Math.max(1, Math.floor(lastLeft / containerW) + 1);
+                            // rightmostLeft drives page count; use last stream's right edge for centering.
+                            const allItems  = thermo ? [...streams, thermo] : streams;
+                            const rightmostLeft = Math.max(...allItems.map(e => e.getBoundingClientRect().left - innerRect.left));
+                            const lastStreamRect = streams[streams.length - 1]?.getBoundingClientRect();
+                            const rightEdge = lastStreamRect ? lastStreamRect.right - innerRect.left : rightmostLeft;
+                            const streamPages = Math.max(1, Math.floor(rightmostLeft / containerW) + 1);
                             const newTotal = (this._statusHasIncidentPage ? 1 : 0) + streamPages;
                             if (newTotal !== this._statusPageCount) {
                                 this._statusPageCount = newTotal;
@@ -602,6 +608,15 @@ export class SlideshowController {
                         for (const s of statusInner.querySelectorAll('.status-stream')) {
                             const sx = s.getBoundingClientRect().left - baseRect.left;
                             if (sx >= boundary - 1) { tx = sx; break; }
+                        }
+                        // If no stream starts past the boundary (e.g. only the thermometer is on this page),
+                        // fall back to the thermometer's left edge.
+                        if (tx === boundary) {
+                            const thermo = statusInner.querySelector('.status-thermometer');
+                            if (thermo) {
+                                const tx2 = thermo.getBoundingClientRect().left - baseRect.left;
+                                if (tx2 >= boundary - 1) tx = tx2;
+                            }
                         }
                         statusInner.style.transform = `translateX(${-tx}px)`;
                     }
