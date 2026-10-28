@@ -4213,6 +4213,11 @@ html:not([data-theme="dark"]) .jtl-issue-search__clear:hover {
     z-index: 3 !important;
 }
 
+.jtl-lane--collapsed .jtl-lane-controls,
+.jtl-lane--collapsed .jtl-lane-legend {
+    display: none !important;
+}
+
 /* If a controls wrapper exists, neutralize its layout impact in collapsed mode. */
 .jtl-lane--collapsed .jtl-lane__controls {
     position: static !important;

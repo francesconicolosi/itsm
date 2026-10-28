@@ -147,8 +147,8 @@ export class TimelineRenderer {
             const raw = localStorage.getItem('jenga-comparison-state-v1');
             if (!raw) return;
             const s = JSON.parse(raw);
-            if ([3, 6, 12, 24].includes(s.incidentAvgMonths)) this._incidentAvgMonths = s.incidentAvgMonths;
-            if ([3, 6, 12, 24].includes(s.srAvgMonths))       this._srAvgMonths       = s.srAvgMonths;
+            if ([0, 3, 6, 12, 24].includes(s.incidentAvgMonths)) this._incidentAvgMonths = s.incidentAvgMonths;
+            if ([0, 3, 6, 12, 24].includes(s.srAvgMonths))       this._srAvgMonths       = s.srAvgMonths;
             this._incidentLastYear = Boolean(s.incidentLastYear);
             this._srLastYear       = Boolean(s.srLastYear);
             this._incidentCompareMonths = Array.isArray(s.incidentCompareMonths)
@@ -160,8 +160,8 @@ export class TimelineRenderer {
 
     /** Apply comparison state from an external object (e.g. restored from URL params). */
     applyComparisonState(state = {}) {
-        if ([3, 6, 12, 24].includes(state.incidentAvgMonths)) this._incidentAvgMonths = state.incidentAvgMonths;
-        if ([3, 6, 12, 24].includes(state.srAvgMonths))       this._srAvgMonths       = state.srAvgMonths;
+        if ([0, 3, 6, 12, 24].includes(state.incidentAvgMonths)) this._incidentAvgMonths = state.incidentAvgMonths;
+        if ([0, 3, 6, 12, 24].includes(state.srAvgMonths))       this._srAvgMonths       = state.srAvgMonths;
         if (typeof state.incidentLastYear === 'boolean') this._incidentLastYear = state.incidentLastYear;
         if (typeof state.srLastYear === 'boolean')       this._srLastYear       = state.srLastYear;
         if (Array.isArray(state.incidentCompareMonths))  this._incidentCompareMonths = state.incidentCompareMonths.slice(0, 6);
@@ -205,8 +205,9 @@ export class TimelineRenderer {
     /** Build per-day-of-month average curve for a lane. */
     _getAvgCurve(laneKey, year, month, issueType) {
         if (this._tvMode) return null;
-        const store = this.app.store;
         const avgMonths = laneKey === 'incidents' ? this._incidentAvgMonths : this._srAvgMonths;
+        if (!avgMonths) return null;
+        const store = this.app.store;
         const activeServices = this.app.search?.activeServices;
         const services = activeServices && activeServices.size > 0 ? activeServices : undefined;
         return store.getAverageCurveForMonth(issueType, year, month, avgMonths, { services });
@@ -286,16 +287,16 @@ export class TimelineRenderer {
         const avgBtn = document.createElement('button');
         avgBtn.type = 'button';
         avgBtn.className = 'jtl-avg-btn';
-        avgBtn.textContent = `avg: ${avgMonths}m ▾`;
+        avgBtn.textContent = avgMonths === 0 ? 'avg: off ▾' : `avg: ${avgMonths}m ▾`;
         avgBtn.title = 'Average lookback span';
 
         const avgPanel = document.createElement('div');
         avgPanel.className = 'jtl-compare-dropdown';
         avgPanel.style.display = 'none';
-        [3, 6, 12, 24].forEach(n => {
+        [[0, 'None'], [3, '3 months'], [6, '6 months'], [12, '12 months'], [24, '24 months']].forEach(([n, label]) => {
             const opt = document.createElement('div');
             opt.className = 'jtl-compare-dropdown__item' + (n === avgMonths ? ' jtl-compare-dropdown__item--active' : '');
-            opt.textContent = `${n} months`;
+            opt.textContent = label;
             opt.addEventListener('click', () => {
                 if (isInc) this._incidentAvgMonths = n;
                 else       this._srAvgMonths       = n;
