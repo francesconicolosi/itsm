@@ -12,6 +12,7 @@ import { CardsDrawer } from './CardsDrawer.js';
 import { SlideshowController } from './SlideshowController.js';
 import { MajorIncidentAlert } from './MajorIncidentAlert.js';
 import { JengaStatusView } from './JengaStatusView.js';
+import { getToday } from './mockDate.js';
 
 const TOPBAR_PIN_STORAGE_KEY = 'jenga.topBarPinned';
 const SPAN_STORAGE_KEY = 'jenga.spanMode';
@@ -39,8 +40,8 @@ export class JengaApp {
         this.announcementBar = new AnnouncementBar();
         this._dayDrawerOpen = false;
 
-        this.currentYear  = new Date().getFullYear();
-        this.currentMonth = new Date().getMonth();
+        this.currentYear  = getToday().getFullYear();
+        this.currentMonth = getToday().getMonth();
         this.view = 'calendar'; // 'calendar' | 'timeline' | 'status'
         this.topBarPinned = this._loadTopBarPinned();
         this.spanMode      = this._loadSpanMode(); // 'month' | '1w' | '2w' | '3w' | '4w'
@@ -453,7 +454,7 @@ export class JengaApp {
     }
 
     _goToToday() {
-        const now = new Date();
+        const now = getToday();
         if (this.spanMode !== 'month') {
             this.spanStartDate = this._mondayOf(now);
             this.currentYear   = this.spanStartDate.getFullYear();
@@ -548,7 +549,7 @@ export class JengaApp {
 
         // If starting in week mode, initialise spanStartDate
         if (this.spanMode !== 'month' && !this.spanStartDate) {
-            const now = new Date();
+            const now = getToday();
             const firstOfMonth = new Date(this.currentYear, this.currentMonth, 1);
             // If today is in the current month, start from current week's Monday
             const todayInMonth = now.getFullYear() === this.currentYear && now.getMonth() === this.currentMonth;
@@ -563,7 +564,7 @@ export class JengaApp {
             if (this.spanMode !== 'month') {
                 if (!this.spanStartDate || prev === 'month') {
                     // Entering week mode: pick the right Monday
-                    const now = new Date();
+                    const now = getToday();
                     const firstOfMonth = new Date(this.currentYear, this.currentMonth, 1);
                     const todayInMonth = now.getFullYear() === this.currentYear && now.getMonth() === this.currentMonth;
                     this.spanStartDate = this._mondayOf(todayInMonth ? now : firstOfMonth);

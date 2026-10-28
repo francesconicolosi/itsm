@@ -6,6 +6,7 @@
  */
 
 import { getDayProtectionColor, getViolationColor, isPspwDeployViolation } from './EventStore.js';
+import { getToday } from './mockDate.js';
 
 const TYPE_COLORS_LIGHT = {
     SERVICE_OP:     { bg: '#dbeafe', border: '#3b82f6', text: '#1d4ed8' },
@@ -162,8 +163,7 @@ export function isDateInPeakRange(date, peakDates) {
 const _ITSM_RETENTION_DAYS = typeof __ITSM_RETENTION_DAYS__ !== 'undefined' ? __ITSM_RETENTION_DAYS__ : 100;
 
 function _itsmCutoffDate() {
-    const d = new Date();
-    d.setHours(0, 0, 0, 0);
+    const d = getToday();
     d.setDate(d.getDate() - _ITSM_RETENTION_DAYS);
     return d;
 }
@@ -762,8 +762,7 @@ export class CalendarRenderer {
         if (!ev?.dueDate) return false;
         const closedStatuses = new Set(['Done', "WON'T DO"]);
         if (closedStatuses.has(ev.status)) return false;
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
+        const today = getToday();
         return ev.dueDate < today;
     }
 
@@ -1141,7 +1140,7 @@ export class CalendarRenderer {
     }
 
     _isToday(d) {
-        const t = new Date();
+        const t = getToday();
         return d.getFullYear()===t.getFullYear() && d.getMonth()===t.getMonth() && d.getDate()===t.getDate();
     }
 }

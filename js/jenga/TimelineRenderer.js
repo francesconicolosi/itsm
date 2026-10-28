@@ -13,6 +13,7 @@
 import * as d3 from 'd3';
 import { getTypeColor, isDateInPeakRange, formatOperation, getEnvColor, getEnvTextColor, getEnvLabel } from './CalendarRenderer.js';
 import { getDayProtectionColor, getViolationColor, isPspwDeployViolation } from './EventStore.js';
+import { getToday } from './mockDate.js';
 
 /** Format a local Date as YYYY-MM-DD (matches CSV values and EventStore.localDateKey). */
 function localDateKey(d) {
@@ -26,8 +27,7 @@ const ITSM_RETENTION_DAYS = typeof __ITSM_RETENTION_DAYS__ !== 'undefined' ? __I
 
 /** Midnight of today minus ITSM_RETENTION_DAYS — the earliest date with ITSM data. */
 function itsmCutoffDate() {
-    const d = new Date();
-    d.setHours(0, 0, 0, 0);
+    const d = getToday();
     d.setDate(d.getDate() - ITSM_RETENTION_DAYS);
     return d;
 }
@@ -492,7 +492,7 @@ export class TimelineRenderer {
         }
         const days      = this._buildDaysRange(startDate, endDate);
         const totalDays = days.length;
-        const today     = new Date();
+        const today     = getToday();
         const todayFmt  = (today >= startDate && today <= endDate) ? localDateKey(today) : null;
 
         // The timeline only shows events that actually overlap the rendered period.
