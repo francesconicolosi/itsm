@@ -554,11 +554,11 @@ export class StatusViewBase {
             const parts = [];
             if (m.p1 > 0) {
                 const h = (m.p1 / yMax * ch).toFixed(1);
-                parts.push(`<rect x="${bx}" y="${yPos(m.p1).toFixed(1)}" width="${barW}" height="${h}" fill="#991b1b" rx="2"/>`);
+                parts.push(`<rect x="${bx}" y="${yPos(m.p1).toFixed(1)}" width="${barW}" height="${h}" fill="#991b1b"/>`);
             }
             if (m.p2 > 0) {
                 const h = (m.p2 / yMax * ch).toFixed(1);
-                parts.push(`<rect x="${bx}" y="${yPos(m.p1 + m.p2).toFixed(1)}" width="${barW}" height="${h}" fill="#d97706" rx="2"/>`);
+                parts.push(`<rect x="${bx}" y="${yPos(m.p1 + m.p2).toFixed(1)}" width="${barW}" height="${h}" fill="#d97706"/>`);
             }
             const lx = cx.toFixed(1);
             parts.push(`<text x="${lx}" y="${(H - mb + 16).toFixed(1)}" text-anchor="middle" font-size="${fs1}" fill="currentColor" fill-opacity="0.6">${MONTH_NAMES[m.month]}</text>`);
