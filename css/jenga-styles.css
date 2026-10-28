@@ -4214,7 +4214,8 @@ html:not([data-theme="dark"]) .jtl-issue-search__clear:hover {
 }
 
 .jtl-lane--collapsed .jtl-lane-controls,
-.jtl-lane--collapsed .jtl-lane-legend {
+.jtl-lane--collapsed .jtl-lane-legend,
+.jtl-lane--collapsed .jtl-panel__total {
     display: none !important;
 }
 

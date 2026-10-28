@@ -666,7 +666,7 @@ export class TimelineRenderer {
             this._buildLinePanel({
                 title: 'SERVICE\nREQUESTS\nCREATED',
                 subtitle: '(count per day)',
-                icon: '💬',
+                icon: '🛎️',
                 iconColor: '#3b82f6',
                 series: [{ label: 'Service Requests', color: '#3b82f6', data: srData }],
                 xDomain,
@@ -2034,7 +2034,7 @@ export class TimelineRenderer {
             if (peak.value > 0) {
                 const fmt = peak.date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
                 insights.push({
-                    icon: '💬',
+                    icon: '🛎️',
                     title: 'Service Requests spike',
                     sub: fmt,
                     desc: `${peak.value} SRs created`,
