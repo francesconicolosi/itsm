@@ -455,7 +455,7 @@ export class CalendarRenderer {
 
         // Single-day chips
         const key = this._dayKey(date);
-        const dayEvts = (singleByDay.get(key) || []).filter(ev => !isCabProtectionEvent(ev));
+        const dayEvts = (singleByDay.get(key) || []).filter(ev => ev.type !== 'PEAK_SEASON_PROTECTION_WINDOW');
         const chipsArea = document.createElement('div');
         chipsArea.className = 'jenga-cal__chips';
 
