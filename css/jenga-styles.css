@@ -728,6 +728,8 @@ html[data-theme="dark"] .day-timeline__pspw-warn {
 #jenga-legend-root .legend__resize-handle--ne,
 #jenga-legend-root .legend__resize-handle--nw,
 #jenga-legend-root .legend__resize-handle--n { display: none !important; }
+/* Keep filter-toggle hidden when not in search mode (global button CSS can override [hidden]) */
+#jenga-legend-root .legend__filter-toggle[hidden] { display: none !important; }
 
 #jenga-legend-root .legend__item {
     display: flex; align-items: center; gap: 8px;

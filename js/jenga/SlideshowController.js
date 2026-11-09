@@ -72,6 +72,8 @@ export class SlideshowController {
             ['left', 'top', 'right', 'bottom'].forEach(p => legendRoot.style.removeProperty(p));
             legendRoot.classList.add('legend--anchor-br');
             legendRoot.style.zIndex = '850';
+            // Raise legend above brand watermark (~50px tall at bottom: 24px)
+            legendRoot.style.bottom = '90px';
         }
 
         // Mark button active
