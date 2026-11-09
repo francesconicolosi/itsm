@@ -25,3 +25,11 @@ html[data-theme="dark"] {
 #brand-logo path {
     fill: var(--_g-logo-fill-color);
 }
+
+#loading-brand-logo {
+    width: clamp(320px, 38vw, 520px);
+    flex-shrink: 0;
+}
+#loading-brand-logo path {
+    fill: var(--_g-logo-fill-color);
+}

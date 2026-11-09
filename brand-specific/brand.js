@@ -98,9 +98,6 @@ M 271.125 27.303 Q 271.125 34.953 273.825 40.691 Q 276.525 46.428 281.4 49.616 Q
  * brand logo path from BRAND.logo.svgInline. Call once on DOMContentLoaded.
  */
 export function renderBrandLogo() {
-    const el = document.getElementById('brand-logo');
-    if (!el) return;
-
     const {
         d,
         viewBoxX = 0,
@@ -113,13 +110,8 @@ export function renderBrandLogo() {
     } = BRAND.logo.svgInline;
 
     const normalizedD = d.replace(/\s+/g, ' ').trim();
-
-    el.setAttribute('viewBox', `${viewBoxX} ${viewBoxY} ${viewBoxW} ${viewBoxH}`);
-    el.setAttribute('aria-label', `${BRAND.name} logo`);
-    el.setAttribute('fill', 'none');
-    el.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
-
-    el.innerHTML = `
+    const viewBox = `${viewBoxX} ${viewBoxY} ${viewBoxW} ${viewBoxH}`;
+    const logoHTML = `
         <path
             d="${normalizedD}"
             fill="var(--_g-logo-fill-color)"
@@ -129,7 +121,18 @@ export function renderBrandLogo() {
             fill-rule="${fillRule}"
         ></path>
     `;
+
+    function hydrate(el) {
+        if (!el) return;
+        el.setAttribute('viewBox', viewBox);
+        el.setAttribute('aria-label', `${BRAND.name} logo`);
+        el.setAttribute('fill', 'none');
+        el.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+        el.innerHTML = logoHTML;
+    }
+
+    hydrate(document.getElementById('brand-logo'));
+    hydrate(document.getElementById('loading-brand-logo'));
 }
-``
 
 
