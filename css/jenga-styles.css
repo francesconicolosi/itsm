@@ -735,6 +735,10 @@ html[data-theme="dark"] .day-timeline__pspw-warn {
     display: inline-block; width: 18px; height: 10px;
     border-radius: 2px; flex-shrink: 0;
 }
+#jenga-legend-root .legend__swatch--icon {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 18px; height: 14px; font-size: 13px; flex-shrink: 0;
+}
 #jenga-legend-root .legend__label { flex: 1; white-space: nowrap; }
 
 html[data-theme="dark"] #jenga-legend-root {
@@ -776,9 +780,16 @@ html[data-theme="dark"] #jenga-legend-root .legend__collapse { color: rgba(245,2
 
 .jenga-popover__list {
     padding: 8px;
-    max-height: 280px;
+    max-height: 340px;
     overflow-y: auto;
 }
+
+.jenga-popover__section-header {
+    font-size: 10px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .06em; color: #888; padding: 6px 4px 4px; margin-top: 4px;
+}
+.jenga-popover__section-header:first-child { margin-top: 0; }
+.jenga-popover__section-header--danger { color: #ef4444; }
 
 /* ── Side drawer extras ──────────────────────────────────────────────────── */
 
@@ -5246,6 +5257,15 @@ html[data-theme="light"]     .jtl-pspw-popup__item + .jtl-pspw-popup__item { bor
     transition: opacity 0.3s ease, transform 0.3s ease;
 }
 .toast.show { opacity: 1; transform: translateY(0); }
+
+/* ── SVG timeline dot glow (for release popup) ───────────────────────────── */
+@keyframes jtl-dot-glow {
+    0%, 100% { filter: drop-shadow(0 0 5px rgba(245,158,11,0.90)); }
+    50%       { filter: drop-shadow(0 0 2px rgba(245,158,11,0.30)); }
+}
+.jtl-dot--selected {
+    animation: jtl-dot-glow 1.8s ease-in-out infinite;
+}
 
 /* ── Selection glow ──────────────────────────────────────────────────── */
 @keyframes jenga-sel-ring {

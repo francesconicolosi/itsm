@@ -12,6 +12,7 @@ import { CardsDrawer } from './CardsDrawer.js';
 import { SlideshowController } from './SlideshowController.js';
 import { MajorIncidentAlert } from './MajorIncidentAlert.js';
 import { JengaStatusView } from './JengaStatusView.js';
+import { JengaLegend } from './JengaLegend.js';
 import { getToday } from './mockDate.js';
 
 const TOPBAR_PIN_STORAGE_KEY = 'jenga.topBarPinned';
@@ -36,6 +37,7 @@ export class JengaApp {
         this.brandHideTypes = new Set(BRAND.statusHideTypes || []);
         this.statusView = new JengaStatusView(this);
         this.majorIncidentAlert = new MajorIncidentAlert();
+        this.legend = new JengaLegend();
         this.postIt = new PostItNote('jenga');
         this.announcementBar = new AnnouncementBar();
         this._dayDrawerOpen = false;
@@ -68,6 +70,7 @@ export class JengaApp {
         this.dayDrawer.initEvents(this.drawer);
         this.cardsDrawer.initEvents();
         this.search.init();
+        this.legend.render();
         this._initNavControls();
         this._initSpanSelector();
         this._initViewToggle();
@@ -162,6 +165,7 @@ export class JengaApp {
         const filtered = this.search.getFilteredEvents(allEvents);
 
         if (this.view === 'status') {
+            this.legend.hide();
             const el = document.getElementById('jenga-status');
             if (el) this.statusView.render(el);
             return;
@@ -174,7 +178,13 @@ export class JengaApp {
             } else {
                 this.calendar.render(el, this.currentYear, this.currentMonth, filtered);
             }
+            const legendEvents = [...new Map([
+                ...filtered,
+                ...allEvents.filter(e => e.type === 'PEAK_SEASON_PROTECTION_WINDOW'),
+            ].map(e => [e.key, e])).values()];
+            this.legend.update(legendEvents);
         } else if (this.view === 'timeline') {
+            this.legend.hide();
             const el = document.getElementById('jenga-timeline');
             // Peak Season Protection Window must remain visible on the timeline even
             // when the Event Types filter does not explicitly include this technical type.

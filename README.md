@@ -12,6 +12,8 @@ I started developing this small application during a train journey and it was co
 - View detailed information about services by clicking on nodes.
 - Zoom and drag the map.
 - Enriched fields derived from existing attributes (e.g., automatic Tracking Software filter URLs).
+- **Jenga**: dynamic calendar legend (draggable, collapsible) showing only event types visible in the current month; auto-updates on month change.
+- **Jenga**: timeline release popup — clicking any release lane dot shows all deployments for that day split into PSPW violations and regular deployments; clicked dot glows.
 
 ## Repository Structure
 itsm/ ├── README.md ├── domino.html ├── css/ │ └── styles.css ├── js/ │ ├── main.js │ └── d3.min.js ├── data/ │ └── sample.csv ├── assets/ │ └── images/ │ └── logo.png ├── docs/ │ └── documentation.md └── LICENSE

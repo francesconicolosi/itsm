@@ -1529,15 +1529,20 @@ export class TimelineRenderer {
                 .style('pointer-events', 'none')
                 .text('!');
 
-            if (dotClickLabel && this._onDotClick) {
+            if (dotClickLabel) {
+                const isRelease = dotClickLabel === 'release';
                 const clickFn = (event, d) => {
                     event.stopPropagation();
                     if (d.value === 0) return;
-                    const entries = dayEntries.get(d.date.getDate()) || [];
-                    if (entries.length > 1) {
-                        this._showDayMonthPicker(event, entries, dotClickLabel);
-                    } else {
-                        this._onDotClick(d.date, dotClickLabel);
+                    if (isRelease) {
+                        this._showReleasePopup(event, d, event.currentTarget);
+                    } else if (this._onDotClick) {
+                        const entries = dayEntries.get(d.date.getDate()) || [];
+                        if (entries.length > 1) {
+                            this._showDayMonthPicker(event, entries, dotClickLabel);
+                        } else {
+                            this._onDotClick(d.date, dotClickLabel);
+                        }
                     }
                 };
                 dots.style('cursor', 'pointer').on('click', clickFn);
@@ -1587,7 +1592,7 @@ export class TimelineRenderer {
 
                 pspwTris.on('click', (event, d) => {
                     event.stopPropagation();
-                    this._showPspwViolationsPopup(event, d.date, d.pspwViolatingEvents || []);
+                    this._showReleasePopup(event, d, event.currentTarget);
                 });
             }
         });
@@ -1801,6 +1806,109 @@ export class TimelineRenderer {
             }
         };
         setTimeout(() => document.addEventListener('click', close, true), 0);
+    }
+
+    _showReleasePopup(event, d, dotEl) {
+        document.getElementById('jtl-release-popup')?.remove();
+        this._clearDotGlow?.();
+
+        const violations  = d.pspwViolatingEvents || [];
+        const allDayEvts  = d.allDayEvents || [];
+        const violSet     = new Set(violations.map(e => e.key));
+        const regular     = allDayEvts.filter(e => !violSet.has(e.key));
+
+        if (!allDayEvts.length && !violations.length) return;
+
+        // Glow on the clicked SVG element
+        if (dotEl) {
+            dotEl.classList.add('jtl-dot--selected');
+            this._clearDotGlow = () => dotEl.classList.remove('jtl-dot--selected');
+        }
+
+        const popup = document.createElement('div');
+        popup.id = 'jtl-release-popup';
+        popup.className = 'jenga-popover';
+        popup.style.cssText = 'position:fixed;z-index:10002;';
+
+        // Header
+        const header = document.createElement('div');
+        header.className = 'jenga-popover__header';
+        const total = allDayEvts.length;
+        const dateLabel = d.date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+        const titleSpan = document.createElement('span');
+        titleSpan.textContent = `${total} deployment${total === 1 ? '' : 's'} · ${dateLabel}`;
+        const closeBtn = document.createElement('button');
+        closeBtn.className = 'jenga-popover__close';
+        closeBtn.textContent = '✕';
+        header.append(titleSpan, closeBtn);
+        popup.appendChild(header);
+
+        let anchorCleanup;
+        let closeListener;
+        const closePopup = () => {
+            popup.remove();
+            anchorCleanup?.();
+            this._clearDotGlow?.();
+            this._clearDotGlow = null;
+            document.removeEventListener('click', closeListener, true);
+        };
+        closeBtn.addEventListener('click', e => { e.stopPropagation(); closePopup(); });
+
+        const makeChip = (ev) => {
+            const chip = document.createElement('div');
+            chip.className = 'jenga-chip jenga-chip--service_op';
+            chip.style.cssText = 'margin-bottom:4px;cursor:pointer;';
+            const badge = document.createElement('span');
+            badge.className = 'jenga-chip__env-badge';
+            badge.textContent = getEnvLabel(ev.environment);
+            badge.style.background = getEnvColor(ev.environment);
+            badge.style.color = getEnvTextColor(ev.environment);
+            const svc = document.createElement('span');
+            svc.className = 'jenga-chip__service';
+            const svcText = ev.service || ev.summary || '—';
+            svc.textContent = svcText.length > 18 ? svcText.slice(0, 16) + '…' : svcText;
+            const op = document.createElement('span');
+            op.className = 'jenga-chip__operation';
+            const opText = formatOperation(ev.operation || 'Deploy');
+            op.textContent = opText.length > 12 ? opText.slice(0, 10) + '…' : opText;
+            chip.append(badge, svc, op);
+            chip.addEventListener('click', e => {
+                e.stopPropagation();
+                closePopup();
+                this._onEventClick?.(ev);
+            });
+            return chip;
+        };
+
+        const list = document.createElement('div');
+        list.className = 'jenga-popover__list';
+
+        if (violations.length) {
+            const sh = document.createElement('div');
+            sh.className = 'jenga-popover__section-header jenga-popover__section-header--danger';
+            sh.textContent = `🚨 ${violations.length} Violation${violations.length === 1 ? '' : 's'}`;
+            list.appendChild(sh);
+            violations.forEach(ev => list.appendChild(makeChip(ev)));
+        }
+        if (regular.length) {
+            if (violations.length) {
+                const sh = document.createElement('div');
+                sh.className = 'jenga-popover__section-header';
+                sh.textContent = `${regular.length} Other Deployment${regular.length === 1 ? '' : 's'}`;
+                list.appendChild(sh);
+            }
+            regular.forEach(ev => list.appendChild(makeChip(ev)));
+        }
+
+        popup.appendChild(list);
+        popup.addEventListener('click', e => e.stopPropagation());
+        document.body.appendChild(popup);
+        anchorCleanup = this._anchorPopupToTarget(popup, event.clientX, event.clientY);
+
+        closeListener = e => {
+            if (!popup.contains(e.target)) closePopup();
+        };
+        setTimeout(() => document.addEventListener('click', closeListener, true), 0);
     }
 
     _showPspwViolationsPopup(event, date, violations) {
@@ -2104,7 +2212,7 @@ export class TimelineRenderer {
                         hasPspwWarning = pspwViolatingEvents.length > 0;
                     }
                 }
-                return { date: dayStart, value: count, hasPspwWarning, pspwViolatingEvents };
+                return { date: dayStart, value: count, hasPspwWarning, pspwViolatingEvents, allDayEvents: dayEvents };
             });
             return { key, label, color, data };
         }).filter(s => s.data.some(d => d.value > 0));
