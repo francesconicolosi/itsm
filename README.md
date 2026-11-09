@@ -12,7 +12,7 @@ I started developing this small application during a train journey and it was co
 - View detailed information about services by clicking on nodes.
 - Zoom and drag the map.
 - Enriched fields derived from existing attributes (e.g., automatic Tracking Software filter URLs).
-- **Jenga**: dynamic calendar legend (draggable, collapsible) showing only event types visible in the current month; auto-updates on month change.
+- **Jenga**: dynamic calendar legend — draggable, resizable, collapsible; shows only event types visible in the current month; Hybris entries use the Y icon; PSPW entries use distinct square swatches with renamed labels (Emergency/Allowed/Scheduled); clicking any entry sets an exclusive type filter; "Show only calendar" hides all chips while keeping PSPW cell backgrounds; legend stays above the top bar and defaults to bottom-right in slideshow mode.
 - **Jenga**: timeline release popup — clicking any release lane dot shows all deployments for that day split into PSPW violations and regular deployments; clicked dot glows.
 
 ## Repository Structure

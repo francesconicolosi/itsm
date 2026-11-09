@@ -704,8 +704,8 @@ html[data-theme="dark"] .day-timeline__pspw-warn {
 /* Anchor positions (set by makeLegendDraggable corner snapping) */
 #jenga-legend-root.legend--anchor-bl { bottom: 16px; left:  16px; top: auto;  right: auto; }
 #jenga-legend-root.legend--anchor-br { bottom: 16px; right: 16px; top: auto;  left:  auto; }
-#jenga-legend-root.legend--anchor-tl { top:    68px; left:  16px; bottom: auto; right: auto; }
-#jenga-legend-root.legend--anchor-tr { top:    68px; right: 16px; bottom: auto; left:  auto; }
+#jenga-legend-root.legend--anchor-tl { top: calc(var(--jenga-topbar-height, 57px) + 8px); left:  16px; bottom: auto; right: auto; }
+#jenga-legend-root.legend--anchor-tr { top: calc(var(--jenga-topbar-height, 57px) + 8px); right: 16px; bottom: auto; left:  auto; }
 
 #jenga-legend-root .legend__header {
     display: flex; align-items: center; justify-content: space-between;
@@ -727,6 +727,7 @@ html[data-theme="dark"] .day-timeline__pspw-warn {
 #jenga-legend-root .legend__item {
     display: flex; align-items: center; gap: 8px;
     padding: 3px 8px; border-radius: 4px; font-size: 12px;
+    cursor: default;
 }
 #jenga-legend-root .legend__swatch--dot {
     width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
@@ -739,6 +740,16 @@ html[data-theme="dark"] .day-timeline__pspw-warn {
     display: inline-flex; align-items: center; justify-content: center;
     width: 18px; height: 14px; font-size: 13px; flex-shrink: 0;
 }
+#jenga-legend-root .legend__swatch--pspw {
+    display: inline-block; width: 14px; height: 14px;
+    border-radius: 2px; flex-shrink: 0; box-sizing: border-box;
+}
+#jenga-legend-root .legend__swatch--hybris {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 18px; height: 14px; flex-shrink: 0;
+    color: #14b8a6;
+}
+html[data-theme="dark"] #jenga-legend-root .legend__swatch--hybris { color: #5bb8a9; }
 #jenga-legend-root .legend__label { flex: 1; white-space: nowrap; }
 
 html[data-theme="dark"] #jenga-legend-root {

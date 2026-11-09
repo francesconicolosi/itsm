@@ -658,7 +658,7 @@ export function showThemeSwitchSpinner() {
  * @param {string}      opts.storageKey     - localStorage key for position persistence
  * @param {boolean}    [opts.cornerAnchor]  - if true, snaps to viewport corners on drop
  */
-export function makeLegendDraggable(root, { handleSelector, storageKey, cornerAnchor = false } = {}) {
+export function makeLegendDraggable(root, { handleSelector, storageKey, cornerAnchor = false, minTop = 0 } = {}) {
     const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
     const getViewportSize = () => ({ w: document.documentElement.clientWidth, h: document.documentElement.clientHeight });
     const getRootRect = () => root.getBoundingClientRect();
@@ -725,8 +725,9 @@ export function makeLegendDraggable(root, { handleSelector, storageKey, cornerAn
         }
         const rect = getRootRect();
         const { w, h } = getViewportSize();
+        const mt = typeof minTop === 'function' ? minTop() : minTop;
         const nx = clamp(rect.left, 0, w - rect.width);
-        const ny = clamp(rect.top, 0, h - rect.height);
+        const ny = clamp(rect.top, mt, h - rect.height);
         applyFree(nx, ny);
         save(cornerAnchor ? { type: 'free', x: nx, y: ny } : { x: nx, y: ny });
     };
@@ -764,7 +765,8 @@ export function makeLegendDraggable(root, { handleSelector, storageKey, cornerAn
         }
         const { w, h } = getViewportSize();
         const r = getRootRect();
-        applyFree(clamp(startLeft + dx, 0, w - r.width), clamp(startTop + dy, 0, h - r.height));
+        const mt = typeof minTop === 'function' ? minTop() : minTop;
+        applyFree(clamp(startLeft + dx, 0, w - r.width), clamp(startTop + dy, mt, h - r.height));
     };
 
     const onPointerUp = () => {
@@ -775,8 +777,9 @@ export function makeLegendDraggable(root, { handleSelector, storageKey, cornerAn
         dragging = false; pointerId = null;
         const rect = getRootRect();
         const { w, h } = getViewportSize();
-        const fx = clamp(rect.left, 0, w - rect.width);
-        const fy = clamp(rect.top,  0, h - rect.height);
+        const mt2 = typeof minTop === 'function' ? minTop() : minTop;
+        const fx = clamp(rect.left, 0,   w - rect.width);
+        const fy = clamp(rect.top,  mt2, h - rect.height);
         if (cornerAnchor) {
             const corner = cornerForQuadrant({ left: fx, top: fy, width: rect.width, height: rect.height });
             if (corner) {

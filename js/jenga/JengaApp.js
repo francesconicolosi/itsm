@@ -173,16 +173,39 @@ export class JengaApp {
 
         if (this.view === 'calendar') {
             const el = document.getElementById('jenga-calendar');
-            if (this.spanMode !== 'month' && this.spanStartDate) {
-                this.calendar.renderSpan(el, this.spanStartDate, this._spanNumWeeks(), filtered);
-            } else {
-                this.calendar.render(el, this.currentYear, this.currentMonth, filtered);
-            }
-            const legendEvents = [...new Map([
+            // Always include PSPW so cell backgrounds survive "Show only calendar" filter
+            const calEvents = [...new Map([
                 ...filtered,
                 ...allEvents.filter(e => e.type === 'PEAK_SEASON_PROTECTION_WINDOW'),
             ].map(e => [e.key, e])).values()];
-            this.legend.update(legendEvents);
+            if (this.spanMode !== 'month' && this.spanStartDate) {
+                this.calendar.renderSpan(el, this.spanStartDate, this._spanNumWeeks(), calEvents);
+            } else {
+                this.calendar.render(el, this.currentYear, this.currentMonth, calEvents);
+            }
+            // Legend: scope PSPW events to the currently displayed date range to avoid adjacent-month peaks
+            let rangeStart, rangeEnd;
+            if (this.spanMode !== 'month' && this.spanStartDate) {
+                rangeStart = this.spanStartDate;
+                rangeEnd   = this._spanEndDate ? this._spanEndDate() : new Date(rangeStart.getFullYear(), rangeStart.getMonth() + 1, 0, 23, 59, 59, 999);
+            } else {
+                rangeStart = new Date(this.currentYear, this.currentMonth, 1);
+                rangeEnd   = new Date(this.currentYear, this.currentMonth + 1, 0, 23, 59, 59, 999);
+            }
+            const legendEvents = [...new Map([
+                ...calEvents,
+                ...allEvents.filter(e => {
+                    if (e.type !== 'PEAK_SEASON_PROTECTION_WINDOW' || !e.protectionColor) return false;
+                    const s = e.startDate || e.dueDate;
+                    const d = e.dueDate   || e.startDate;
+                    if (!s || !d) return false;
+                    const [start, end] = s <= d ? [s, d] : [d, s];
+                    return start <= rangeEnd && end >= rangeStart;
+                }),
+            ].map(e => [e.key, e])).values()];
+            this.legend.update(legendEvents, (filterName) => {
+                this.search.setTypeFilterExclusive(filterName);
+            });
         } else if (this.view === 'timeline') {
             this.legend.hide();
             const el = document.getElementById('jenga-timeline');

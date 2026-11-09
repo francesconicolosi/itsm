@@ -62,6 +62,18 @@ export class SlideshowController {
         const container = document.getElementById('jenga-slideshow-container');
         if (container) container.style.display = '';
 
+        // Snap legend to bottom-right for slideshow; restore on stop()
+        const legendRoot = this.app.legend._root;
+        if (legendRoot) {
+            this._legendSavedClass = legendRoot.className;
+            this._legendSavedStyle = legendRoot.style.cssText;
+            ['legend--anchor-tl','legend--anchor-tr','legend--anchor-bl','legend--anchor-br'].forEach(c =>
+                legendRoot.classList.remove(c));
+            legendRoot.style.removeProperty('left');
+            legendRoot.style.removeProperty('top');
+            legendRoot.classList.add('legend--anchor-br');
+        }
+
         // Mark button active
         document.getElementById('jenga-view-slideshow')?.classList.add('jenga-view-btn--active');
         document.getElementById('jenga-view-calendar')?.classList.remove('jenga-view-btn--active');
@@ -131,6 +143,15 @@ export class SlideshowController {
             if (timWrap)  timWrap.style.display   = 'none';
             if (statWrap) statWrap.style.display  = 'none';
             document.getElementById('jenga-view-calendar')?.classList.add('jenga-view-btn--active');
+        }
+
+        // Restore legend position saved before slideshow started
+        const legendRoot = this.app.legend._root;
+        if (legendRoot && this._legendSavedClass !== undefined) {
+            legendRoot.className  = this._legendSavedClass;
+            legendRoot.style.cssText = this._legendSavedStyle;
+            this._legendSavedClass = undefined;
+            this._legendSavedStyle = undefined;
         }
 
         // Re-sync legend to the restored view

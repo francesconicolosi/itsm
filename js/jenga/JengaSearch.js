@@ -37,6 +37,7 @@ const TYPE_OPTIONS = [
     'Business Events',
     'Hybris Releases',
     'Milestones',
+    'Show only calendar',
 ];
 
 // Maps display name → internal event type key
@@ -138,6 +139,9 @@ export class JengaSearch {
     _toEffectiveTypeSet(displaySelection) {
         if (!displaySelection || displaySelection.size === 0) {
             return new Set(Object.values(TYPE_DISPLAY_TO_KEY));
+        }
+        if (displaySelection.has('Show only calendar')) {
+            return new Set(['CALENDAR_ONLY']);
         }
         return new Set([...displaySelection].map(d => TYPE_DISPLAY_TO_KEY[d]).filter(Boolean));
     }
@@ -330,6 +334,7 @@ export class JengaSearch {
     }
 
     getFilteredEvents(allEvents) {
+        if (this.activeTypes.has('CALENDAR_ONLY')) return [];
         return allEvents.filter(e => {
             // Type filter. Empty raw type selection produces activeTypes = all types.
             if (this.activeTypes.size > 0 && !this.activeTypes.has(e.type)) return false;
@@ -362,6 +367,10 @@ export class JengaSearch {
 
             return true;
         });
+    }
+
+    setTypeFilterExclusive(displayName) {
+        this._typeMs?.setValue(new Set([displayName]), { emit: true });
     }
 
     refreshChips() {
