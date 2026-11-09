@@ -719,10 +719,6 @@ html[data-theme="dark"] .day-timeline__pspw-warn {
     background: none !important; border: none !important; box-shadow: none !important;
     cursor: pointer; padding: 2px 4px; color: #aaa; line-height: 1;
 }
-#jenga-legend-root .legend__collapse .chevron::before {
-    content: '▾'; display: inline-block; transition: transform .2s; transform: rotate(0deg);
-}
-#jenga-legend-root.legend--collapsed .legend__collapse .chevron::before { transform: rotate(-90deg); }
 #jenga-legend-root .legend__list { padding: 0 4px 4px; overflow-y: auto; max-height: 240px; }
 /* Hide top-edge resize handles — they overlap the header collapse button */
 #jenga-legend-root .legend__resize-handle--ne,
