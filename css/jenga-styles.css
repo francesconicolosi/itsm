@@ -724,6 +724,11 @@ html[data-theme="dark"] .day-timeline__pspw-warn {
 }
 #jenga-legend-root.legend--collapsed .legend__collapse .chevron::before { transform: rotate(-90deg); }
 #jenga-legend-root .legend__list { padding: 0 4px 4px; overflow-y: auto; max-height: 240px; }
+/* Hide top-edge resize handles — they overlap the header collapse button */
+#jenga-legend-root .legend__resize-handle--ne,
+#jenga-legend-root .legend__resize-handle--nw,
+#jenga-legend-root .legend__resize-handle--n { display: none !important; }
+
 #jenga-legend-root .legend__item {
     display: flex; align-items: center; gap: 8px;
     padding: 3px 8px; border-radius: 4px; font-size: 12px;

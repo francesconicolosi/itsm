@@ -71,13 +71,13 @@ export class JengaLegend extends LegendBase {
         if (types.has('SERVICE_OP'))
             items.push({ label: 'Service Operations', filterName: 'Service Operations', ...colors.SERVICE_OP });
         if (types.has('BUSINESS_EVENT'))
-            items.push({ label: 'Business Event',     filterName: 'Business Events',    ...colors.BUSINESS_EVENT });
+            items.push({ label: 'Business Event',     filterName: 'Business Events',    icon: '👜' });
         if (hasPeak)
-            items.push({ label: 'High Traffic Day',   filterName: 'Show only calendar', flame: true });
+            items.push({ label: 'High Traffic Day',   filterName: 'Show only calendar', icon: '🔥' });
         if (types.has('HYBRIS'))
             items.push({ label: 'Hybris Release',     filterName: 'Hybris Releases',    hybris: true });
         if (types.has('MILESTONE'))
-            items.push({ label: 'Milestone',           filterName: 'Milestones',         ...colors.MILESTONE });
+            items.push({ label: 'Milestone',           filterName: 'Milestones',         icon: '🚩' });
         for (const c of ['RED', 'AMBER', 'BLUE']) {
             if (pspwPresent.has(c)) {
                 const s = PSPW_SWATCH[c];
@@ -95,9 +95,9 @@ export class JengaLegend extends LegendBase {
             }
 
             const sw = document.createElement('span');
-            if (item.flame) {
+            if (item.icon) {
                 sw.className = 'legend__swatch legend__swatch--icon';
-                sw.textContent = '🔥';
+                sw.textContent = item.icon;
             } else if (item.hybris) {
                 sw.className = 'legend__swatch legend__swatch--hybris';
                 sw.innerHTML = HYBRIS_SVG;

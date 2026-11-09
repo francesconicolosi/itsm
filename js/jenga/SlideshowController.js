@@ -62,7 +62,7 @@ export class SlideshowController {
         const container = document.getElementById('jenga-slideshow-container');
         if (container) container.style.display = '';
 
-        // Snap legend to bottom-right for slideshow; restore on stop()
+        // Snap legend to bottom-right for slideshow; raise above slideshow container (z-index 800); restore on stop()
         const legendRoot = this.app.legend._root;
         if (legendRoot) {
             this._legendSavedClass = legendRoot.className;
@@ -72,6 +72,7 @@ export class SlideshowController {
             legendRoot.style.removeProperty('left');
             legendRoot.style.removeProperty('top');
             legendRoot.classList.add('legend--anchor-br');
+            legendRoot.style.zIndex = '850';
         }
 
         // Mark button active
