@@ -35,6 +35,7 @@ export class JengaLegend extends LegendBase {
         this._root = root;
         this._buildShell(root, 'Legend');
         root.querySelector('.legend__search-toggle')?.remove();
+        root.querySelector('.legend__filter-toggle')?.remove();
         const { list } = this._wireCollapse(root, 'jenga-legend-collapsed-v1');
         this._list = list;
         this._enableDrag(root, {
