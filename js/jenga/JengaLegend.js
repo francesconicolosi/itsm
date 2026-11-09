@@ -77,7 +77,7 @@ export class JengaLegend extends LegendBase {
         if (types.has('HYBRIS'))
             items.push({ label: 'Hybris Release',     filterName: 'Hybris Releases',    hybris: true });
         if (types.has('MILESTONE'))
-            items.push({ label: 'Milestone',           filterName: 'Milestones',         icon: '🚩' });
+            items.push({ label: 'Milestone',           filterName: 'Milestones',         icon: '🏁' });
         for (const c of ['RED', 'AMBER', 'BLUE']) {
             if (pspwPresent.has(c)) {
                 const s = PSPW_SWATCH[c];

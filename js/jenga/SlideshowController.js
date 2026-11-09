@@ -71,7 +71,7 @@ export class SlideshowController {
                 legendRoot.classList.remove(c));
             legendRoot.style.removeProperty('left');
             legendRoot.style.removeProperty('top');
-            legendRoot.classList.add('legend--anchor-br');
+            legendRoot.classList.add('legend--anchor-bl');
             legendRoot.style.zIndex = '850';
         }
 
