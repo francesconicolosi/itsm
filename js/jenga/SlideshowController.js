@@ -132,6 +132,9 @@ export class SlideshowController {
             if (statWrap) statWrap.style.display  = 'none';
             document.getElementById('jenga-view-calendar')?.classList.add('jenga-view-btn--active');
         }
+
+        // Re-sync legend to the restored view
+        this.app.refresh();
     }
 
     play() {
@@ -295,6 +298,7 @@ export class SlideshowController {
 
         // Status slides: slide 4 is page 0, slide 5 is page 1, etc.
         if (this.currentSlide >= 4) {
+            app.legend.hide();
             this._renderStatusSlide(slideWrap, this.currentSlide - 4);
             return;
         }
@@ -309,6 +313,12 @@ export class SlideshowController {
             } else {
                 app.calendar.render(slideWrap, app.currentYear, app.currentMonth, filtered, { maxChips: 3 });
             }
+
+            const legendEvents = [...new Map([
+                ...filtered,
+                ...allEvents.filter(e => e.type === 'PEAK_SEASON_PROTECTION_WINDOW'),
+            ].map(e => [e.key, e])).values()];
+            app.legend.update(legendEvents);
 
             const monthLabel = document.createElement('div');
             monthLabel.className = 'ss-month-label';
@@ -326,6 +336,7 @@ export class SlideshowController {
                 slideWrap.classList.add('jenga-slide--visible');
             });
         } else {
+            app.legend.hide();
             // Timeline panels — render directly, then remove unwanted lanes
             const timelineEvents = [
                 ...new Map([
