@@ -69,8 +69,7 @@ export class SlideshowController {
             this._legendSavedStyle = legendRoot.style.cssText;
             ['legend--anchor-tl','legend--anchor-tr','legend--anchor-bl','legend--anchor-br'].forEach(c =>
                 legendRoot.classList.remove(c));
-            legendRoot.style.removeProperty('left');
-            legendRoot.style.removeProperty('top');
+            ['left', 'top', 'right', 'bottom'].forEach(p => legendRoot.style.removeProperty(p));
             legendRoot.classList.add('legend--anchor-bl');
             legendRoot.style.zIndex = '850';
         }
