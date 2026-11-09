@@ -193,7 +193,7 @@ export class JengaApp {
                 rangeEnd   = new Date(this.currentYear, this.currentMonth + 1, 0, 23, 59, 59, 999);
             }
             const legendEvents = [...new Map([
-                ...calEvents,
+                ...filtered,
                 ...allEvents.filter(e => {
                     if (e.type !== 'PEAK_SEASON_PROTECTION_WINDOW' || !e.protectionColor) return false;
                     const s = e.startDate || e.dueDate;
