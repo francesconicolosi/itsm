@@ -15,7 +15,7 @@ const CHIP_DARK = {
 };
 const PSPW_SWATCH = {
     RED:   { bg: 'rgba(239,68,68,0.15)',  border: '#ef4444', label: 'Emergency deploys only' },
-    AMBER: { bg: 'rgba(234,179,8,0.16)',  border: '#eab308', label: 'Allowed applications only' },
+    AMBER: { bg: 'rgba(234,179,8,0.16)',  border: '#eab308', label: 'Low risk deploys only' },
     BLUE:  { bg: 'rgba(59,130,246,0.15)', border: '#3b82f6', label: 'Scheduled approved deploys' },
 };
 
