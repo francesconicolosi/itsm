@@ -360,10 +360,10 @@ export class SlideshowController {
             if (_legendTitle) {
                 if (effectiveSlide <= 0) {
                     _legendTitle.textContent = 'Peak Season Protection Windows';
-                    _legendTitle.style.textTransform = 'none';
+                    _legendTitle.style.whiteSpace = 'normal'; // prevent truncation
                 } else {
                     _legendTitle.textContent = 'Legend';
-                    _legendTitle.style.textTransform = '';
+                    _legendTitle.style.whiteSpace = '';
                 }
             }
 
