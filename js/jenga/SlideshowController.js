@@ -355,6 +355,18 @@ export class SlideshowController {
             ].map(e => [e.key, e])).values()];
             app.legend.update(legendEvents);
 
+            // On the PSPW-only slide rename the legend title; restore on the regular calendar.
+            const _legendTitle = app.legend._root?.querySelector('.legend__title');
+            if (_legendTitle) {
+                if (effectiveSlide <= 0) {
+                    _legendTitle.textContent = 'Peak Season Protection Windows';
+                    _legendTitle.style.textTransform = 'none';
+                } else {
+                    _legendTitle.textContent = 'Legend';
+                    _legendTitle.style.textTransform = '';
+                }
+            }
+
             const monthLabel = document.createElement('div');
             monthLabel.className = 'ss-month-label';
             if (isSpanMode) {
