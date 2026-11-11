@@ -23,6 +23,7 @@ export class SlideshowController {
         this._mouseMoveHandler = null;
         this._commandBar = null;
         this._outgoing = null;
+        this._hasPspw = false;
     }
 
     _readSlideDuration() {
@@ -39,6 +40,10 @@ export class SlideshowController {
         this._statusHasIncidentPage = false;
         this._statusIncidentFitCount = Infinity;
         this._slideCount = (slideCount != null && slideCount > 0) ? slideCount : SLIDE_COUNT;
+        const _isSpanMode = this.app.spanMode !== 'month' && this.app.spanStartDate;
+        const _monthEvts  = this.app.store.getEventsForMonth(this.app.currentYear, this.app.currentMonth);
+        this._hasPspw = !_isSpanMode && _monthEvts.some(e => e.type === 'PEAK_SEASON_PROTECTION_WINDOW');
+        if (this._hasPspw) this._slideCount += 1;
         this.active = true;
         this.playing = true;
         this.currentSlide = 1;
@@ -98,6 +103,7 @@ export class SlideshowController {
         this._statusPageCount = 1;
         this._statusHasIncidentPage = false;
         this._slideCount = SLIDE_COUNT;
+        this._hasPspw = false;
         this.active = false;
         this.playing = false;
         this._clearTimer();
@@ -315,30 +321,36 @@ export class SlideshowController {
             }, { once: true });
         }
 
+        // effectiveSlide: 0 = PSPW calendar-only (extra first slide when month has PSPW),
+        //                 1 = calendar, 2 = biz/milestones, 3 = incidents, 4+ = status
+        const effectiveSlide = this._hasPspw ? this.currentSlide - 1 : this.currentSlide;
+        const cssNum = effectiveSlide <= 0 ? 1 : effectiveSlide;
         const slideWrap = document.createElement('div');
-        slideWrap.className = `jenga-slide jenga-slide--${this.currentSlide}`;
+        slideWrap.className = `jenga-slide jenga-slide--${cssNum}`;
         container.appendChild(slideWrap);
 
         // Status slides: slide 4 is page 0, slide 5 is page 1, etc.
-        if (this.currentSlide >= 4) {
+        if (effectiveSlide >= 4) {
             app.legend.hide();
-            this._renderStatusSlide(slideWrap, this.currentSlide - 4);
+            this._renderStatusSlide(slideWrap, effectiveSlide - 4);
             return;
         }
 
-        if (this.currentSlide === 1) {
+        if (effectiveSlide <= 1) {
             // Calendar view — render first, then inject month label so it isn't wiped
             // by CalendarRenderer.render() which does containerEl.innerHTML = ''
+            // effectiveSlide 0: PSPW-only (no chips); effectiveSlide 1: regular calendar
+            const renderEvents = effectiveSlide <= 0 ? [] : filtered;
             if (isSpanMode) {
                 const SPAN_WEEKS_SS = { '1w': 1, '2w': 2, '3w': 3, '4w': 4 };
                 const nWeeks = SPAN_WEEKS_SS[app.spanMode] ?? 1;
-                app.calendar.renderSpan(slideWrap, app.spanStartDate, nWeeks, filtered, { maxChips: 3 });
+                app.calendar.renderSpan(slideWrap, app.spanStartDate, nWeeks, renderEvents, { maxChips: 3 });
             } else {
-                app.calendar.render(slideWrap, app.currentYear, app.currentMonth, filtered, { maxChips: 3 });
+                app.calendar.render(slideWrap, app.currentYear, app.currentMonth, renderEvents, { maxChips: 3 });
             }
 
             const legendEvents = [...new Map([
-                ...filtered,
+                ...renderEvents,
                 ...allEvents.filter(e => e.type === 'PEAK_SEASON_PROTECTION_WINDOW'),
             ].map(e => [e.key, e])).values()];
             app.legend.update(legendEvents);
@@ -373,7 +385,7 @@ export class SlideshowController {
             });
 
             // Filter by data-lane attribute (set by _makeCollapsible)
-            const keepLanes = this.currentSlide === 2
+            const keepLanes = effectiveSlide === 2
                 ? new Set(['biz', 'milestones'])
                 : new Set(['incidents', 'sr', 'releases', 'peak-protection']);
 
@@ -395,7 +407,7 @@ export class SlideshowController {
                     child.classList.remove('jtl-lane--collapsed');
                 });
 
-                if (this.currentSlide === 2) {
+                if (effectiveSlide === 2) {
                     // Slide 2 keeps biz + milestones: the jtl-axis-header (month label +
                     // day ruler) rendered by TimelineRenderer is already present and correct.
                     // Promote it to the top of main so it sits above the lanes.
@@ -518,7 +530,7 @@ export class SlideshowController {
                                     const newCount = 1 + streamPages; // 1 incident page + N stream pages
                                     if (newCount !== this._statusPageCount) {
                                         this._statusPageCount = newCount;
-                                        this._slideCount = (SLIDE_COUNT - 1) + newCount;
+                                        this._slideCount = (SLIDE_COUNT - 1 + (this._hasPspw ? 1 : 0)) + newCount;
                                         this._updateCommandBar();
                                     }
                                     probe.remove();
@@ -554,7 +566,7 @@ export class SlideshowController {
                     }
                     if (pages !== this._statusPageCount) {
                         this._statusPageCount = pages;
-                        this._slideCount = (SLIDE_COUNT - 1) + pages;
+                        this._slideCount = (SLIDE_COUNT - 1 + (this._hasPspw ? 1 : 0)) + pages;
                         this._updateCommandBar();
                     }
                     probe.remove();
@@ -607,7 +619,7 @@ export class SlideshowController {
                             const newTotal = (this._statusHasIncidentPage ? 1 : 0) + streamPages;
                             if (newTotal !== this._statusPageCount) {
                                 this._statusPageCount = newTotal;
-                                this._slideCount = (SLIDE_COUNT - 1) + newTotal;
+                                this._slideCount = (SLIDE_COUNT - 1 + (this._hasPspw ? 1 : 0)) + newTotal;
                                 this._updateCommandBar();
                             }
                             // Center the column block when it fits in a single page and
@@ -680,7 +692,7 @@ export class SlideshowController {
                             const newTotal = (this._statusHasIncidentPage ? 1 : 0) + newStreamPages;
                             if (newTotal !== this._statusPageCount) {
                                 this._statusPageCount = newTotal;
-                                this._slideCount = (SLIDE_COUNT - 1) + newTotal;
+                                this._slideCount = (SLIDE_COUNT - 1 + (this._hasPspw ? 1 : 0)) + newTotal;
                                 this._updateCommandBar();
                             }
                         });
