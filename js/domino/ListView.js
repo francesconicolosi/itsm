@@ -17,6 +17,7 @@ export class ListView {
         this.btnGraph = null;
         this.btnExport = null;
         this.btnStatus = null;
+        this._filterDropdown = null;
     }
 
     initDOM() {
@@ -237,6 +238,12 @@ export class ListView {
             title.className = 'th-title fade-link';
             title.type = 'button';
             title.textContent = `${labelForKey(key)}${this.getSortIndicator(key)}`;
+            const filterBtn = document.createElement('button');
+            filterBtn.className = 'list-filter-btn' + (this._isColFilterActive(key) ? ' list-filter-btn--active' : '');
+            filterBtn.type = 'button';
+            filterBtn.setAttribute('aria-label', `Filter by ${labelForKey(key)}`);
+            filterBtn.innerHTML = '<svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M10 18h4v-2h-4v2zM3 6v2h18V6H3zm3 7h12v-2H6v2z"/></svg>';
+            filterBtn.addEventListener('click', (e) => { e.stopPropagation(); this._openFilterDropdown(key, filterBtn); });
             const removeBtn = document.createElement('button');
             removeBtn.className = 'col-op fade-link';
             removeBtn.type = 'button';
@@ -244,6 +251,7 @@ export class ListView {
             removeBtn.setAttribute('data-col', encodeURIComponent(key));
             removeBtn.setAttribute('aria-label', `Remove "${labelForKey(key)}" from list view`);
             cellWrap.appendChild(title);
+            cellWrap.appendChild(filterBtn);
             cellWrap.appendChild(removeBtn);
             th.appendChild(cellWrap);
             trh.appendChild(th);
@@ -359,6 +367,139 @@ export class ListView {
             });
         }
         return results;
+    }
+
+    // ── Column filters ────────────────────────────────────────────────────────
+
+    _collectColumnValues(key) {
+        const all = this.app.search.currentNodes || [];
+        const seen = new Set();
+        const values = [];
+        for (const node of all) {
+            const raw = key === 'id' ? (node.id ?? '') : (node[key] ?? '');
+            if (typeof raw !== 'string' || !raw) continue;
+            for (const v of splitValues(raw)) {
+                const t = v.trim();
+                if (t && !seen.has(t)) { seen.add(t); values.push(t); }
+            }
+        }
+        return values.sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base', numeric: true }));
+    }
+
+    _getFilterSelectedValues(key) {
+        const engine = this.app.search;
+        const clauses = engine.parseCompoundKeyValueSearch(engine.searchTerm || '');
+        const clause = clauses.find(c => c.key === key && !c.isNegation);
+        if (!clause || !clause.values.length) return null;
+        return new Set(clause.values);
+    }
+
+    _isColFilterActive(key) {
+        return this._getFilterSelectedValues(key) !== null;
+    }
+
+    _applyColumnFilter(key, selectedValues, allValues) {
+        const engine = this.app.search;
+        const remaining = engine.splitSearchClauses(engine.searchTerm || '')
+            .filter(c => { const p = engine.parseKeyValueClause(c); return !p || p.key !== key || p.isNegation; });
+        const isFiltered = selectedValues && selectedValues.size > 0 && selectedValues.size < allValues.length;
+        if (isFiltered) remaining.push(engine.buildKeyValueSearch(key, [...selectedValues], true));
+        engine.updateSearchAndRefresh(remaining.filter(Boolean).join(' & '), false);
+        this.renderListFromSearch();
+    }
+
+    _closeFilterDropdown() {
+        if (this._filterDropdown) { this._filterDropdown.remove(); this._filterDropdown = null; }
+    }
+
+    _openFilterDropdown(key, anchorEl) {
+        if (this._filterDropdown) { this._closeFilterDropdown(); return; }
+
+        const allValues = this._collectColumnValues(key);
+        if (!allValues.length) return;
+
+        const dropdown = document.createElement('div');
+        dropdown.className = 'list-filter-dropdown';
+        document.body.appendChild(dropdown);
+        this._filterDropdown = dropdown;
+
+        const rect = anchorEl.getBoundingClientRect();
+        dropdown.style.top = `${rect.bottom + 2}px`;
+        dropdown.style.left = `${Math.min(rect.left, window.innerWidth - 250)}px`;
+
+        const searchWrap = document.createElement('div');
+        searchWrap.className = 'list-filter-search-wrap';
+        const searchInput = document.createElement('input');
+        searchInput.type = 'text';
+        searchInput.className = 'list-filter-search';
+        searchInput.placeholder = 'Search values...';
+        searchWrap.appendChild(searchInput);
+        dropdown.appendChild(searchWrap);
+
+        const scroll = document.createElement('div');
+        scroll.className = 'list-filter-scroll';
+        dropdown.appendChild(scroll);
+
+        const rebuild = (filterText = '') => {
+            scroll.innerHTML = '';
+            const lc = filterText.toLowerCase();
+            const visible = filterText ? allValues.filter(v => v.toLowerCase().includes(lc)) : allValues;
+            const selectedSet = this._getFilterSelectedValues(key);
+
+            const allChecked = selectedSet === null;
+            const someChecked = selectedSet !== null && selectedSet.size > 0 && selectedSet.size < allValues.length;
+
+            const allLabel = document.createElement('label');
+            allLabel.className = 'list-filter-item list-filter-item--selectall';
+            const allCheck = document.createElement('input');
+            allCheck.type = 'checkbox';
+            allCheck.checked = allChecked;
+            allCheck.indeterminate = someChecked;
+            allCheck.addEventListener('change', (e) => {
+                e.stopPropagation();
+                this._applyColumnFilter(key, null, allValues);
+                rebuild(filterText);
+            });
+            allLabel.appendChild(allCheck);
+            const allSpan = document.createElement('span');
+            allSpan.textContent = '(Select All)';
+            allLabel.appendChild(allSpan);
+            scroll.appendChild(allLabel);
+
+            visible.forEach(v => {
+                const isChecked = selectedSet === null || selectedSet.has(v);
+                const label = document.createElement('label');
+                label.className = 'list-filter-item';
+                const cb = document.createElement('input');
+                cb.type = 'checkbox';
+                cb.checked = isChecked;
+                cb.addEventListener('change', (e) => {
+                    e.stopPropagation();
+                    const current = this._getFilterSelectedValues(key);
+                    const newSet = current ? new Set(current) : new Set(allValues);
+                    if (cb.checked) newSet.add(v); else newSet.delete(v);
+                    this._applyColumnFilter(key, newSet.size >= allValues.length ? null : newSet, allValues);
+                    rebuild(filterText);
+                });
+                const span = document.createElement('span');
+                span.textContent = v;
+                label.appendChild(cb);
+                label.appendChild(span);
+                scroll.appendChild(label);
+            });
+        };
+
+        rebuild();
+        searchInput.addEventListener('input', () => rebuild(searchInput.value));
+        requestAnimationFrame(() => searchInput.focus());
+
+        const onOutside = (e) => {
+            if (!dropdown.contains(e.target)) {
+                this._closeFilterDropdown();
+                document.removeEventListener('mousedown', onOutside);
+            }
+        };
+        setTimeout(() => document.addEventListener('mousedown', onOutside), 0);
     }
 
     exportToExcel(allColumns) {
