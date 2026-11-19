@@ -1,4 +1,4 @@
-import { isUrl, createFormattedLongTextElementsFrom, splitValues, formatUrlLink, renderUrlPartsIntoCell } from '../shared/utils.js';
+import { isUrl, createFormattedLongTextElementsFrom, splitValues, formatUrlLink, renderUrlPartsIntoCell, createOutlookUrl, truncateString } from '../shared/utils.js';
 import { labelForKey, isListViewVisible, refreshDrawerColumnIcons, LABEL_FOR_KEY, getCellValue, descriptionFields } from './columns.js';
 import { computeJiraIssuesValue } from './jira.js';
 
@@ -277,7 +277,44 @@ export class ListView {
                 }
                 if (typeof raw === 'string' && raw) {
                     const parts = splitValues(raw);
-                    if (parts.some(p => isUrl(p))) {
+                    if (key === 'Team Email') {
+                        const wrap = document.createElement('div');
+                        wrap.style.cssText = 'display:flex;flex-direction:column;gap:4px;';
+                        parts.forEach(email => {
+                            const row = document.createElement('div');
+                            row.style.cssText = 'display:flex;align-items:center;gap:4px;white-space:nowrap;';
+                            const a = document.createElement('a');
+                            a.href = createOutlookUrl([email]);
+                            a.textContent = truncateString(email, 28);
+                            a.title = email;
+                            a.target = '_blank';
+                            a.rel = 'noopener noreferrer';
+                            a.addEventListener('click', e => e.stopPropagation());
+                            row.appendChild(a);
+                            const btn = document.createElement('button');
+                            btn.className = 'drawer-icon-btn';
+                            btn.setAttribute('aria-label', 'Copy email address');
+                            btn.setAttribute('data-tooltip', 'Copy email');
+                            btn.setAttribute('data-tooltip-placement', 'top');
+                            btn.title = '';
+                            btn.innerHTML = '<svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
+                            btn.addEventListener('click', async (e) => {
+                                e.stopPropagation();
+                                try { await navigator.clipboard.writeText(email); }
+                                catch {
+                                    const ta = document.createElement('textarea');
+                                    ta.value = email;
+                                    ta.style.cssText = 'position:fixed;top:-9999px;left:-9999px';
+                                    document.body.appendChild(ta); ta.select();
+                                    document.execCommand('copy'); ta.remove();
+                                }
+                                this.app.showToast('Email copied to clipboard');
+                            });
+                            row.appendChild(btn);
+                            wrap.appendChild(row);
+                        });
+                        td.appendChild(wrap);
+                    } else if (parts.some(p => isUrl(p))) {
                         renderUrlPartsIntoCell(parts, td);
                     } else if (descriptionFields.includes(key)) {
                         td.innerHTML = '';

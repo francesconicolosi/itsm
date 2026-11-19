@@ -1,4 +1,4 @@
-import { isDateTimeValue, formatDateTimeLocal, createFormattedLongTextElementsFrom, splitValues, isUrl, setSearchQuery, formatUrlLink, renderUrlPartsIntoCell, createOutlookUrl } from '../shared/utils.js';
+import { isDateTimeValue, formatDateTimeLocal, createFormattedLongTextElementsFrom, splitValues, isUrl, setSearchQuery, formatUrlLink, renderUrlPartsIntoCell, createOutlookUrl, truncateString } from '../shared/utils.js';
 import { labelForKey, isListViewVisible, refreshDrawerColumnIcons, descriptionFields } from './columns.js';
 import { computeJiraIssuesValue } from './jira.js';
 import { BRAND } from '../../brand-specific/brand.js';
@@ -196,7 +196,8 @@ export class DetailDrawer {
                 row.style.cssText = 'display:flex;align-items:center;gap:4px;';
                 const a = document.createElement('a');
                 a.href = createOutlookUrl([email]);
-                a.textContent = email;
+                a.textContent = truncateString(email, 28);
+                a.title = email;
                 a.target = '_blank';
                 a.rel = 'noopener noreferrer';
                 row.appendChild(a);
