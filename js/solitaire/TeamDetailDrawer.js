@@ -127,9 +127,32 @@ export class TeamDetailDrawer {
 
         if (email && email !== '') {
             addDrawerSection('Team Mailbox <span class="drawer-svc-icon">✉️</span>', (body) => {
-                body.appendChild(
+                const row = document.createElement('div');
+                row.style.cssText = 'display:flex;align-items:center;gap:4px;';
+                row.appendChild(
                     createHrefElement(createOutlookUrl([email]), `${truncateString(email, 25)}`)
                 );
+                const copyEmailBtn = document.createElement('button');
+                copyEmailBtn.className = 'drawer-icon-btn';
+                copyEmailBtn.setAttribute('aria-label', 'Copy email address');
+                copyEmailBtn.setAttribute('data-tooltip', 'Copy email');
+                copyEmailBtn.setAttribute('data-tooltip-placement', 'top');
+                copyEmailBtn.title = '';
+                copyEmailBtn.innerHTML = '<svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
+                copyEmailBtn.addEventListener('click', async (e) => {
+                    e.stopPropagation();
+                    try { await navigator.clipboard.writeText(email); }
+                    catch {
+                        const ta = document.createElement('textarea');
+                        ta.value = email;
+                        ta.style.cssText = 'position:fixed;top:-9999px;left:-9999px';
+                        document.body.appendChild(ta); ta.select();
+                        document.execCommand('copy'); ta.remove();
+                    }
+                    this.app.showToast('Email copied to clipboard');
+                });
+                row.appendChild(copyEmailBtn);
+                body.appendChild(row);
             }, { open: false, sectionId: 'mailbox' });
         }
 
