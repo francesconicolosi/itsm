@@ -162,6 +162,13 @@ export class SlideshowController {
             this._legendSavedStyle = undefined;
         }
 
+        // Reset legend title in case the PSPW slide renamed it
+        const _legendTitle = legendRoot?.querySelector('.legend__title');
+        if (_legendTitle) {
+            _legendTitle.textContent = 'Legend';
+            _legendTitle.style.whiteSpace = '';
+        }
+
         // Re-sync legend to the restored view
         this.app.refresh();
     }

@@ -1,9 +1,9 @@
-import { isDateTimeValue, formatDateTimeLocal, createFormattedLongTextElementsFrom, splitValues, isUrl, setSearchQuery, formatUrlLink, renderUrlPartsIntoCell } from '../shared/utils.js';
+import { isDateTimeValue, formatDateTimeLocal, createFormattedLongTextElementsFrom, splitValues, isUrl, setSearchQuery, formatUrlLink, renderUrlPartsIntoCell, createOutlookUrl } from '../shared/utils.js';
 import { labelForKey, isListViewVisible, refreshDrawerColumnIcons, descriptionFields } from './columns.js';
 import { computeJiraIssuesValue } from './jira.js';
 import { BRAND } from '../../brand-specific/brand.js';
 
-const SEARCHABLE_ATTRS_ON_PEOPLE_DB = ['Theme', 'Stream', 'Owner', 'Service Manager', 'Responsible Teams', 'Accounts administered by', 'Accounts approved by', 'Accessed by'];
+const SEARCHABLE_ATTRS_ON_PEOPLE_DB = ['Theme', 'Stream', 'Owner', 'Service Manager', 'Responsible Teams', 'Team Email', 'Accounts administered by', 'Accounts approved by', 'Accessed by'];
 const PRIORITY_KEYS = ['Key', 'id', 'Description', 'Depends on', 'Used by'];
 
 const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
@@ -189,6 +189,48 @@ export class DetailDrawer {
             const sym = inSearch ? '−' : '+';
             return ` <a class="fade-link search-toggle ${cls}" data-key="${encodeURIComponent(key)}" data-value="${encodeURIComponent(v)}" href="#">${sym}</a>`;
         };
+
+        if (key === 'Team Email') {
+            const renderEmailEntry = (email) => {
+                const row = document.createElement('div');
+                row.style.cssText = 'display:flex;align-items:center;gap:4px;';
+                const a = document.createElement('a');
+                a.href = createOutlookUrl([email]);
+                a.textContent = email;
+                a.target = '_blank';
+                a.rel = 'noopener noreferrer';
+                row.appendChild(a);
+                const btn = document.createElement('button');
+                btn.className = 'drawer-icon-btn';
+                btn.setAttribute('aria-label', 'Copy email address');
+                btn.setAttribute('data-tooltip', 'Copy email');
+                btn.setAttribute('data-tooltip-placement', 'top');
+                btn.title = '';
+                btn.innerHTML = '<svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
+                btn.addEventListener('click', async (e) => {
+                    e.stopPropagation();
+                    try { await navigator.clipboard.writeText(email); }
+                    catch {
+                        const ta = document.createElement('textarea');
+                        ta.value = email;
+                        ta.style.cssText = 'position:fixed;top:-9999px;left:-9999px';
+                        document.body.appendChild(ta); ta.select();
+                        document.execCommand('copy'); ta.remove();
+                    }
+                    this.app.showToast('Email copied to clipboard');
+                });
+                row.appendChild(btn);
+                return row;
+            };
+            if (parts.length > 1) {
+                const ul = document.createElement('ul');
+                parts.forEach(email => { const li = document.createElement('li'); li.appendChild(renderEmailEntry(email)); ul.appendChild(li); });
+                td.appendChild(ul);
+            } else {
+                td.appendChild(renderEmailEntry(parts[0] || raw));
+            }
+            return td;
+        }
 
         if (SEARCHABLE_ATTRS_ON_PEOPLE_DB.includes(key)) {
             const SOLITAIRE_FIELD_MAP = { 'Theme': 'theme', 'Stream': 'stream', 'Responsible Teams': 'team' };
