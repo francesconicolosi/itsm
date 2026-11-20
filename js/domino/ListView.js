@@ -218,7 +218,12 @@ export class ListView {
                 const col = title.closest('th')?.getAttribute('data-col');
                 if (!col) return;
                 if (this.sortKey === col) {
-                    this.sortDir = this.sortDir === 'asc' ? 'desc' : 'asc';
+                    if (this.sortDir === 'asc') {
+                        this.sortDir = 'desc';
+                    } else {
+                        this.sortKey = null;
+                        this.sortDir = 'asc';
+                    }
                 } else {
                     this.sortKey = col;
                     this.sortDir = 'asc';
@@ -440,14 +445,16 @@ export class ListView {
         scroll.className = 'list-filter-scroll';
         dropdown.appendChild(scroll);
 
+        let pendingDeselect = false;
+
         const rebuild = (filterText = '') => {
             scroll.innerHTML = '';
             const lc = filterText.toLowerCase();
             const visible = filterText ? allValues.filter(v => v.toLowerCase().includes(lc)) : allValues;
-            const selectedSet = this._getFilterSelectedValues(key);
+            const selectedSet = pendingDeselect ? new Set() : this._getFilterSelectedValues(key);
 
-            const allChecked = selectedSet === null;
-            const someChecked = selectedSet !== null && selectedSet.size > 0 && selectedSet.size < allValues.length;
+            const allChecked = !pendingDeselect && selectedSet === null;
+            const someChecked = selectedSet instanceof Set && selectedSet.size > 0 && selectedSet.size < allValues.length;
 
             const allLabel = document.createElement('label');
             allLabel.className = 'list-filter-item list-filter-item--selectall';
@@ -457,8 +464,14 @@ export class ListView {
             allCheck.indeterminate = someChecked;
             allCheck.addEventListener('change', (e) => {
                 e.stopPropagation();
-                this._applyColumnFilter(key, null, allValues);
-                rebuild(filterText);
+                if (allChecked) {
+                    pendingDeselect = true;
+                    rebuild(filterText);
+                } else {
+                    pendingDeselect = false;
+                    this._applyColumnFilter(key, null, allValues);
+                    rebuild(filterText);
+                }
             });
             allLabel.appendChild(allCheck);
             const allSpan = document.createElement('span');
@@ -467,7 +480,7 @@ export class ListView {
             scroll.appendChild(allLabel);
 
             visible.forEach(v => {
-                const isChecked = selectedSet === null || selectedSet.has(v);
+                const isChecked = !pendingDeselect && (selectedSet === null || selectedSet.has(v));
                 const label = document.createElement('label');
                 label.className = 'list-filter-item';
                 const cb = document.createElement('input');
@@ -475,10 +488,17 @@ export class ListView {
                 cb.checked = isChecked;
                 cb.addEventListener('change', (e) => {
                     e.stopPropagation();
-                    const current = this._getFilterSelectedValues(key);
-                    const newSet = current ? new Set(current) : new Set(allValues);
-                    if (cb.checked) newSet.add(v); else newSet.delete(v);
-                    this._applyColumnFilter(key, newSet.size >= allValues.length ? null : newSet, allValues);
+                    const wasDeselect = pendingDeselect;
+                    pendingDeselect = false;
+                    if (wasDeselect) {
+                        const newSet = cb.checked ? new Set([v]) : new Set();
+                        this._applyColumnFilter(key, newSet.size > 0 ? newSet : null, allValues);
+                    } else {
+                        const current = this._getFilterSelectedValues(key);
+                        const newSet = current ? new Set(current) : new Set(allValues);
+                        if (cb.checked) newSet.add(v); else newSet.delete(v);
+                        this._applyColumnFilter(key, newSet.size >= allValues.length ? null : newSet, allValues);
+                    }
                     rebuild(filterText);
                 });
                 const span = document.createElement('span');
